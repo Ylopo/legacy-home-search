@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { upload } from '@vercel/blob/client'
+import { AdminWorkflowNav } from '@/components/AdminWorkflowNav'
 import type { SanityBlogPost, WorkflowStatus } from '@/sanity/queries'
 type ThumbnailState =
   | { type: 'none' }
@@ -480,14 +481,12 @@ export default function VAPostPage() {
   return (
     <PageShell>
       {/* Nav */}
-      <div style={{ background: '#1E3A5F', color: '#fff', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <Link href={`/admin/va-queue?secret=${secret}`} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>
-          ← Back to Queue
-        </Link>
-        <span style={{ opacity: 0.3 }}>|</span>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>{post.title}</span>
+      <AdminWorkflowNav current="editor" secret={secret} postId={postId} />
+      {/* Post title bar */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</span>
         {post.workflowStatus && (
-          <span style={{ marginLeft: 'auto', fontSize: 11, background: 'rgba(255,255,255,0.15)', padding: '3px 10px', borderRadius: 99 }}>
+          <span style={{ flexShrink: 0, fontSize: 11, background: '#f1f5f9', color: '#475569', padding: '3px 10px', borderRadius: 99, fontWeight: 600 }}>
             {post.workflowStatus.replace(/_/g, ' ').toUpperCase()}
           </span>
         )}

@@ -2,14 +2,24 @@
 
 import Link from 'next/link'
 
-const STEPS = [
+const BASE_STEPS = [
   { key: 'ideas',    label: 'Idea Review',  path: '/admin/idea-review', num: 1 },
   { key: 'va-queue', label: 'Media Queue',  path: '/admin/va-queue',    num: 2 },
 ] as const
 
-type Step = (typeof STEPS)[number]['key']
+type BaseStep = (typeof BASE_STEPS)[number]['key']
+type Step = BaseStep | 'editor'
 
-export function AdminWorkflowNav({ current, secret }: { current: Step; secret: string }) {
+export function AdminWorkflowNav({ current, secret, postId }: {
+  current: Step
+  secret: string
+  postId?: string
+}) {
+  const steps: { key: Step; label: string; path: string; num: number }[] = [
+    ...BASE_STEPS,
+    ...(postId ? [{ key: 'editor' as const, label: 'Post Editor', path: `/admin/va-queue/${postId}`, num: 3 }] : []),
+  ]
+
   return (
     <div style={{
       background: '#1E3A5F',
@@ -26,7 +36,7 @@ export function AdminWorkflowNav({ current, secret }: { current: Step; secret: s
         Legacy Home Team
       </span>
 
-      {STEPS.map((s, i) => (
+      {steps.map((s, i) => (
         <span key={s.key} style={{ display: 'flex', alignItems: 'stretch' }}>
           {i > 0 && (
             <span style={{

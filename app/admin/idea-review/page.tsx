@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { IdeaCandidate, IdeaScore } from '@/lib/types'
 import { AdminWorkflowNav } from '@/components/AdminWorkflowNav'
@@ -56,7 +57,7 @@ const SOURCE_ICONS: Record<string, string> = {
 type CardState =
   | { phase: 'idle' }
   | { phase: 'writing' }
-  | { phase: 'done'; title: string; vaUrl: string }
+  | { phase: 'done'; title: string }
   | { phase: 'error'; message: string }
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
@@ -120,6 +121,7 @@ function IdeaCard({ idea, secret, onAction }: {
   secret: string
   onAction: (id: string, action: 'approved' | 'skipped' | 'deferred') => void
 }) {
+  const router = useRouter()
   const [state, setState] = useState<CardState>({ phase: 'idle' })
   const [showScore, setShowScore] = useState(false)
 
@@ -135,8 +137,9 @@ function IdeaCard({ idea, secret, onAction }: {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Writing failed')
-      setState({ phase: 'done', title: data.title, vaUrl: `${data.vaQueueUrl}?secret=${encodeURIComponent(secret)}` })
+      setState({ phase: 'done', title: data.title })
       onAction(idea.id, 'approved')
+      router.push(`/admin/va-queue?secret=${encodeURIComponent(secret)}`)
     } catch (err) {
       setState({ phase: 'error', message: err instanceof Error ? err.message : 'Failed' })
     }
@@ -172,14 +175,11 @@ function IdeaCard({ idea, secret, onAction }: {
       borderRadius: 12, padding: 20, marginBottom: 14,
     }}>
 
-      {/* Success state */}
+      {/* Success state — briefly shown before redirect */}
       {state.phase === 'done' && (
         <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: 14, marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, color: '#166534', marginBottom: 4 }}>✓ Post written and queued</div>
-          <div style={{ fontSize: 13, color: '#166534', marginBottom: 8 }}>{state.title}</div>
-          <a href={state.vaUrl} style={{ fontSize: 13, color: '#166534', fontWeight: 600 }}>
-            Open in VA Editor →
-          </a>
+          <div style={{ fontWeight: 700, color: '#166534', marginBottom: 4 }}>✓ Post written — taking you to the media queue…</div>
+          <div style={{ fontSize: 13, color: '#166534' }}>{state.title}</div>
         </div>
       )}
 
