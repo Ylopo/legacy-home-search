@@ -855,6 +855,11 @@ export default function VAPostPage() {
             {(publishState.phase === 'polling' || publishState.phase === 'done') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 <PlatformStatusRow
+                  icon="🌐"
+                  label="Website"
+                  status={{ phase: 'done' }}
+                />
+                <PlatformStatusRow
                   icon="👥"
                   label="Facebook"
                   status={publishState.facebook}
