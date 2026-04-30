@@ -103,22 +103,31 @@ export default function BlogPickerPage() {
         <div style={styles.container}>
           <div style={styles.successBox}>
             <div style={styles.successIcon}>✓</div>
-            <h2 style={styles.successTitle}>{result.published.length} {result.published.length === 1 ? 'Post' : 'Posts'} Published</h2>
-            <p style={styles.successSub}>They&apos;re live on the blog now.</p>
-            <ul style={styles.publishedList}>
+            <h2 style={styles.successTitle}>
+              {result.published.length} {result.published.length === 1 ? 'Post' : 'Posts'} Written &amp; Queued
+            </h2>
+            <p style={styles.successSub}>
+              Claude has written {result.published.length === 1 ? 'the article' : 'the articles'}. Head to the media queue to add a thumbnail and publish.
+            </p>
+            <ul style={{ ...styles.publishedList, marginBottom: 32 }}>
               {result.published.map((p) => (
                 <li key={p.slug} style={styles.publishedItem}>
-                  <a
-                    href={`/blog/${p.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.publishedLink}
-                  >
-                    {p.title} →
-                  </a>
+                  <span style={{ fontSize: 14, color: '#1a1a1a' }}>{p.title}</span>
                 </li>
               ))}
             </ul>
+            <a
+              href={`/admin/va-queue?secret=${secret}`}
+              style={{
+                display: 'inline-block',
+                background: '#2563eb', color: '#fff',
+                padding: '14px 40px', borderRadius: 8,
+                fontSize: 15, fontWeight: 700, textDecoration: 'none',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Go to Media Queue →
+            </a>
           </div>
         </div>
       </div>
@@ -218,13 +227,13 @@ export default function BlogPickerPage() {
             }}
           >
             {publishing
-              ? 'Publishing...'
+              ? 'Writing posts...'
               : selected.size > 0
-                ? `Publish ${selected.size} Post${selected.size !== 1 ? 's' : ''} →`
+                ? `Write & Queue ${selected.size} Post${selected.size !== 1 ? 's' : ''} →`
                 : 'Select at least 1 article'}
           </button>
           <p style={styles.footerNote}>
-            Claude will write and publish all selected posts simultaneously. This may take up to 60 seconds per post.
+            Claude will write the selected posts and add them to the media queue. Takes up to 60 seconds per post — don&apos;t close this tab.
           </p>
         </div>
 
