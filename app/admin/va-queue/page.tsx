@@ -54,6 +54,11 @@ export default function VAQueuePage() {
   const [socialLoading, setSocialLoading] = useState(true)
   const [error,         setError]         = useState('')
   const [socialDismissed, setSocialDismissed] = useState<Set<string>>(new Set())
+  const [deletedIds,    setDeletedIds]    = useState<Set<string>>(new Set())
+
+  function handleDelete(id: string) {
+    setDeletedIds(prev => new Set([...prev, id]))
+  }
 
   const secret = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('secret') ?? ''
@@ -82,9 +87,9 @@ export default function VAQueuePage() {
       .finally(() => setSocialLoading(false))
   }, [secret])
 
-  const pending = posts.filter(p => p.workflowStatus === 'media_pending')
-  const ready   = posts.filter(p => p.workflowStatus === 'media_ready')
-  const other   = posts.filter(p => !['media_pending', 'media_ready'].includes(p.workflowStatus ?? ''))
+  const pending = posts.filter(p => p.workflowStatus === 'media_pending' && !deletedIds.has(p._id))
+  const ready   = posts.filter(p => p.workflowStatus === 'media_ready'   && !deletedIds.has(p._id))
+  const other   = posts.filter(p => !['media_pending', 'media_ready'].includes(p.workflowStatus ?? '') && !deletedIds.has(p._id))
   const social  = socialPosts.filter(p => !socialDismissed.has(p._id))
 
   const activeCount = posts.filter(p => ['media_pending', 'media_ready'].includes(p.workflowStatus ?? '')).length
@@ -125,7 +130,7 @@ export default function VAQueuePage() {
         {pending.length > 0 && (
           <Section title="Needs Media" count={pending.length} accent="#9a3412" bg="#fed7aa">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {pending.map(post => <PostCard key={post._id} post={post} secret={secret} />)}
+              {pending.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
             </div>
           </Section>
         )}
@@ -134,7 +139,7 @@ export default function VAQueuePage() {
         {ready.length > 0 && (
           <Section title="Ready to Publish" count={ready.length}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {ready.map(post => <PostCard key={post._id} post={post} secret={secret} />)}
+              {ready.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
             </div>
           </Section>
         )}
@@ -143,7 +148,7 @@ export default function VAQueuePage() {
         {other.length > 0 && (
           <Section title="In Progress / Recent" count={other.length}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {other.map(post => <PostCard key={post._id} post={post} secret={secret} />)}
+              {other.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
             </div>
           </Section>
         )}
@@ -214,38 +219,119 @@ function Section({ title, count, accent = '#1a1a1a', bg = '#e2e8f0', subtitle, c
 
 // ─── Workflow post card (links to VA editor) ──────────────────────────────────
 
-function PostCard({ post, secret }: { post: SanityBlogPost; secret: string }) {
+function PostCard({ post, secret, onDelete }: { post: SanityBlogPost; secret: string; onDelete: (id: string) => void }) {
+  const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   const status = post.workflowStatus as WorkflowStatus
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.media_pending
   const label  = STATUS_LABELS[status] ?? status
   const hasThumb = !!post.coverImage?.asset
 
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDeleting(true)
+    try {
+      await fetch(`/api/content/delete-post?secret=${encodeURIComponent(secret)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post._id }),
+      })
+      onDelete(post._id)
+    } catch {
+      setDeleting(false)
+      setConfirming(false)
+    }
+  }
+
   return (
-    <Link href={`/admin/va-queue/${post._id}?secret=${secret}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-      <div style={{ background: '#fff', border: `1.5px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}
-        onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)')}
-        onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
-      >
-        <div style={{ height: 140, background: hasThumb ? '#e2e8f0' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          {hasThumb
-            ? <img src={sanityThumbUrl(post.coverImage.asset._ref)} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <div style={{ textAlign: 'center', color: '#94a3b8' }}><div style={{ fontSize: 28, marginBottom: 4 }}>🖼</div><div style={{ fontSize: 12 }}>No thumbnail yet</div></div>
-          }
-        </div>
-        <div style={{ padding: '14px 16px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#64748b' }}>
-              {post.category?.replace(/-/g, ' ')}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 700, background: colors.bg, color: colors.text, borderRadius: 99, padding: '2px 8px' }}>
-              {label}
-            </span>
+    <div style={{ position: 'relative' }}>
+      <Link href={`/admin/va-queue/${post._id}?secret=${secret}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <div style={{ background: '#fff', border: `1.5px solid ${confirming ? '#fca5a5' : colors.border}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' }}
+          onMouseEnter={e => { if (!confirming) e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' }}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+        >
+          <div style={{ height: 140, background: hasThumb ? '#e2e8f0' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {hasThumb
+              ? <img src={sanityThumbUrl(post.coverImage.asset._ref)} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ textAlign: 'center', color: '#94a3b8' }}><div style={{ fontSize: 28, marginBottom: 4 }}>🖼</div><div style={{ fontSize: 12 }}>No thumbnail yet</div></div>
+            }
           </div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4, marginBottom: 8 }}>{post.title}</div>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>{post.publishedAt ? fmtDate(post.publishedAt) : 'Unpublished'}</div>
+          <div style={{ padding: '14px 16px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#64748b' }}>
+                {post.category?.replace(/-/g, ' ')}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, background: colors.bg, color: colors.text, borderRadius: 99, padding: '2px 8px' }}>
+                {label}
+              </span>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4, marginBottom: 8 }}>{post.title}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>{post.publishedAt ? fmtDate(post.publishedAt) : 'Unpublished'}</div>
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Trash button */}
+      {!confirming && (
+        <button
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirming(true) }}
+          title="Delete post"
+          style={{
+            position: 'absolute', top: 10, right: 10,
+            width: 30, height: 30, borderRadius: 8,
+            background: 'rgba(255,255,255,0.9)', border: '1px solid #e2e8f0',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, cursor: 'pointer', color: '#94a3b8',
+            backdropFilter: 'blur(4px)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fca5a5' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#e2e8f0' }}
+        >
+          🗑
+        </button>
+      )}
+
+      {/* Inline delete confirmation */}
+      {confirming && (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'absolute', inset: 0, borderRadius: 12,
+            background: 'rgba(255,255,255,0.97)', border: '1.5px solid #fca5a5',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 12, padding: 20, textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 28 }}>🗑</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4 }}>Delete this post?</div>
+          <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>This permanently removes it from Sanity. It cannot be undone.</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{
+                padding: '8px 20px', background: '#dc2626', color: '#fff',
+                border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.7 : 1,
+              }}
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setConfirming(false) }}
+              style={{
+                padding: '8px 16px', background: 'none', color: '#64748b',
+                border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
