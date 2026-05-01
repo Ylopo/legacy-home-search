@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSocialDashboardPosts, getQueueCounts } from '@/sanity/queries'
 import { getGSCOverview } from '@/lib/gsc-client'
 import { getYouTubeOverview } from '@/lib/youtube-client'
+import { getFacebookOverview } from '@/lib/facebook-client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -12,11 +13,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [posts, queue, gsc, youtube] = await Promise.all([
+  const [posts, queue, gsc, youtube, facebook] = await Promise.all([
     getSocialDashboardPosts(),
     getQueueCounts(),
     getGSCOverview(28),
     getYouTubeOverview(),
+    getFacebookOverview(),
   ])
 
   // Weekly posting volume — last 8 weeks
@@ -47,6 +49,7 @@ export async function GET(request: Request) {
     queue,
     gsc,
     youtube,
+    facebook,
     weeks,
     stats: {
       total: posts.length,
@@ -61,8 +64,9 @@ export async function GET(request: Request) {
       withTikTok:       posts.filter(p => p.hasTikTok).length,
       recentCount:      recentPosts.length,
       daysSinceLastPost,
-      gscConnected:     !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
-      youtubeConnected: !!process.env.YOUTUBE_API_KEY && !!process.env.YOUTUBE_CHANNEL_ID,
+      gscConnected:      !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
+      youtubeConnected:  !!process.env.YOUTUBE_API_KEY && !!process.env.YOUTUBE_CHANNEL_ID,
+      facebookConnected: !!process.env.FACEBOOK_PAGE_ACCESS_TOKEN && !!process.env.FACEBOOK_PAGE_ID,
     },
   })
 }
