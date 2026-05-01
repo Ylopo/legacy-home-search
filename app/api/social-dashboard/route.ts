@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       withTikTok:       posts.filter(p => p.hasTikTok).length,
       recentCount:      recentPosts.length,
       daysSinceLastPost,
-      gscConnected:     !!process.env.GSC_SERVICE_ACCOUNT_JSON && !!process.env.GSC_SITE_URL,
+      gscConnected:     !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
     },
   })
 }

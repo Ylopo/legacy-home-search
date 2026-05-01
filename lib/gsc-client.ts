@@ -1,10 +1,12 @@
 /**
- * Google Search Console API client
+ * Google Search Console API client (OAuth2)
  *
  * Requires env vars:
- *   GSC_SERVICE_ACCOUNT_JSON  — full JSON string of service account credentials
- *   GSC_SITE_URL              — e.g. "sc-domain:legacyhometeamlpt.com"
- *                               or "https://www.legacyhometeamlpt.com/"
+ *   GSC_CLIENT_ID      — OAuth 2.0 Client ID from Google Cloud
+ *   GSC_CLIENT_SECRET  — OAuth 2.0 Client Secret
+ *   GSC_REFRESH_TOKEN  — Refresh token (one-time grant via OAuth Playground)
+ *   GSC_SITE_URL       — e.g. "sc-domain:legacyhometeamlpt.com"
+ *                         or "https://www.legacyhometeamlpt.com/"
  */
 
 import { google } from 'googleapis'
@@ -22,15 +24,15 @@ export type GSCOverview = {
 }
 
 function getClient() {
-  const json = process.env.GSC_SERVICE_ACCOUNT_JSON
-  if (!json) return null
+  const clientId     = process.env.GSC_CLIENT_ID
+  const clientSecret = process.env.GSC_CLIENT_SECRET
+  const refreshToken = process.env.GSC_REFRESH_TOKEN
+  if (!clientId || !clientSecret || !refreshToken) return null
+
   try {
-    const credentials = JSON.parse(json)
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
-    })
-    return google.searchconsole({ version: 'v1', auth })
+    const oauth2 = new google.auth.OAuth2(clientId, clientSecret)
+    oauth2.setCredentials({ refresh_token: refreshToken })
+    return google.searchconsole({ version: 'v1', auth: oauth2 })
   } catch {
     return null
   }
@@ -47,7 +49,6 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
   const startDate = new Date()
   startDate.setDate(endDate.getDate() - days)
   const fmt = (d: Date) => d.toISOString().split('T')[0]
-
   const base = { startDate: fmt(startDate), endDate: fmt(endDate) }
 
   try {
