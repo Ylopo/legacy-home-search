@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SocialDashboardPost } from '@/sanity/queries'
 import type { YouTubeOverview } from '@/lib/youtube-client'
+import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 type Data = {
   posts: SocialDashboardPost[]
@@ -38,16 +39,14 @@ function StatCard({ label, value, sub, accent = '#ff0000' }: {
 }
 
 export default function YouTubePage() {
-  const secret = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('secret') ?? ''
-    : ''
+  const secret = useUrlSecret()
 
   const [data, setData]       = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    if (!secret) { setError('Unauthorized'); setLoading(false); return }
+    if (!secret) return
     fetch(`/api/social-dashboard?secret=${encodeURIComponent(secret)}`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(setData)

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SocialDashboardPost } from '@/sanity/queries'
 import type { FacebookOverview } from '@/lib/facebook-client'
+import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 type Data = {
   posts: SocialDashboardPost[]
@@ -46,16 +47,14 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 export default function FacebookPage() {
-  const secret = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('secret') ?? ''
-    : ''
+  const secret = useUrlSecret()
 
   const [data, setData]       = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    if (!secret) { setError('Unauthorized'); setLoading(false); return }
+    if (!secret) return
     fetch(`/api/social-dashboard?secret=${encodeURIComponent(secret)}`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(setData)

@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const NAV_ITEMS = [
   { label: 'Home',          path: '/admin/social-dashboard',            exact: true  },
@@ -12,9 +13,7 @@ const NAV_ITEMS = [
 
 export function SocialDashboardNav() {
   const pathname = usePathname()
-  const secret = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('secret') ?? ''
-    : ''
+  const secret = useUrlSecret()
 
   return (
     <nav style={{

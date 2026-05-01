@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { GSCOverview } from '@/lib/gsc-client'
+import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 type Data = {
   gsc: GSCOverview | null
@@ -52,16 +53,14 @@ function TrendChart({ trend }: { trend: { date: string; clicks: number; impressi
 const SL = { fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: '#64748b', marginBottom: 12 }
 
 export default function GoogleSearchPage() {
-  const secret = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('secret') ?? ''
-    : ''
+  const secret = useUrlSecret()
 
   const [data, setData]       = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    if (!secret) { setError('Unauthorized'); setLoading(false); return }
+    if (!secret) return
     fetch(`/api/social-dashboard?secret=${encodeURIComponent(secret)}`)
       .then(r => r.ok ? r.json() : Promise.reject('Unauthorized'))
       .then(setData)
