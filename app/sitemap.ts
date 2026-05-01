@@ -1,12 +1,14 @@
 import type { MetadataRoute } from 'next'
 import { getBlogPosts, getMarketReports } from '@/sanity/queries'
 
+export const dynamic = 'force-dynamic'
+
 const BASE_URL = 'https://www.legacyhometeamlpt.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, reports] = await Promise.all([
-    getBlogPosts(500),
-    getMarketReports(200),
+    getBlogPosts(500).catch(() => []),
+    getMarketReports(200).catch(() => []),
   ])
 
   const staticPages: MetadataRoute.Sitemap = [
