@@ -7,18 +7,31 @@ import { getFacebookOverview } from '@/lib/facebook-client'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
+// Wraps an async fn so errors don't break the whole route — captures them
+// per-platform so the dashboard can show the actual error message in the UI.
+async function safe<T>(fn: () => Promise<T>): Promise<{ data: T | null; error: string | null }> {
+  try {
+    const data = await fn()
+    return { data, error: null }
+  } catch (e: any) {
+    const error = e?.message ?? String(e)
+    console.error('[social-dashboard]', error)
+    return { data: null, error }
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   if (searchParams.get('secret') !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [posts, queue, gsc, youtube, facebook] = await Promise.all([
+  const [posts, queue, gscRes, youtubeRes, facebookRes] = await Promise.all([
     getSocialDashboardPosts(),
     getQueueCounts(),
-    getGSCOverview(28),
-    getYouTubeOverview(),
-    getFacebookOverview(),
+    safe(() => getGSCOverview(28)),
+    safe(() => getYouTubeOverview()),
+    safe(() => getFacebookOverview()),
   ])
 
   // Weekly posting volume — last 8 weeks
@@ -47,9 +60,14 @@ export async function GET(request: Request) {
   return NextResponse.json({
     posts,
     queue,
-    gsc,
-    youtube,
-    facebook,
+    gsc: gscRes.data,
+    youtube: youtubeRes.data,
+    facebook: facebookRes.data,
+    errors: {
+      gsc: gscRes.error,
+      youtube: youtubeRes.error,
+      facebook: facebookRes.error,
+    },
     weeks,
     stats: {
       total: posts.length,

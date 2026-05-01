@@ -140,18 +140,13 @@ async function getRecentPosts(limit = 25): Promise<FBPost[]> {
 export async function getFacebookOverview(): Promise<FacebookOverview | null> {
   if (!token() || !pageId()) return null
 
-  try {
-    const [page, recentPosts] = await Promise.all([
-      getPageStats(),
-      getRecentPosts(25),
-    ])
-    if (!page) return null
+  const [page, recentPosts] = await Promise.all([
+    getPageStats(),
+    getRecentPosts(25),
+  ])
+  if (!page) return null
 
-    const topPostsByReach = [...recentPosts].sort((a, b) => b.reach - a.reach).slice(0, 10)
+  const topPostsByReach = [...recentPosts].sort((a, b) => b.reach - a.reach).slice(0, 10)
 
-    return { page, recentPosts, topPostsByReach }
-  } catch (err) {
-    console.error('[facebook-client]', err)
-    return null
-  }
+  return { page, recentPosts, topPostsByReach }
 }

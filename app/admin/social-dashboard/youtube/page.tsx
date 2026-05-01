@@ -8,6 +8,7 @@ import { useUrlSecret } from '@/hooks/useUrlSecret'
 type Data = {
   posts: SocialDashboardPost[]
   youtube: YouTubeOverview | null
+  errors?: { youtube?: string | null }
   stats: {
     total: number
     withYouTube: number
@@ -192,6 +193,11 @@ export default function YouTubePage() {
                 ? 'Credentials are set but the API returned an error. Check that the API key has YouTube Data API v3 enabled and the channel ID is correct.'
                 : 'Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID env vars to display subscribers, total views, recent uploads, top videos, and per-video stats.'}
             </div>
+            {data.errors?.youtube && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991b1b', fontFamily: 'monospace', marginBottom: 12, wordBreak: 'break-word' }}>
+                <strong>Error:</strong> {data.errors.youtube}
+              </div>
+            )}
             <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#475569' }}>
               <strong>Env vars needed:</strong>
               <span style={{ fontFamily: 'monospace', marginLeft: 8, color: '#2563eb' }}>

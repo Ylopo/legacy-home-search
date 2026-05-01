@@ -63,16 +63,15 @@ export async function getYouTubeOverview(): Promise<YouTubeOverview | null> {
   const id = channelId()
   if (!id || !key()) return null
 
-  try {
-    // 1. Channel info
-    const channelRes = await ytFetch('/channels', {
-      part: 'snippet,statistics,contentDetails',
-      id,
-    })
-    const channel = channelRes.items?.[0]
-    if (!channel) return null
+  // 1. Channel info — let errors propagate to caller
+  const channelRes = await ytFetch('/channels', {
+    part: 'snippet,statistics,contentDetails',
+    id,
+  })
+  const channel = channelRes.items?.[0]
+  if (!channel) return null
 
-    const uploadsPlaylistId: string | undefined =
+  const uploadsPlaylistId: string | undefined =
       channel.contentDetails?.relatedPlaylists?.uploads
     const stats: YTChannelStats = {
       channelTitle: channel.snippet?.title ?? 'Unknown',
@@ -122,16 +121,12 @@ export async function getYouTubeOverview(): Promise<YouTubeOverview | null> {
     const recentLikes    = videos.reduce((s, v) => s + v.likes, 0)
     const recentComments = videos.reduce((s, v) => s + v.comments, 0)
 
-    return {
-      channel: stats,
-      recentVideos,
-      topVideos,
-      recentViews,
-      recentLikes,
-      recentComments,
-    }
-  } catch (err) {
-    console.error('[youtube-client]', err)
-    return null
+  return {
+    channel: stats,
+    recentVideos,
+    topVideos,
+    recentViews,
+    recentLikes,
+    recentComments,
   }
 }

@@ -51,8 +51,7 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
   const fmt = (d: Date) => d.toISOString().split('T')[0]
   const base = { startDate: fmt(startDate), endDate: fmt(endDate) }
 
-  try {
-    const [summaryRes, trendRes, topPagesRes, topQueriesRes, devicesRes, countriesRes] = await Promise.all([
+  const [summaryRes, trendRes, topPagesRes, topQueriesRes, devicesRes, countriesRes] = await Promise.all([
       sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: [], rowLimit: 1 } }),
       sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['date'], rowLimit: 90 } }),
       sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['page'], rowLimit: 50 } }),
@@ -112,12 +111,8 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
       position: summary?.position ?? 0,
       trend,
       topPages,
-      topQueries,
-      devices,
-      countries,
-    }
-  } catch (err) {
-    console.error('[gsc-client]', err)
-    return null
+    topQueries,
+    devices,
+    countries,
   }
 }
