@@ -39,6 +39,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     facebook: result.facebook,
+    facebookReel: result.facebookReel,
     youtube: result.youtube,
     tiktok: result.tiktok,
   })

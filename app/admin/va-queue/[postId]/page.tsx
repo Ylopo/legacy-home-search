@@ -36,12 +36,14 @@ type PublishState =
   | {
       phase: 'polling'
       facebook: PlatformStatus
+      facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
     }
   | {
       phase: 'done'
       facebook: PlatformStatus
+      facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
     }
@@ -81,7 +83,7 @@ export default function VAPostPage() {
   const [videoPublishState, setVideoPublishState] = useState<
     | { phase: 'idle' }
     | { phase: 'publishing' }
-    | { phase: 'done'; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string } }
+    | { phase: 'done'; facebookReel: { postSubmissionId?: string; error?: string }; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string } }
     | { phase: 'error'; message: string }
   >({ phase: 'idle' })
   const heygenPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -274,7 +276,7 @@ export default function VAPostPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Publish failed')
-      setVideoPublishState({ phase: 'done', youtube: data.youtube ?? {}, tiktok: data.tiktok ?? {} })
+      setVideoPublishState({ phase: 'done', facebookReel: data.facebookReel ?? {}, youtube: data.youtube ?? {}, tiktok: data.tiktok ?? {} })
     } catch (err) {
       setVideoPublishState({ phase: 'error', message: err instanceof Error ? err.message : 'Publish failed' })
     }
@@ -348,7 +350,7 @@ export default function VAPostPage() {
 
   // ── Poll a single platform ───────────────────────────────────────────────────
   function startPoll(
-    platform: 'facebook' | 'youtube' | 'tiktok',
+    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok',
     submissionId: string,
     onUpdate: (status: PlatformStatus) => void,
   ) {
@@ -396,6 +398,11 @@ export default function VAPostPage() {
       const initFb: PlatformStatus = data.facebook?.postSubmissionId
         ? { phase: 'polling', submissionId: data.facebook.postSubmissionId }
         : { phase: 'idle' }
+      const initReel: PlatformStatus = data.facebookReel?.postSubmissionId
+        ? { phase: 'polling', submissionId: data.facebookReel.postSubmissionId }
+        : data.facebookReel?.error
+        ? { phase: 'error', message: data.facebookReel.error }
+        : { phase: 'idle' }
       const initYt: PlatformStatus = data.youtube?.postSubmissionId
         ? { phase: 'polling', submissionId: data.youtube.postSubmissionId }
         : data.youtube?.error
@@ -407,16 +414,15 @@ export default function VAPostPage() {
         ? { phase: 'error', message: data.tiktok.error }
         : { phase: 'idle' }
 
-      setPublishState({ phase: 'polling', facebook: initFb, youtube: initYt, tiktok: initTt })
+      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
 
-      // Track resolved statuses so we know when all are done
-      const resolved = { facebook: initFb.phase === 'idle', youtube: initYt.phase === 'idle', tiktok: initTt.phase === 'idle' }
-      const statuses: Record<string, PlatformStatus> = { facebook: initFb, youtube: initYt, tiktok: initTt }
+      const resolved = { facebook: initFb.phase === 'idle', facebookReel: initReel.phase === 'idle', youtube: initYt.phase === 'idle', tiktok: initTt.phase === 'idle' }
+      const statuses: Record<string, PlatformStatus> = { facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt }
 
       function checkAllDone() {
-        if (resolved.facebook && resolved.youtube && resolved.tiktok) {
-          setPublishState({ phase: 'done', facebook: statuses.facebook, youtube: statuses.youtube, tiktok: statuses.tiktok })
+        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok) {
+          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok })
         }
       }
 
@@ -429,6 +435,17 @@ export default function VAPostPage() {
         })
       } else {
         resolved.facebook = true
+      }
+
+      if (data.facebookReel?.postSubmissionId) {
+        startPoll('facebookReel', data.facebookReel.postSubmissionId, (s) => {
+          statuses.facebookReel = s
+          resolved.facebookReel = true
+          setPublishState(prev => prev.phase === 'polling' ? { ...prev, facebookReel: s } : prev)
+          checkAllDone()
+        })
+      } else {
+        resolved.facebookReel = true
       }
 
       if (data.youtube?.postSubmissionId) {
@@ -846,6 +863,7 @@ export default function VAPostPage() {
             <ul style={{ fontSize: 13, color: '#475569', lineHeight: 1.8, margin: '0 0 16px', paddingLeft: 18 }}>
               <li>Make the post live on the website</li>
               <li>Post to the Legacy Home Team Facebook page</li>
+              {hasVideo && <li>Publish as a Facebook Reel</li>}
               {hasVideo && <li>Upload the video to YouTube</li>}
               {hasVideo && <li>Post the video to TikTok</li>}
             </ul>
@@ -863,6 +881,9 @@ export default function VAPostPage() {
                   label="Facebook"
                   status={publishState.facebook}
                 />
+                {publishState.facebookReel.phase !== 'idle' && (
+                  <PlatformStatusRow icon="🎬" label="Facebook Reel" status={publishState.facebookReel} />
+                )}
                 {publishState.youtube.phase !== 'idle' && (
                   <PlatformStatusRow icon="▶️" label="YouTube" status={publishState.youtube} />
                 )}
@@ -894,6 +915,11 @@ export default function VAPostPage() {
                     View Facebook post →
                   </a>
                 )}
+                {publishState.facebookReel.phase === 'done' && publishState.facebookReel.postUrl && (
+                  <a href={publishState.facebookReel.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
+                    View Facebook Reel →
+                  </a>
+                )}
                 {publishState.youtube.phase === 'done' && publishState.youtube.postUrl && (
                   <a href={publishState.youtube.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
                     View YouTube video →
@@ -922,7 +948,7 @@ export default function VAPostPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    ▶️ Publish Video to YouTube & TikTok
+                    ▶️ Publish Video to Facebook Reel, YouTube & TikTok
                   </button>
                 )}
                 {videoPublishState.phase === 'publishing' && (
@@ -931,10 +957,15 @@ export default function VAPostPage() {
                 {videoPublishState.phase === 'done' && (
                   <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: 12, fontSize: 13 }}>
                     <div style={{ fontWeight: 700, color: '#166534', marginBottom: 6 }}>Video published!</div>
-                    {videoPublishState.youtube.error ? (
-                      <div style={{ color: '#991b1b' }}>▶️ YouTube: {videoPublishState.youtube.error}</div>
+                    {videoPublishState.facebookReel.error ? (
+                      <div style={{ color: '#991b1b' }}>🎬 Facebook Reel: {videoPublishState.facebookReel.error}</div>
                     ) : (
-                      <div style={{ color: '#166534' }}>▶️ YouTube: queued</div>
+                      <div style={{ color: '#166534' }}>🎬 Facebook Reel: queued</div>
+                    )}
+                    {videoPublishState.youtube.error ? (
+                      <div style={{ color: '#991b1b', marginTop: 4 }}>▶️ YouTube: {videoPublishState.youtube.error}</div>
+                    ) : (
+                      <div style={{ color: '#166534', marginTop: 4 }}>▶️ YouTube: queued</div>
                     )}
                     {videoPublishState.tiktok.error ? (
                       <div style={{ color: '#991b1b', marginTop: 4 }}>🎵 TikTok: {videoPublishState.tiktok.error}</div>

@@ -104,6 +104,46 @@ export async function publishToFacebook(
   return { postSubmissionId: String(data.postSubmissionId) }
 }
 
+export async function publishToFacebookReel(
+  text: string,
+  videoUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getFacebookAccountId()
+  const pageId = getPageId()
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text,
+          mediaUrls: [videoUrl],
+          platform: 'facebookReel',
+        },
+        target: {
+          targetType: 'facebookReel',
+          pageId,
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato Facebook Reel publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
+
+  return { postSubmissionId: String(data.postSubmissionId) }
+}
+
 export async function publishToYouTube(
   title: string,
   description: string,

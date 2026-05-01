@@ -8,7 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import imageUrlBuilder from '@sanity/image-url'
 import { createClient } from '@sanity/client'
-import { publishToFacebook, publishToYouTube, publishToTikTok } from './blotato-client'
+import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok } from './blotato-client'
 import { markPublishing, markPublished, markPublishFailed, patchSocialSubmission } from './content-workflow'
 import { getSanityWriteClient } from './sanity-write'
 import type { SanityBlogPost } from '../sanity/queries'
@@ -117,6 +117,7 @@ export type PublishResult =
   | {
       ok: true
       facebook: PlatformResult
+      facebookReel: PlatformResult
       youtube: PlatformResult
       tiktok: PlatformResult
     }
@@ -144,7 +145,7 @@ export async function publishSocialOnly(
     const { postSubmissionId } = await publishToFacebook(fullCopy, imageUrl)
     await patchSocialSubmission(postId, postSubmissionId, copy)
 
-    return { ok: true, facebook: { postSubmissionId }, youtube: null, tiktok: null }
+    return { ok: true, facebook: { postSubmissionId }, facebookReel: null, youtube: null, tiktok: null }
   } catch (err) {
     console.error('[publish-service] Social-only publish error:', err instanceof Error ? err.message : err)
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown publish error' }
@@ -178,20 +179,28 @@ export async function publishPostToAll(
     // Always publish to Facebook
     const fbResult = await publishToFacebook(fullCopy, imageUrl)
 
-    // Publish to YouTube + TikTok only if a video has been uploaded
+    // Publish to Facebook Reel + YouTube + TikTok only if a video has been uploaded
+    let reelResult: PlatformResult = null
     let ytResult: PlatformResult = null
     let ttResult: PlatformResult = null
 
     if (post.videoUrl) {
       const videoDescription = `${copy}\n\n${appUrl}/blog/${post.slug}`
-
-      // Run YouTube and TikTok concurrently; one failure doesn't block the other
       const tiktokCaption = buildTikTokCaption(copy, post.category, `${appUrl}/blog/${post.slug}`)
 
-      const [ytOutcome, ttOutcome] = await Promise.allSettled([
+      const [reelOutcome, ytOutcome, ttOutcome] = await Promise.allSettled([
+        publishToFacebookReel(fullCopy, post.videoUrl),
         publishToYouTube(post.title, videoDescription, post.videoUrl, post.videoThumbnailUrl),
         publishToTikTok(tiktokCaption, post.videoUrl),
       ])
+
+      if (reelOutcome.status === 'fulfilled') {
+        reelResult = { postSubmissionId: reelOutcome.value.postSubmissionId }
+      } else {
+        const msg = reelOutcome.reason instanceof Error ? reelOutcome.reason.message : 'Facebook Reel publish failed'
+        console.error('[publish-service] Facebook Reel publish error:', msg)
+        reelResult = { error: msg }
+      }
 
       if (ytOutcome.status === 'fulfilled') {
         ytResult = { postSubmissionId: ytOutcome.value.postSubmissionId }
@@ -215,6 +224,7 @@ export async function publishPostToAll(
       fbResult.postSubmissionId,
       'postSubmissionId' in (ytResult ?? {}) ? (ytResult as { postSubmissionId: string }).postSubmissionId : undefined,
       'postSubmissionId' in (ttResult ?? {}) ? (ttResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      'postSubmissionId' in (reelResult ?? {}) ? (reelResult as { postSubmissionId: string }).postSubmissionId : undefined,
     )
 
     if (!socialCopy) {
@@ -225,6 +235,7 @@ export async function publishPostToAll(
     return {
       ok: true,
       facebook: { postSubmissionId: fbResult.postSubmissionId },
+      facebookReel: reelResult,
       youtube: ytResult,
       tiktok: ttResult,
     }
