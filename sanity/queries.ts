@@ -172,6 +172,7 @@ export type SanityBlogPost = {
   videoThumbnailUrl?: string
   youtubePostSubmissionId?: string
   tiktokPostSubmissionId?: string
+  facebookReelSubmissionId?: string
   youtubePostUrl?: string
   tiktokPostUrl?: string
 }
@@ -259,6 +260,57 @@ export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null>
     { id },
     { next: { revalidate: 0 } }
   )
+}
+
+export type SocialDashboardPost = {
+  _id: string
+  title: string
+  slug: string
+  category: string
+  publishedAt: string
+  hasFacebook: boolean
+  hasFacebookReel: boolean
+  hasYouTube: boolean
+  hasTikTok: boolean
+  facebookPostUrl?: string
+}
+
+export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> {
+  const raw = await client.fetch(
+    `*[_type == "blogPost" && (workflowStatus == "published" || status == "published")] | order(publishedAt desc)[0...200]{
+      _id, title, "slug": slug.current, category, publishedAt,
+      blotatoPublishStatus, facebookPostUrl,
+      facebookReelSubmissionId,
+      youtubePostSubmissionId,
+      tiktokPostSubmissionId,
+    }`,
+    {},
+    { next: { revalidate: 0 } }
+  )
+  return raw.map((p: any) => ({
+    _id: p._id,
+    title: p.title,
+    slug: p.slug,
+    category: p.category,
+    publishedAt: p.publishedAt,
+    hasFacebook: p.blotatoPublishStatus === 'published' || !!p.facebookPostUrl,
+    hasFacebookReel: !!p.facebookReelSubmissionId,
+    hasYouTube: !!p.youtubePostSubmissionId,
+    hasTikTok: !!p.tiktokPostSubmissionId,
+    facebookPostUrl: p.facebookPostUrl,
+  }))
+}
+
+export async function getQueueCounts(): Promise<{ media_pending: number; media_ready: number }> {
+  const counts = await client.fetch(
+    `{
+      "media_pending": count(*[_type == "blogPost" && workflowStatus == "media_pending"]),
+      "media_ready":   count(*[_type == "blogPost" && workflowStatus == "media_ready"])
+    }`,
+    {},
+    { next: { revalidate: 0 } }
+  )
+  return counts
 }
 
 // ─── Market Reports ───────────────────────────────────────────────────────────
