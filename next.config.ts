@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     return `build-${Date.now()}`
   },
+  async rewrites() {
+    return [
+      { source: '/sitemap.xml', destination: '/api/sitemap' },
+    ]
+  },
   // Prevent large community photo assets from being bundled into serverless functions.
   // These are served as static CDN assets and don't need to be in function bundles.
   outputFileTracingExcludes: {
