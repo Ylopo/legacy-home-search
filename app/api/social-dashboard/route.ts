@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSocialDashboardPosts, getQueueCounts } from '@/sanity/queries'
 import { getGSCOverview } from '@/lib/gsc-client'
+import { getYouTubeOverview } from '@/lib/youtube-client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -11,10 +12,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [posts, queue, gsc] = await Promise.all([
+  const [posts, queue, gsc, youtube] = await Promise.all([
     getSocialDashboardPosts(),
     getQueueCounts(),
     getGSCOverview(28),
+    getYouTubeOverview(),
   ])
 
   // Weekly posting volume — last 8 weeks
@@ -44,6 +46,7 @@ export async function GET(request: Request) {
     posts,
     queue,
     gsc,
+    youtube,
     weeks,
     stats: {
       total: posts.length,
@@ -59,6 +62,7 @@ export async function GET(request: Request) {
       recentCount:      recentPosts.length,
       daysSinceLastPost,
       gscConnected:     !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
+      youtubeConnected: !!process.env.YOUTUBE_API_KEY && !!process.env.YOUTUBE_CHANNEL_ID,
     },
   })
 }
