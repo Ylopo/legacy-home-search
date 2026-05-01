@@ -16,6 +16,9 @@ export type GSCOverview = {
   position: number
   trend: { date: string; clicks: number; impressions: number }[]
   topPages: { page: string; clicks: number; impressions: number; ctr: number; position: number }[]
+  topQueries: { query: string; clicks: number; impressions: number; ctr: number; position: number }[]
+  devices: { device: string; clicks: number; impressions: number; ctr: number }[]
+  countries: { country: string; clicks: number; impressions: number }[]
 }
 
 function getClient() {
@@ -45,38 +48,16 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
   startDate.setDate(endDate.getDate() - days)
   const fmt = (d: Date) => d.toISOString().split('T')[0]
 
+  const base = { startDate: fmt(startDate), endDate: fmt(endDate) }
+
   try {
-    const [summaryRes, trendRes, topPagesRes] = await Promise.all([
-      // Overall totals
-      sc.searchanalytics.query({
-        siteUrl,
-        requestBody: {
-          startDate: fmt(startDate),
-          endDate: fmt(endDate),
-          dimensions: [],
-          rowLimit: 1,
-        },
-      }),
-      // Daily trend
-      sc.searchanalytics.query({
-        siteUrl,
-        requestBody: {
-          startDate: fmt(startDate),
-          endDate: fmt(endDate),
-          dimensions: ['date'],
-          rowLimit: 90,
-        },
-      }),
-      // Top pages by clicks (sorted client-side — orderBy not in this SDK version)
-      sc.searchanalytics.query({
-        siteUrl,
-        requestBody: {
-          startDate: fmt(startDate),
-          endDate: fmt(endDate),
-          dimensions: ['page'],
-          rowLimit: 50,
-        },
-      }),
+    const [summaryRes, trendRes, topPagesRes, topQueriesRes, devicesRes, countriesRes] = await Promise.all([
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: [], rowLimit: 1 } }),
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['date'], rowLimit: 90 } }),
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['page'], rowLimit: 50 } }),
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['query'], rowLimit: 25 } }),
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['device'], rowLimit: 10 } }),
+      sc.searchanalytics.query({ siteUrl, requestBody: { ...base, dimensions: ['country'], rowLimit: 10 } }),
     ])
 
     const summary = summaryRes.data.rows?.[0]
@@ -98,6 +79,31 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 10)
 
+    const topQueries = (topQueriesRes.data.rows ?? [])
+      .map((r: any) => ({
+        query: r.keys[0] as string,
+        clicks: r.clicks ?? 0,
+        impressions: r.impressions ?? 0,
+        ctr: r.ctr ?? 0,
+        position: r.position ?? 0,
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+
+    const devices = (devicesRes.data.rows ?? []).map((r: any) => ({
+      device: (r.keys[0] as string).toLowerCase(),
+      clicks: r.clicks ?? 0,
+      impressions: r.impressions ?? 0,
+      ctr: r.ctr ?? 0,
+    }))
+
+    const countries = (countriesRes.data.rows ?? [])
+      .map((r: any) => ({
+        country: r.keys[0] as string,
+        clicks: r.clicks ?? 0,
+        impressions: r.impressions ?? 0,
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+
     return {
       clicks: summary?.clicks ?? 0,
       impressions: summary?.impressions ?? 0,
@@ -105,6 +111,9 @@ export async function getGSCOverview(days = 28): Promise<GSCOverview | null> {
       position: summary?.position ?? 0,
       trend,
       topPages,
+      topQueries,
+      devices,
+      countries,
     }
   } catch (err) {
     console.error('[gsc-client]', err)
