@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { label: 'Facebook',      path: '/admin/social-dashboard/facebook',   exact: false },
   { label: 'YouTube',       path: '/admin/social-dashboard/youtube',    exact: false },
   { label: 'TikTok',        path: '/admin/social-dashboard/tiktok',     exact: false },
-  { label: 'Instagram',     path: '/admin/social-dashboard/instagram',  exact: false },
 ]
 
 export function SocialDashboardNav() {
