@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const PIPELINE = [
@@ -28,17 +28,6 @@ export function AdminNav() {
   const pathname = usePathname()
   const secret = useUrlSecret()
   const [open, setOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!open) return
-    function handle(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [open])
 
   const onContentMachine = pathname.startsWith(CONTENT_MACHINE_BASE)
   const activeCM = CONTENT_MACHINE.find(item => isActive(pathname, item.path, item.exact))
@@ -115,9 +104,13 @@ export function AdminNav() {
       </span>
 
       {/* Content Machine dropdown */}
-      <div ref={dropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
-        <button
-          onClick={() => setOpen(o => !o)}
+      <div
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        style={{ position: 'relative', flexShrink: 0 }}
+      >
+        <a
+          href={link(CONTENT_MACHINE_BASE)}
           style={{
             padding: '0 14px',
             lineHeight: '52px',
@@ -125,14 +118,13 @@ export function AdminNav() {
             fontWeight: onContentMachine ? 600 : 400,
             color: onContentMachine ? '#fff' : 'rgba(255,255,255,0.5)',
             background: onContentMachine || open ? 'rgba(255,255,255,0.09)' : 'transparent',
-            border: 'none',
             borderRadius: 6,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: 6,
             whiteSpace: 'nowrap',
-            fontFamily: 'inherit',
+            textDecoration: 'none',
           }}
         >
           {cmLabel}
@@ -142,7 +134,7 @@ export function AdminNav() {
             transition: 'transform 0.15s',
             color: 'rgba(255,255,255,0.5)',
           }}>▼</span>
-        </button>
+        </a>
 
         {open && (
           <div style={{
@@ -163,7 +155,6 @@ export function AdminNav() {
                 <a
                   key={item.path}
                   href={link(item.path)}
-                  onClick={() => setOpen(false)}
                   style={{
                     display: 'block',
                     padding: '8px 14px',
