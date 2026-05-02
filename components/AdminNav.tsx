@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const PIPELINE = [
@@ -27,6 +27,10 @@ export function AdminNav() {
   const pathname = usePathname()
   const secret = useUrlSecret()
   const [open, setOpen] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  function openMenu()  { clearTimeout(closeTimer.current); setOpen(true) }
+  function closeMenu() { closeTimer.current = setTimeout(() => setOpen(false), 120) }
 
   const onReporting = pathname.startsWith(CONTENT_MACHINE_BASE)
 
@@ -100,8 +104,8 @@ export function AdminNav() {
 
       {/* Reporting dropdown */}
       <div
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onMouseEnter={openMenu}
+        onMouseLeave={closeMenu}
         style={{ position: 'relative', flexShrink: 0 }}
       >
         <a
@@ -134,15 +138,19 @@ export function AdminNav() {
         {open && (
           <div style={{
             position: 'absolute',
-            top: 'calc(100% - 4px)',
+            top: '100%',
             left: 0,
+            paddingTop: 4,
+            background: 'transparent',
+            zIndex: 100,
+            minWidth: 200,
+          }}>
+          <div style={{
             background: '#1f2937',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 8,
             padding: 6,
-            minWidth: 200,
             boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-            zIndex: 100,
           }}>
             {REPORTING_ITEMS.map(item => {
               const active = isActive(pathname, item.path, item.exact)
@@ -166,6 +174,7 @@ export function AdminNav() {
                 </a>
               )
             })}
+          </div>
           </div>
         )}
       </div>
