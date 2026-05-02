@@ -43,12 +43,12 @@ export function AdminNav() {
       alignItems: 'center',
       padding: '0 20px',
       gap: 4,
-      overflowX: 'auto',
       flexShrink: 0,
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       minHeight: 52,
       position: 'relative',
       zIndex: 50,
+      overflow: 'visible',
     }}>
       {/* Brand */}
       <span style={{
