@@ -11,15 +11,12 @@ const PIPELINE = [
 
 const CONTENT_MACHINE_BASE = '/admin/social-dashboard'
 
-const CONTENT_MACHINE = [
-  { label: 'Overview',      path: '/admin/social-dashboard',                exact: true  },
-  { label: 'Google Search', path: '/admin/social-dashboard/google-search',  exact: false },
-  { label: 'Facebook',      path: '/admin/social-dashboard/facebook',       exact: false },
-  { label: 'YouTube',       path: '/admin/social-dashboard/youtube',        exact: false },
-  { label: 'TikTok',        path: '/admin/social-dashboard/tiktok',         exact: false },
+const REPORTING_ITEMS = [
+  { label: 'Facebook analytics', path: '/admin/social-dashboard/facebook',       exact: false },
+  { label: 'YouTube analytics',  path: '/admin/social-dashboard/youtube',        exact: false },
+  { label: 'TikTok analytics',   path: '/admin/social-dashboard/tiktok',         exact: false },
+  { label: 'Google Search',      path: '/admin/social-dashboard/google-search',  exact: false },
 ] as const
-
-const REPORTING_LABEL = 'Reporting'
 
 function isActive(pathname: string, path: string, exact = false): boolean {
   if (exact) return pathname === path
@@ -31,11 +28,7 @@ export function AdminNav() {
   const secret = useUrlSecret()
   const [open, setOpen] = useState(false)
 
-  const onContentMachine = pathname.startsWith(CONTENT_MACHINE_BASE)
-  const activeCM = CONTENT_MACHINE.find(item => isActive(pathname, item.path, item.exact))
-  const cmLabel = onContentMachine && activeCM
-    ? `${REPORTING_LABEL} · ${activeCM.label}`
-    : REPORTING_LABEL
+  const onReporting = pathname.startsWith(CONTENT_MACHINE_BASE)
 
   const link = (path: string) => `${path}?secret=${encodeURIComponent(secret)}`
 
@@ -117,9 +110,9 @@ export function AdminNav() {
             padding: '0 14px',
             lineHeight: '52px',
             fontSize: 13,
-            fontWeight: onContentMachine ? 600 : 400,
-            color: onContentMachine ? '#fff' : 'rgba(255,255,255,0.5)',
-            background: onContentMachine || open ? 'rgba(255,255,255,0.09)' : 'transparent',
+            fontWeight: onReporting ? 600 : 400,
+            color: onReporting ? '#fff' : 'rgba(255,255,255,0.5)',
+            background: onReporting || open ? 'rgba(255,255,255,0.09)' : 'transparent',
             borderRadius: 6,
             cursor: 'pointer',
             display: 'flex',
@@ -129,7 +122,7 @@ export function AdminNav() {
             textDecoration: 'none',
           }}
         >
-          {cmLabel}
+          Overview
           <span style={{
             fontSize: 10,
             transform: open ? 'rotate(180deg)' : 'none',
@@ -151,7 +144,7 @@ export function AdminNav() {
             boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
             zIndex: 100,
           }}>
-            {CONTENT_MACHINE.map(item => {
+            {REPORTING_ITEMS.map(item => {
               const active = isActive(pathname, item.path, item.exact)
               return (
                 <a
