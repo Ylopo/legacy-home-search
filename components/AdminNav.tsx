@@ -19,6 +19,8 @@ const CONTENT_MACHINE = [
   { label: 'TikTok',        path: '/admin/social-dashboard/tiktok',         exact: false },
 ] as const
 
+const REPORTING_LABEL = 'Reporting'
+
 function isActive(pathname: string, path: string, exact = false): boolean {
   if (exact) return pathname === path
   return pathname === path || pathname.startsWith(path + '/')
@@ -32,8 +34,8 @@ export function AdminNav() {
   const onContentMachine = pathname.startsWith(CONTENT_MACHINE_BASE)
   const activeCM = CONTENT_MACHINE.find(item => isActive(pathname, item.path, item.exact))
   const cmLabel = onContentMachine && activeCM
-    ? `Content Machine · ${activeCM.label}`
-    : 'Content Machine'
+    ? `${REPORTING_LABEL} · ${activeCM.label}`
+    : REPORTING_LABEL
 
   const link = (path: string) => `${path}?secret=${encodeURIComponent(secret)}`
 
@@ -95,15 +97,15 @@ export function AdminNav() {
       {/* Divider */}
       <span style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.1)', margin: '0 12px', flexShrink: 0 }} />
 
-      {/* Analytics section */}
+      {/* Reporting section */}
       <span style={{
         fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
         color: 'rgba(255,255,255,0.25)', marginRight: 6, flexShrink: 0,
       }}>
-        Analytics
+        Reporting
       </span>
 
-      {/* Content Machine dropdown */}
+      {/* Reporting dropdown */}
       <div
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
