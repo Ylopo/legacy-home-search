@@ -82,6 +82,18 @@ const ROTATING_QUERIES = [
   'Hampton Roads 55 plus active adult retirement community homes 2026',
   'Hampton Roads first time home buyer programs 2026',
   'Virginia Beach condo townhouse market trends 2026',
+
+  // Local history & anniversaries — content locals care about beyond real estate
+  'Virginia Beach Hampton Roads historical anniversary milestone 2026',
+  'Hampton Roads Virginia famous historical event anniversary May 2026',
+  'Virginia Beach significant local history 50th 100th anniversary',
+  'Hampton Roads famous unsolved crime murder mystery cold case anniversary',
+  'Virginia Beach notable politician leader local figure history legacy',
+  'Hampton Roads Virginia Beach famous storm hurricane disaster anniversary',
+  'Virginia Beach boardwalk oceanfront history milestone anniversary',
+  'Norfolk Hampton Roads local legend famous story notable history 2026',
+  'Virginia Beach military history famous battle event anniversary',
+  'Hampton Roads local news big story anniversary notable event',
 ]
 
 function getQueriesForToday(): string[] {
@@ -264,7 +276,16 @@ For each article below, decide:
 1. Should it become a blog post idea? (drop if: not Hampton Roads relevant, generic listicle, agent blog, content farm, national story with no local angle)
 2. If yes: propose a blog angle that sounds like Barry — a trusted local expert sharing what he knows
 
-High-value topics: local market data, VA/Hampton Roads law changes, military/PCS housing, flood zones, cost breakdowns, major local developments, zoning/tax/insurance changes, community growth signals.
+HIGH-VALUE REAL ESTATE TOPICS: local market data, VA/Hampton Roads law changes, military/PCS housing, flood zones, cost breakdowns, major local developments, zoning/tax/insurance changes, community growth signals.
+
+HIGH-VALUE LOCAL INTEREST TOPICS (does NOT need to be real estate):
+- Historical anniversaries: significant events in Virginia Beach/Hampton Roads history (notable storms, battles, civic milestones, 25th/50th/100th anniversaries of major events)
+- Famous local stories: notable crimes, unsolved mysteries, cold cases that locals remember, local legends
+- Notable local figures: politicians, military heroes, famous residents past and present
+- Big community moments: things that put Virginia Beach/Hampton Roads on the map
+
+For local-interest/local-history articles: frame Barry as a proud local who knows the community's story, not as a real estate agent. Use category "local-history" or "local-interest". Audience should include "local".
+These score well on localRelevance (20-25 if very Hampton Roads specific) and audienceValue (10-13 if it's something locals genuinely care about).
 
 Return a JSON array. For each article:
 {
@@ -272,17 +293,17 @@ Return a JSON array. For each article:
   "drop": boolean,            // true = disqualify, don't include in queue
   "proposedTitle": string,    // Barry's blog post headline (not the article title)
   "angle": string,            // 1-2 sentences on how to frame it from Barry's POV
-  "whyItMatters": string,     // why Hampton Roads buyers/sellers/homeowners care NOW
-  "category": string,         // market-update|buying-tips|selling-tips|community-spotlight|investment|news|cost-breakdown|flood-and-risk
+  "whyItMatters": string,     // why Hampton Roads residents care about this NOW
+  "category": string,         // market-update|buying-tips|selling-tips|community-spotlight|investment|news|cost-breakdown|flood-and-risk|local-history|local-interest
   "audiences": string[],      // any of: buyer seller homeowner investor local
-  "contentType": string,      // e.g. "Market Update" | "Cost Breakdown" | "Law Change" | "Community Development" | "Flood Risk" | "Military/PCS" | "Process Guide" | "Investment Analysis"
-  "localRelevance": number,   // 0-25: 20-25=specific named Hampton Roads city, 15-19=Hampton Roads general, 8-14=Virginia/Mid-Atlantic, 0-7=national/generic
-  "formatFit": number,        // 0-15: how well this fits high-performing formats (cost breakdowns=15, flood/risk=14, comparison=13, process guide=12, market data=10, generic tips=3)
-  "audienceValue": number,    // 0-15: 12-15=decision-critical right now, 8-11=useful for planning, 4-7=interesting not actionable, 0-3=low utility
+  "contentType": string,      // e.g. "Market Update" | "Cost Breakdown" | "Law Change" | "Community Development" | "Flood Risk" | "Military/PCS" | "Process Guide" | "Investment Analysis" | "Local History" | "Anniversary" | "Local Crime & Mystery" | "Notable Figure" | "Community Story"
+  "localRelevance": number,   // 0-25: 20-25=specific named Hampton Roads city/event, 15-19=Hampton Roads general, 8-14=Virginia/Mid-Atlantic, 0-7=national/generic
+  "formatFit": number,        // 0-15: cost breakdowns=15, flood/risk=14, comparison=13, local history narrative=12, process guide=12, market data=10, generic tips=3
+  "audienceValue": number,    // 0-15: 12-15=decision-critical or highly compelling local story, 8-11=useful for planning or genuinely interesting, 4-7=interesting not actionable, 0-3=low utility
   "seoPotential": number      // 0-5: clear search intent keyword=4-5, moderate=2-3, low=0-1
 }
 
-MARKET RESTRICTION: Drop (drop:true) anything about Las Vegas, Nevada, California, Texas, Florida, or any non-Virginia market. Drop generic "10 tips for homebuyers" listicles. Drop content farm articles.
+MARKET RESTRICTION: Drop (drop:true) anything about Las Vegas, Nevada, California, Texas, Florida, or any non-Virginia market. Drop generic "10 tips for homebuyers" listicles. Drop content farm articles. Keep local-interest stories ONLY if they are specific to Hampton Roads / Virginia Beach / Norfolk / Chesapeake / the region.
 
 Return ONLY valid JSON array, no markdown.
 

@@ -36,6 +36,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   'news':                 'News',
   'cost-breakdown':       'Cost Breakdown',
   'flood-and-risk':       'Flood & Risk',
+  'local-history':        'Local History',
+  'local-interest':       'Local Interest',
 }
 
 const SOURCE_ICONS: Record<string, string> = {
@@ -230,11 +232,6 @@ function IdeaCard({ idea, secret, onAction }: {
             <span style={{ background: '#eff6ff', color: '#2563eb', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
               {CATEGORY_LABELS[idea.category] ?? idea.category}
             </span>
-            {idea.renickLift && (
-              <span style={{ background: '#fefce8', color: '#92400e', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>
-                📈 {idea.renickLift} lift
-              </span>
-            )}
           </div>
 
           {/* Title */}
@@ -251,6 +248,30 @@ function IdeaCard({ idea, secret, onAction }: {
           <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, margin: '0 0 12px', fontStyle: 'italic' }}>
             {idea.whyItMatters}
           </p>
+
+          {/* Renick performance context */}
+          {(idea.renickLift || idea.renickTitle) && (
+            <div style={{
+              background: '#fffbeb', border: '1px solid #fde68a',
+              borderLeft: '3px solid #f59e0b',
+              borderRadius: 8, padding: '10px 14px', marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#92400e', marginBottom: 4, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                📈 Proven pattern — Team Renick
+              </div>
+              <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.5 }}>
+                {idea.renickTitle
+                  ? <>A similar post <em>&ldquo;{idea.renickTitle}&rdquo;</em>{idea.renickLift ? <> drove <strong>{idea.renickLift} more traffic</strong> for Team Renick after publishing.</> : <> performed well for Team Renick.</>}</>
+                  : <>This matches a content pattern that drove <strong>{idea.renickLift} more traffic</strong> for Team Renick — a strong signal it resonates with this audience.</>
+                }
+              </div>
+              {idea.renickPattern && (
+                <div style={{ fontSize: 11, color: '#b45309', marginTop: 4 }}>
+                  Pattern: {idea.renickPattern}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Audience + source row */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
@@ -272,14 +293,6 @@ function IdeaCard({ idea, secret, onAction }: {
                 )}
               </span>
             ))}
-            {idea.renickTitle && (
-              <>
-                <span style={{ color: '#cbd5e1', fontSize: 11 }}>·</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  Based on: "{idea.renickTitle}"
-                </span>
-              </>
-            )}
           </div>
 
           {/* Actions */}

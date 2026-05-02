@@ -12,6 +12,8 @@ export type ArticleCategory =
   | 'financing'
   | 'lifestyle'
   | 'waterfront-living'
+  | 'local-history'
+  | 'local-interest'
 
 export interface RawArticle {
   id: string
