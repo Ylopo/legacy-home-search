@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { IdeaCandidate, IdeaScore } from '@/lib/types'
-import { AdminWorkflowNav } from '@/components/AdminWorkflowNav'
+import { AdminNav } from '@/components/AdminNav'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -387,7 +387,7 @@ export default function IdeaReviewPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', fontFamily: 'Inter, sans-serif' }}>
 
-      <AdminWorkflowNav current="ideas" secret={secret} />
+      <AdminNav />
 
       {/* Toolbar */}
       <div style={{

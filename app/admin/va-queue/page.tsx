@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { SanityBlogPost, WorkflowStatus } from '@/sanity/queries'
-import { AdminWorkflowNav } from '@/components/AdminWorkflowNav'
+import { AdminNav } from '@/components/AdminNav'
 
 // ─── Workflow queue status display ────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ export default function VAQueuePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', fontFamily: 'Inter, sans-serif' }}>
-      <AdminWorkflowNav current="va-queue" secret={secret} />
+      <AdminNav />
 
       {/* Title bar */}
       <div style={{

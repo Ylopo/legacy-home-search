@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { upload } from '@vercel/blob/client'
-import { AdminWorkflowNav } from '@/components/AdminWorkflowNav'
+import { AdminNav } from '@/components/AdminNav'
 import type { SanityBlogPost, WorkflowStatus } from '@/sanity/queries'
 type ThumbnailState =
   | { type: 'none' }
@@ -498,7 +498,7 @@ export default function VAPostPage() {
   return (
     <PageShell>
       {/* Nav */}
-      <AdminWorkflowNav current="editor" secret={secret} postId={postId} />
+      <AdminNav />
       {/* Post title bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</span>
