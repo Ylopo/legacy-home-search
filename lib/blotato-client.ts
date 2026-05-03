@@ -120,10 +120,10 @@ export async function publishToFacebookReel(
         content: {
           text,
           mediaUrls: [videoUrl],
-          platform: 'facebookReel',
+          platform: 'facebook',
         },
         target: {
-          targetType: 'facebookReel',
+          targetType: 'facebook',
           pageId,
         },
       },
