@@ -130,7 +130,7 @@ function Slide0() {
         The Content Machine
       </h1>
       <p style={{ fontSize: 20, color: '#475569', margin: '16px 0 0', maxWidth: 560 }}>
-        Automated content marketing — from raw news to published blog post and social media, every week.
+        Automated content marketing — from raw news to published blog post and social media, every DAY.
       </p>
       <div style={{ marginTop: 40, display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
         {['Website', 'Facebook', 'YouTube', 'TikTok'].map(p => (
@@ -147,12 +147,12 @@ function Slide1() {
   return (
     <SlideShell>
       <Tag color="#dc2626">The Challenge</Tag>
-      <H>Real estate agents need content. They never have time to write it.</H>
+      <H>Real estate agents need content. They never have time to DO it.</H>
       <Sub>Google rewards consistent publishing. Social platforms reward it too. But writing a single quality blog post takes 3–4 hours — research, drafting, SEO, formatting, images, and then you still need to post it everywhere.</Sub>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 32 }}>
         {[
           { label: 'Without a system', items: ['0–2 posts/month, inconsistently', 'No keyword strategy', 'Nothing posted to social', 'Zero compounding traffic'] },
-          { label: 'With the Content Machine', items: ['4–8 posts/month, on autopilot', 'Every post scored for SEO value', 'Auto-posted to Facebook, YouTube, TikTok', 'Traffic compounds over time'] },
+          { label: 'With the Content Machine', items: ['30–40 posts/month, on autopilot', 'Every post scored for SEO value', 'Auto-posted to Facebook, YouTube, TikTok', 'Traffic compounds over time'] },
         ].map(col => (
           <div key={col.label} style={{
             background: col.label.includes('Without') ? '#fef2f2' : '#f0fdf4',
@@ -182,7 +182,7 @@ function Slide2() {
         {[
           { n: '21+', label: 'Posts published', sub: 'and growing every week' },
           { n: '4', label: 'Platforms covered', sub: 'Website · Facebook · YouTube · TikTok' },
-          { n: '~15 min', label: 'Human time per week', sub: 'to review and approve ideas' },
+          { n: '2–3 hrs', label: 'Human time per week', sub: 'to review, approve, and produce media' },
         ].map(stat => (
           <div key={stat.n} style={{ background: '#f8f7f4', border: '1px solid #e2e8f0', borderRadius: 12, padding: '28px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: 44, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{stat.n}</div>
@@ -203,7 +203,7 @@ function Slide3() {
     { icon: '🎯', label: 'Score & Rank', sub: 'Claude Opus (100pt model)', type: 'auto' },
     { icon: '👤', label: 'Idea Review', sub: '~15 min, once/week', type: 'human' },
     { icon: '✍️', label: 'AI Writing', sub: 'Claude Sonnet, ~20 sec', type: 'auto' },
-    { icon: '🎨', label: 'VA: Media', sub: 'Thumbnail + caption', type: 'va' },
+    { icon: '🎨', label: 'VA: Media', sub: '5–10 mins per post', type: 'va' },
     { icon: '🚀', label: 'Publish', sub: 'Website + Facebook', type: 'auto' },
     { icon: '📹', label: 'Video', sub: 'YouTube + TikTok', type: 'va' },
   ]
@@ -330,7 +330,7 @@ function Slide6() {
     <SlideShell>
       <Tag color="#7c3aed">Human gate</Tag>
       <H>The Idea Review — 15 minutes, once a week</H>
-      <Sub>The only part of the pipeline that requires a human. A weekly email delivers the top 10–15 ideas. The reviewer opens the admin dashboard and sees each idea as a card.</Sub>
+      <Sub>Part 1 or 2 in the pipeline that requires a human (for now). A weekly email delivers the top 10–15 ideas. The reviewer opens the admin dashboard and sees each idea as a card.</Sub>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 28 }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Each idea card shows:</div>
@@ -485,7 +485,7 @@ function Slide9() {
       <div style={{ marginTop: 28, textAlign: 'center', padding: '20px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #86efac' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#166534', marginBottom: 4 }}>The goal</div>
         <div style={{ fontSize: 14, color: '#166534' }}>
-          Barry shows up everywhere — blog, Facebook, YouTube, TikTok — consistently and authoritatively, without writing a single word or recording a single video.
+          Barry shows up everywhere — blog, Facebook, YouTube, TikTok — consistently and authoritatively, without writing a single word or recording a single video. His organic lead flow continues to grow month over month and his recognition within the community is undeniable.
         </div>
       </div>
     </SlideShell>
