@@ -199,51 +199,77 @@ function Slide2() {
 // Slide 3 — The Pipeline
 function Slide3() {
   const steps = [
-    { icon: '🔍', label: 'Research', sub: 'Tavily search API', type: 'auto' },
-    { icon: '🎯', label: 'Score & Rank', sub: 'Claude Opus (100pt model)', type: 'auto' },
-    { icon: '👤', label: 'Idea Review', sub: '~15 min, once/week', type: 'human' },
-    { icon: '✍️', label: 'AI Writing', sub: 'Claude Sonnet, ~20 sec', type: 'auto' },
-    { icon: '🎨', label: 'VA: Media', sub: '5–10 mins per post', type: 'va' },
-    { icon: '🚀', label: 'Publish', sub: 'Website + Facebook', type: 'auto' },
-    { icon: '📹', label: 'Video', sub: 'YouTube + TikTok', type: 'va' },
+    { icon: '🔍', label: 'Research',      sub: 'Tavily search API',          type: 'auto'  },
+    { icon: '🎯', label: 'Score & Rank',  sub: 'Claude Opus (100pt model)',   type: 'auto'  },
+    { icon: '👤', label: 'Idea Review',   sub: '~15 min, once/week',          type: 'human' },
+    { icon: '✍️', label: 'AI Writing',    sub: 'Claude Sonnet, ~20 sec',      type: 'auto'  },
+    { icon: '🎨', label: 'VA: Media',     sub: '5–10 mins per post',          type: 'human' },
+    { icon: '🚀', label: 'Publish',       sub: 'Website + Facebook',          type: 'auto'  },
+    { icon: '📹', label: 'Video',         sub: 'YouTube + TikTok',            type: 'auto'  },
   ]
-  const colors: Record<string, string> = { auto: '#16a34a', human: '#2563eb', va: '#7c3aed' }
-  const labels: Record<string, string> = { auto: 'Automated', human: 'Human', va: 'VA' }
 
   return (
     <SlideShell>
       <Tag>End-to-end</Tag>
       <H>From raw news to published post</H>
-      <div style={{ marginTop: 32, display: 'flex', alignItems: 'flex-start', gap: 0, overflowX: 'auto' }}>
-        {steps.map((step, i) => (
-          <div key={step.label} style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100 }}>
-              <div style={{
-                width: 60, height: 60, borderRadius: 14,
-                background: colors[step.type] + '15',
-                border: `2px solid ${colors[step.type]}40`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-              }}>{step.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginTop: 8, textAlign: 'center' }}>{step.label}</div>
-              <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, textAlign: 'center', lineHeight: 1.4 }}>{step.sub}</div>
-              <span style={{
-                marginTop: 6, fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                color: colors[step.type], background: colors[step.type] + '18', padding: '2px 7px', borderRadius: 99,
-              }}>{labels[step.type]}</span>
+      <div style={{ marginTop: 32, display: 'flex', alignItems: 'flex-end', gap: 0, overflowX: 'auto' }}>
+        {steps.map((step, i) => {
+          const isHuman = step.type === 'human'
+          return (
+            <div key={step.label} style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 108 }}>
+
+                {/* HUMAN badge — shown above icon only for human steps; spacer keeps alignment for auto steps */}
+                {isHuman ? (
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: '#fff', background: '#f59e0b', padding: '4px 10px',
+                    borderRadius: 6, marginBottom: 8, whiteSpace: 'nowrap',
+                  }}>
+                    👤 Human Step
+                  </div>
+                ) : (
+                  <div style={{ height: 28, marginBottom: 8 }} />
+                )}
+
+                {/* Icon box */}
+                <div style={{
+                  width: isHuman ? 70 : 58,
+                  height: isHuman ? 70 : 58,
+                  borderRadius: 14,
+                  background: isHuman ? '#fef3c7' : '#16a34a15',
+                  border: isHuman ? '2.5px solid #f59e0b' : '2px solid #16a34a40',
+                  boxShadow: isHuman ? '0 0 0 4px #f59e0b25' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: isHuman ? 28 : 24,
+                }}>{step.icon}</div>
+
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginTop: 8, textAlign: 'center' }}>{step.label}</div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, textAlign: 'center', lineHeight: 1.4 }}>{step.sub}</div>
+                <span style={{
+                  marginTop: 6, fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: isHuman ? '#d97706' : '#16a34a',
+                  background: isHuman ? '#fef3c7' : '#16a34a18',
+                  padding: '2px 7px', borderRadius: 99,
+                }}>{isHuman ? 'Human' : 'Automated'}</span>
+              </div>
+
+              {i < steps.length - 1 && (
+                <div style={{ marginBottom: 38, fontSize: 16, color: '#cbd5e1', padding: '0 2px', flexShrink: 0 }}>→</div>
+              )}
             </div>
-            {i < steps.length - 1 && (
-              <div style={{ marginTop: 20, fontSize: 18, color: '#cbd5e1', padding: '0 4px', flexShrink: 0 }}>→</div>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
-      <div style={{ display: 'flex', gap: 20, marginTop: 28 }}>
-        {[{ color: '#16a34a', label: 'Automated — no human needed' }, { color: '#2563eb', label: 'Human touchpoint (~15 min/week)' }, { color: '#7c3aed', label: 'VA step (~20 min per post)' }].map(l => (
-          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: l.color }} />
-            {l.label}
-          </div>
-        ))}
+      <div style={{ display: 'flex', gap: 24, marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#16a34a' }} />
+          Automated — no human needed
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569' }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
+          Human touchpoint — these two steps require a person
+        </div>
       </div>
     </SlideShell>
   )
