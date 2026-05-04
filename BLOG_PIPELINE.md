@@ -315,7 +315,7 @@ The VA's home base. Shows all posts waiting to be finished and published.
 **Sections:**
 - **Needs Media** — `workflowStatus: 'media_pending'` (amber border, no thumbnail yet)
 - **Ready to Publish** — `workflowStatus: 'media_ready'` (thumbnail saved, ready to publish)
-- **Published — Post to Facebook** — published posts from last 21 days without a Facebook post (social queue, see Phase 6)
+- **Monthly Progress** — month-to-date blog post and video output vs. daily goals (see Phase 6)
 
 **Trash button:** Each card has a 🗑 trash button (top-right corner). Clicking shows an inline confirmation overlay on the card. Confirming permanently deletes the Sanity document — use this to remove duplicate or unwanted posts before they are published.
 
@@ -460,17 +460,22 @@ GET /v2/posts/{postSubmissionId}
 
 ---
 
-## Phase 6: Social Queue (Backfill Facebook for Existing Posts)
+## Phase 6: Monthly Progress Tracker
 
-The VA Queue's bottom section surfaces posts that are already live on the blog but haven't been posted to Facebook.
+The bottom of the VA Queue page shows a month-to-date progress panel tracking output against daily goals.
 
-**Query:** `workflowStatus == 'published'` AND `publishedAt > [21 days ago]` AND `!defined(facebookPostUrl)` AND `socialDeclined != true`
+**Goals:**
+- Blog posts (text only, no video): **2/day** → 60/month
+- Video posts (post with `videoUrl` set): **1/day** → 30/month
 
-**Per-post actions:**
-- **Post to Facebook** → generates caption via Claude Haiku → VA reviews in inline editor → submits → calls `publishSocialOnly()` — this does NOT re-publish the website post or change `workflowStatus`
-- **Decline** → sets `socialDeclined: true` on Sanity doc → post disappears from queue permanently
+**Logic:** `GET /api/content/monthly-stats` queries all published posts since the 1st of the current month and returns `{ textPosts, videoPosts }`. Text posts = published without `videoUrl`; video posts = published with `videoUrl`.
 
-`publishSocialOnly()` only patches: `blotatoPostSubmissionId`, `blotatoPublishStatus`, `blotatoPublishedAt`, `facebookPostUrl`, `socialCopy`. The `workflowStatus` is never touched.
+**Status thresholds** (compared to expected pace for the current day of month):
+- **On Track** — actual ≥ expected
+- **Slightly Behind** — actual ≥ 75% of expected
+- **Behind** — actual < 75% of expected
+
+Color coding: green / amber / red matching the thresholds above.
 
 ---
 
@@ -724,8 +729,7 @@ printf 'your-value' | npx vercel env add VAR_NAME production
 | `app/api/content/publish-video/route.ts` | POST publish video to YouTube + TikTok (for already-published posts) |
 | `app/api/content/publish-social/route.ts` | POST publish to Facebook only (post already live on website) |
 | `app/api/content/blotato-status/route.ts` | GET poll Blotato for postSubmissionId status |
-| `app/api/content/social-queue/route.ts` | GET published posts needing Facebook distribution |
-| `app/api/content/social-decline/route.ts` | POST mark post as declined for social |
+| `app/api/content/monthly-stats/route.ts` | GET month-to-date text + video post counts |
 | `app/api/content/delete-post/route.ts` | DELETE permanently remove a Sanity blogPost document |
 | `app/api/content/post/route.ts` | GET single post by ID for the VA editor |
 | `app/admin/va-queue/page.tsx` | VA queue list — media queue + social queue; trash/delete cards |
