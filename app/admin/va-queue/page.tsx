@@ -43,7 +43,7 @@ export default function VAQueuePage() {
   const [error,   setError]   = useState('')
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
 
-  const [monthlyStats, setMonthlyStats] = useState<{ textPosts: number; videoPosts: number } | null>(null)
+  const [monthlyStats, setMonthlyStats] = useState<{ totalPosts: number; videoPosts: number } | null>(null)
 
   function handleDelete(id: string) {
     setDeletedIds(prev => new Set([...prev, id]))
@@ -152,7 +152,7 @@ export default function VAQueuePage() {
 const BLOG_DAILY_GOAL  = 2
 const VIDEO_DAILY_GOAL = 1
 
-function MonthlyProgress({ stats }: { stats: { textPosts: number; videoPosts: number } | null }) {
+function MonthlyProgress({ stats }: { stats: { totalPosts: number; videoPosts: number } | null }) {
   const now           = new Date()
   const dayOfMonth    = now.getDate()
   const daysInMonth   = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
@@ -164,7 +164,7 @@ function MonthlyProgress({ stats }: { stats: { textPosts: number; videoPosts: nu
   const expectedBlog  = BLOG_DAILY_GOAL  * dayOfMonth
   const expectedVideo = VIDEO_DAILY_GOAL * dayOfMonth
 
-  const textPosts  = stats?.textPosts  ?? 0
+  const textPosts  = stats?.totalPosts ?? 0
   const videoPosts = stats?.videoPosts ?? 0
 
   function getStatus(actual: number, expected: number): { label: string; color: string } {
@@ -216,7 +216,7 @@ function MonthlyProgress({ stats }: { stats: { textPosts: number; videoPosts: nu
 
       {/* Blog posts row */}
       <ProgressRow
-        label="Blog Posts (text)"
+        label="Blog Posts (text + video)"
         actual={textPosts}
         goal={blogGoal}
         expected={expectedBlog}

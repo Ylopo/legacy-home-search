@@ -247,7 +247,7 @@ export async function getSocialQueue(): Promise<SanityBlogPost[]> {
   )
 }
 
-export async function getMonthlyPublishStats(): Promise<{ textPosts: number; videoPosts: number }> {
+export async function getMonthlyPublishStats(): Promise<{ totalPosts: number; videoPosts: number }> {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const posts: { videoUrl?: string }[] = await client.fetch(
@@ -256,7 +256,7 @@ export async function getMonthlyPublishStats(): Promise<{ textPosts: number; vid
     { next: { revalidate: 0 } }
   )
   const videoPosts = posts.filter(p => !!p.videoUrl).length
-  return { textPosts: posts.length - videoPosts, videoPosts }
+  return { totalPosts: posts.length, videoPosts }
 }
 
 export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null> {

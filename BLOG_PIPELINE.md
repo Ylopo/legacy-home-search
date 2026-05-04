@@ -468,7 +468,7 @@ The bottom of the VA Queue page shows a month-to-date progress panel tracking ou
 - Blog posts (text only, no video): **2/day** → 60/month
 - Video posts (post with `videoUrl` set): **1/day** → 30/month
 
-**Logic:** `GET /api/content/monthly-stats` queries all published posts since the 1st of the current month and returns `{ textPosts, videoPosts }`. Text posts = published without `videoUrl`; video posts = published with `videoUrl`.
+**Logic:** `GET /api/content/monthly-stats` queries all published posts since the 1st of the current month and returns `{ totalPosts, videoPosts }`. Every published post counts toward the blog total (video posts are double-counted — they satisfy both goals). Video posts = published with `videoUrl`.
 
 **Status thresholds** (compared to expected pace for the current day of month):
 - **On Track** — actual ≥ expected
