@@ -36,12 +36,7 @@ Automated daily blog pipeline via Vercel Cron. Full details in `BLOG_PIPELINE.md
 - Live at `/blog` within 60 seconds (ISR revalidation)
 
 ## Market Reports Pipeline
-Monthly PDF-upload pipeline that turns Altos Research PDFs into full market reports. Full details in `MARKET_REPORTS.md`.
-- Barry uploads Altos PDF at `/admin/market-reports/upload?secret=ADMIN_SECRET`
-- Claude reads the PDF natively and writes a 5-section report in Barry's voice
-- Cover images use **DALL-E 3** (YouTube/financial illustration style — different from blog post covers which use Gemini)
-- Draft saved to Sanity → Barry reviews and publishes → live at `/market-reports/[slug]`
-- Reports also appear in `/blog` listing and community pages show "Latest Market Report" card
+Shelved — code is intact but not in active use. Will be rebuilt around direct Altos Research data access (not manual PDF uploads) when that data becomes available.
 
 ## AI Content Assistant
 Available at `/admin/assistant` (password-protected). Same architecture as chris-nevada-next. Update `COMMUNITY_PAGES` in `lib/assistant-tools.ts` as pages are added.
@@ -50,7 +45,7 @@ Available at `/admin/assistant` (password-protected). Same architecture as chris
 - Full homepage live: hero with tab switcher, Barry bio, Altos market trends, interactive map, testimonials, contact
 - `/communities` landing page with interactive HamptonRoadsMap (all 6 cities) and card grid
 - Blog pipeline active — daily posts at `/blog`
-- Market reports pipeline active — PDF upload at `/admin/market-reports/upload`
+- Market reports pipeline shelved (awaiting Altos data access)
 - All Mapbox maps updated to Standard style (3D buildings, POI, roads)
 - Domain: `legacyhometeamlpt.com` → Vercel (GoDaddy A record + CNAME configured)
 - Mobile-optimized: hero tabs, Barry photo layout, contact form, buttons

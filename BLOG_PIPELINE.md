@@ -805,12 +805,7 @@ tiktokPostSubmissionId: string     // Blotato submission ID for TikTok
 
 ## Market Reports Pipeline
 
-See **[MARKET_REPORTS.md](./MARKET_REPORTS.md)** for full details.
-
-- Barry uploads Altos Research PDFs at `/admin/market-reports/upload`
-- Claude reads the PDF natively and writes a 5-section report in Barry's voice
-- Cover images use **DALL-E 3** (YouTube/financial illustration style)
-- Reports appear in `/blog` listing and community pages show "Latest Market Report" card
+Shelved pending direct Altos Research data access. Code and public pages are intact — no client action required to maintain them. Will be rebuilt around automated data ingestion (not manual PDF uploads) when Altos data is available.
 
 ---
 
