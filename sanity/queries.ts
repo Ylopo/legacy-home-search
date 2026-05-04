@@ -150,6 +150,7 @@ export type SanityBlogPost = {
   title: string
   slug: string
   publishedAt: string
+  lastRefreshedAt?: string
   category: string
   excerpt?: string
   coverImage?: any
@@ -206,7 +207,7 @@ export async function getBlogPosts(limit = 20): Promise<SanityBlogPost[]> {
 export async function getBlogPost(slug: string): Promise<SanityBlogPost | null> {
   return client.fetch(
     `*[_type == "blogPost" && slug.current == $slug && ${PUBLIC_FILTER}][0]{
-      _id, title, "slug": slug.current, publishedAt,
+      _id, title, "slug": slug.current, publishedAt, lastRefreshedAt,
       category, excerpt, coverImage, heroBannerImage, body, metaTitle, metaDescription, aiGenerated
     }`,
     { slug },

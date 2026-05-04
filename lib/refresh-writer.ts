@@ -117,15 +117,19 @@ ${researchSection}
 REFRESH PLAYBOOK (follow each item):
 ${playbookText}
 
-WRITING VOICE & STRUCTURE (same as original):
+WRITING VOICE & STRUCTURE:
 - Voice: knowledgeable, warm, direct — trusted neighbor who knows the market
-- Open with a local Hampton Roads hook or current data point
+- Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. This is the featured snippet hook Google looks for.
 - Always tie insights back to Hampton Roads buyers/sellers/homeowners specifically
-- Structure: intro → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullets) → brief closing
-- 350–450 words
+- Structure: intro (with direct answer) → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullets) → brief closing → ## Frequently Asked Questions
+- 400–500 words
 - SELLER CTA RULE: where the post mentions sellers, homeowners with equity, or home valuations, end that sentence with [SELLER_CTA: Find out what your home is worth →] inline. Max 2 times, only where it genuinely fits.
-- Preserve all existing internal links where they still make sense
+- Preserve all existing internal links where they still make sense; add 1 more if a new relevant page fits
 - Do not add salesy language or excessive CTAs
+
+SEO RULES (required):
+1. Keep the post's primary keyword (derived from the title) in the opening paragraph, at least one ## heading, and 2–3 times in the body naturally.
+2. If the existing post has a ## Frequently Asked Questions section, refresh the Q&A with updated answers. If it does not have one, add it at the end: exactly 3 questions as ### headings, each with a 2–3 sentence answer relevant to Hampton Roads.
 
 Return a JSON object with EXACTLY these fields:
 {
@@ -133,7 +137,7 @@ Return a JSON object with EXACTLY these fields:
   "excerpt": "Updated 2–3 sentence summary",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "SEO description 120–160 chars",
-  "body": "Full refreshed post in plain text. Use ## for h2, ### for h3, - for bullets."
+  "body": "Full refreshed post in plain text. Use ## for h2, ### for h3, - for bullets. Must include FAQ section at end."
 }
 
 Return ONLY valid JSON, no markdown fences.`,

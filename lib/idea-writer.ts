@@ -122,13 +122,18 @@ ${researchSection}
 
 WRITING RULES:
 - Voice: knowledgeable, warm, direct. Feels like advice from a trusted neighbor who knows the market cold — not a pitch.
-- Open with a local hook — a specific Hampton Roads fact, data point, or recent development
+- Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. Example: "Closing costs in Virginia Beach typically run 2–5% of the purchase price." This is the featured snippet hook.
 - Always tie insights back to what they mean for Hampton Roads buyers/sellers/homeowners specifically
 - Include a military/PCS angle where it naturally fits
-- Structure: intro → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullet points) → brief closing
-- 350–450 words total
+- Structure: intro (with direct answer) → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullet points) → brief closing → ## Frequently Asked Questions
+- 400–500 words total
 - SELLER CTA RULE: where the post mentions sellers, homeowners with equity, or what a home is worth, end that sentence with [SELLER_CTA: Find out what your home is worth →] inline. Max 2 times per post, only where it genuinely fits.
 - Avoid: salesy language, generic "tips", "as a real estate agent I recommend", excessive CTAs
+
+SEO RULES (required):
+1. Target keyword is: ${keyword} — use it naturally in the opening paragraph, in at least one ## heading, and 2–3 times in the body. Never forced.
+2. End with ## Frequently Asked Questions — exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a Hampton Roads buyer, seller, or homeowner would actually search for related to "${keyword}".
+3. Add 1 internal link to a relevant page on the site where it genuinely helps the reader (e.g., /blog, /communities, /virginia-beach, /chesapeake). Use markdown link syntax.
 
 Return a JSON object with EXACTLY these fields:
 {
@@ -137,7 +142,7 @@ Return a JSON object with EXACTLY these fields:
   "excerpt": "2–3 sentence summary for blog listing page",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "SEO description 120–160 chars",
-  "body": "Full post in plain text. Use ## for h2, ### for h3, - for bullets."
+  "body": "Full post in plain text. Use ## for h2, ### for h3, - for bullets. Must include FAQ section at end."
 }
 
 Return ONLY valid JSON, no markdown fences.`,

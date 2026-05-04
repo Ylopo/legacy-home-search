@@ -9,6 +9,30 @@ export const metadata: Metadata = {
   description: 'Legacy Home Search — your trusted partner for buying and selling real estate. Expert guidance, local market knowledge, and dedicated service.',
 }
 
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': ['Organization', 'LocalBusiness', 'RealEstateAgent'],
+  name: 'Legacy Home Team',
+  url: 'https://legacyhometeamlpt.com',
+  telephone: '+17578164037',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Virginia Beach',
+    addressRegion: 'VA',
+    addressCountry: 'US',
+  },
+  areaServed: [
+    'Virginia Beach, VA',
+    'Norfolk, VA',
+    'Chesapeake, VA',
+    'Suffolk, VA',
+    'Hampton, VA',
+    'Portsmouth, VA',
+    'Newport News, VA',
+  ],
+  description: 'Barry Jenkins and the Legacy Home Team help buyers, sellers, and investors across Hampton Roads navigate Virginia Beach real estate with 20+ years of local expertise.',
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -18,6 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         {children}
         <LocomotiveScrollInit />
         <YlopoInit />

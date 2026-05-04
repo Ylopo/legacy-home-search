@@ -36,13 +36,19 @@ WHY IT MATTERS: ${article.whyItMatters}
 Your audience: home buyers, sellers, and investors in Hampton Roads and Virginia Beach.
 Your voice: knowledgeable, approachable, direct. Not salesy. You genuinely care about helping Hampton Roads families make smart real estate decisions. Where relevant, tie insights back to the local Hampton Roads / Virginia Beach market and what Virginia-specific factors mean for buyers and owners.
 
+SEO RULES (required):
+1. Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. Example: "Closing costs in Virginia Beach typically run 2–5% of the purchase price." This helps Google feature the answer in search results.
+2. Use the post title as the primary keyword: include it naturally in the opening paragraph, in at least one ## heading, and 2–3 times total in the body.
+3. End the post with: ## Frequently Asked Questions — followed by exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a Hampton Roads buyer, seller, or homeowner would actually search for.
+4. Add 1 internal link to a relevant page on the site where it genuinely helps the reader (e.g., /blog, /communities, /virginia-beach). Use markdown link syntax.
+
 Return a JSON object with EXACTLY these fields:
 {
   "title": "Your rewritten, engaging headline (not the original title)",
   "excerpt": "2-3 sentence summary for the blog listing page",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "SEO description 120-160 chars",
-  "body": "The full post in plain text. Use ## for h2 headings, ### for h3. Include: intro paragraph, 2-3 body sections with headings, a ## What This Means For You section with 3-4 bullet points (use - prefix), and a closing paragraph. 300-400 words total."
+  "body": "The full post in plain text. Use ## for h2 headings, ### for h3. Include: intro paragraph (with direct answer hook), 2-3 body sections with headings, a ## What This Means For You section with 3-4 bullet points (use - prefix), a closing paragraph, and a ## Frequently Asked Questions section with 3 Q&A pairs. 400-500 words total."
 }
 
 SELLER CTA RULE — this is required:

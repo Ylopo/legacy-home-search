@@ -6,6 +6,7 @@ import { createClient } from '@sanity/client'
 import { getBlogPost, getBlogPosts } from '@/sanity/queries'
 import PortableText from '@/components/PortableText'
 import BlogCommunityListings, { type CommunityKey } from '@/components/BlogCommunityListings'
+import { extractFAQSchema } from '@/lib/faq-extractor'
 
 export const revalidate = 60
 
@@ -47,17 +48,22 @@ export async function generateMetadata(
     ? builder.image(post.heroBannerImage).width(1200).height(630).fit('crop').url()
     : null
 
+  const canonicalUrl = `https://legacyhometeamlpt.com/blog/${slug}`
+
   return {
     title,
     description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
       description,
       type: 'article',
-      url: `https://legacyhomesearch.com/blog/${slug}`,
+      url: canonicalUrl,
       ...(ogImage && {
         images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
       }),
+      publishedTime: post.publishedAt,
+      modifiedTime: post.lastRefreshedAt ?? post.publishedAt,
     },
     twitter: {
       card: 'summary_large_image',
@@ -108,8 +114,55 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const category = CATEGORY_LABELS[post.category] ?? post.category
   const communities = detectCommunities(post.title, post.slug)
 
+  const canonicalUrl = `https://legacyhometeamlpt.com/blog/${post.slug}`
+  const ogImageUrl = imgUrl ?? null
+  const dateModified = post.lastRefreshedAt ?? post.publishedAt
+
+  const blogPostingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt ?? '',
+    ...(ogImageUrl && { image: ogImageUrl }),
+    datePublished: post.publishedAt,
+    dateModified,
+    author: {
+      '@type': 'Person',
+      name: 'Barry Jenkins',
+      url: 'https://legacyhometeamlpt.com/team/barry-jenkins',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Legacy Home Team',
+      logo: { '@type': 'ImageObject', url: 'https://legacyhometeamlpt.com/logo.png' },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://legacyhometeamlpt.com' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://legacyhometeamlpt.com/blog' },
+      { '@type': 'ListItem', position: 3, name: post.title },
+    ],
+  }
+
+  const faqSchema = post.body ? extractFAQSchema(post.body) : null
+
   return (
     <article className="blog-post">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify([blogPostingSchema, breadcrumbSchema]) }}
+      />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
 
       {/* ── HERO IMAGE ──────────────────────────────────────────────── */}
       {heroDisplayUrl && (
