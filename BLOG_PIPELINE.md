@@ -73,26 +73,13 @@ VA opens a post → /admin/va-queue/[postId]
     └─ Upload final video → /api/content/upload-video (Vercel Blob, random suffix)
     └─ Optional: upload a video thumbnail image separately
 
-  STEP 4 — Mark Ready → Publish
-    └─ "Mark Ready" → workflowStatus: 'media_ready'
-    └─ "Publish" → /api/content/publish
-         └─ Saves coverImage to Sanity
+  STEP 4 — Publish
+    └─ "🚀 Publish" → /api/content/publish
+         └─ If thumbnail was just uploaded: saves coverImage to Sanity first (inline mark-ready)
          └─ Sets workflowStatus: 'published' + publishedAt: now (website live)
          └─ Posts to Facebook via Blotato
-         └─ Polls Blotato → stores blotatoPublishStatus + facebookPostUrl
-
-  STEP 5 — Video Publish (separate button, after post is published)
-    └─ "▶ Publish Video to YouTube & TikTok"
-         └─ /api/content/publish-video (POST)
-         └─ Stores youtubePostSubmissionId + tiktokPostSubmissionId on doc
-
-─────────────────────────────────────────────────────────
-Social Queue (backfill existing posts)
-─────────────────────────────────────────────────────────
-
-VA Queue bottom section — published posts from last 21 days with no facebookPostUrl
-  └─ "Post to Facebook" → Claude Haiku writes caption → VA edits → posts to Facebook
-  └─ "Decline" → sets socialDeclined: true, removed permanently from queue
+         └─ If videoUrl present: also publishes to YouTube + TikTok (Facebook Reel) simultaneously
+         └─ Polls Blotato → stores all submission IDs + post URLs on doc
 ```
 
 ---
@@ -119,7 +106,8 @@ All admin pages are secret-gated via `?secret=ADMIN_SECRET`. Never share these U
 | Schedule | Route | What it does |
 |----------|-------|-------------|
 | `0 13 * * *` (6 AM PT daily) | `/api/cron/research` | Tavily searches → score ideas → store in Redis |
-| `0 16 2 * *` (9 AM PT, 2nd of month) | `/api/cron/renick-pipeline` | Scrape Renick analytics → extract patterns → add to idea queue |
+| `5 15 * * 2` (8:05 AM PT Tue) | `/api/cron/renick-pipeline` | Scrape Renick analytics → extract patterns → add to idea queue |
+| `0 14 * * 3` (7 AM PT Wed) | `/api/cron/learnings-update` | Generate weekly LEARNINGS.md entry from approval decisions + GA4 data |
 | `0 16 3 * *` (9 AM PT, 3rd of month) | `/api/cron/required-topics-coverage` | Audit required evergreen topics; seed gaps as ideas |
 | `0 17 * * 1` (10 AM PT Mon) | `/api/cron/refresh-evaluation` | Evaluate all published posts for refresh eligibility; build queue; send email digest |
 | `0 16 25 * *` (9 AM PT, 25th of month) | `/api/cron/events-research` | Search next-month events → write posts → VA queue |
@@ -372,10 +360,8 @@ Title, category, excerpt, and date. Gives context for building the thumbnail and
 | YouTube | After video publish | ✓ Published / ⏳ polling / ✗ error |
 | TikTok | After video publish | ✓ Published / ⏳ queued / ✗ error |
 
-**Publish buttons:**
-- **✓ Mark as Ready** → sets `workflowStatus: 'media_ready'`
-- **🚀 Publish** → publishes to website + Facebook simultaneously (active when thumbnail is set)
-- **▶ Publish Video to YouTube & TikTok** → shown when post is already published AND a video has been uploaded
+**Publish button:**
+- **🚀 Publish** → active when thumbnail is set (saved or uploaded). Publishes website + Facebook in one click. If a video has been uploaded, also publishes to YouTube, TikTok, and Facebook Reel simultaneously. If a thumbnail was uploaded (not pre-saved), marks the post ready first, then publishes — all inline, no separate step required.
 
 ### VA Tips & Troubleshooting
 
@@ -856,10 +842,24 @@ printf 'your-value' | npx vercel env add VAR_NAME production
 | `app/api/content/heygen-status/route.ts` | GET poll HeyGen status; saves completed video to Vercel Blob |
 | `app/api/content/upload-video/route.ts` | Vercel Blob client upload handler (returns upload token with random suffix) |
 
+### Content Refresh
+| File | Purpose |
+|------|---------|
+| `lib/refresh-config.ts` | All constants: cadences, scoring weights, tier→category mapping, thresholds, excluded slugs |
+| `lib/refresh-engine.ts` | `classifyPost()`, `computeScore()`, `generatePlaybook()`, `buildRefreshQueue()` |
+| `lib/refresh-store.ts` | Redis ops: queue, skip (30-day TTL), audit log |
+| `lib/refresh-writer.ts` | `refreshPost()` — Tavily fresh-data + Claude rewrite + Sanity patch in-place |
+| `app/api/cron/refresh-evaluation/route.ts` | Weekly Monday cron: builds queue, sends email digest |
+| `app/api/content/refresh-queue/route.ts` | GET current refresh candidates from Redis |
+| `app/api/content/refresh-approve/route.ts` | POST approve → rewrite post in-place |
+| `app/api/content/refresh-skip/route.ts` | POST skip → 30-day defer via Redis TTL |
+| `app/api/content/refresh-exclude/route.ts` | POST exclude → set `refreshExcluded: true` in Sanity |
+| `app/admin/refresh-queue/page.tsx` | Admin review UI: approve / skip / exclude per candidate |
+
 ### Legacy & Dashboard
 | File | Purpose |
 |------|---------|
-| `lib/email.ts` | All email: idea digest, market report ready, monthly Altos reminder, breaking news alert |
+| `lib/email.ts` | All email: idea digest, refresh digest, market report ready, monthly Altos reminder, breaking news alert |
 | `lib/store.ts` | Upstash Redis read/write |
 | `app/admin/blog-dashboard/page.tsx` | Effectiveness dashboard |
 | `app/admin/thumbnail-review/page.tsx` | Legacy thumbnail upload fallback |
@@ -870,8 +870,8 @@ printf 'your-value' | npx vercel env add VAR_NAME production
 ### Sanity Schema & Queries
 | File | Purpose |
 |------|---------|
-| `sanity/schema/blogPost.ts` | blogPost schema: `workflowStatus` + Blotato tracking + `socialDeclined` + video fields |
-| `sanity/queries.ts` | GROQ queries: `getBlogPosts`, `getVAQueuePost`, `getSocialQueue`, etc. |
+| `sanity/schema/blogPost.ts` | blogPost schema: workflow + Blotato tracking + video + refresh fields |
+| `sanity/queries.ts` | GROQ queries: `getBlogPosts`, `getVAQueuePost`, `getPublishedPostsForRefresh`, etc. |
 
 ---
 
@@ -889,6 +889,7 @@ blotatoPostSubmissionId: string    // returned by Blotato POST for Facebook
 blotatoPublishStatus: string       // 'pending' | 'published' | 'failed'
 blotatoPublishedAt: datetime
 facebookPostUrl: string            // Blotato resolves this on success
+facebookReelSubmissionId: string   // Blotato submission ID for Facebook Reel (video)
 
 // Video
 videoScript: string                // Claude-written video script (editable in VA editor)
@@ -896,6 +897,15 @@ videoUrl: string                   // Vercel Blob URL of the final uploaded vide
 videoThumbnailUrl: string          // Vercel Blob URL of the video thumbnail image
 youtubePostSubmissionId: string    // Blotato submission ID for YouTube
 tiktokPostSubmissionId: string     // Blotato submission ID for TikTok
+youtubePostUrl: string             // Published YouTube video URL
+tiktokPostUrl: string              // Published TikTok video URL
+
+// Content Refresh (Phase 7)
+refreshTier: 'evergreen' | 'pillar' | 'competitive' | 'fast-changing' | 'seasonal' | 'news-trend' | 'money-page'
+                                   // Auto-assigned from category if blank; overridable in Sanity Studio
+refreshExcluded: boolean           // true = never appears in the refresh queue
+lastRefreshedAt: datetime          // set each time the refresh pipeline rewrites this post
+refreshCount: number               // incremented on every successful refresh
 ```
 
 ---
@@ -930,6 +940,15 @@ curl -X POST https://legacyhometeamlpt.com/api/blog/generate-thumbnail \
 ### Required topics coverage check (dry run):
 ```bash
 curl -X POST "https://legacyhometeamlpt.com/api/cron/required-topics-coverage?secret=YOUR_ADMIN_SECRET&dryRun=1"
+```
+
+### Trigger content refresh evaluation manually:
+```bash
+curl -X POST "https://legacyhometeamlpt.com/api/cron/refresh-evaluation" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"YOUR_ADMIN_SECRET"}'
+# → { "evaluated": N, "queued": N, "emailSent": true }
+# Then visit /admin/refresh-queue?secret=… to review candidates
 ```
 
 ---
