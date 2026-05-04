@@ -442,6 +442,10 @@ GET /v2/posts/{postSubmissionId}
 
 **Legacy compatibility:** Old posts with `status: 'published'` remain live. GROQ filter: `workflowStatus == 'published' || status == 'published'`.
 
+**Failure handling:** If Blotato returns an error, `workflowStatus` is set to `publish_failed` and the error is shown inline in the VA editor. The VA can retry by clicking Publish again on the same post.
+
+**Multi-client (future):** Phase 1 uses hardcoded account/page IDs from env vars. Phase 2 will replace these with a Sanity `clientConfig` document per client. The only files to update are the getter functions in `lib/blotato-client.ts` (`getFacebookAccountId`, `getYouTubeAccountId`, `getTikTokAccountId`, `getPageId`).
+
 ---
 
 ## Phase 6: Social Queue (Backfill Facebook for Existing Posts)
