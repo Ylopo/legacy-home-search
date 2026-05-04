@@ -110,6 +110,7 @@ All admin pages are secret-gated via `?secret=ADMIN_SECRET`. Never share these U
 | Blog Dashboard | `/admin/blog-dashboard?secret=…` | Post stats, category breakdown, GA4 KPIs | Operator |
 | Thumbnail Review | `/admin/thumbnail-review?secret=…` | Legacy fallback — manual thumbnail upload for any post | Admin |
 | Market Reports Upload | `/admin/market-reports/upload?secret=…` | Upload Altos PDF → auto-publish market report | Agent/Admin |
+| Refresh Queue | `/admin/refresh-queue?secret=…` | Weekly content refresh candidates — approve/skip/exclude | Operator |
 
 ---
 
@@ -120,6 +121,7 @@ All admin pages are secret-gated via `?secret=ADMIN_SECRET`. Never share these U
 | `0 13 * * *` (6 AM PT daily) | `/api/cron/research` | Tavily searches → score ideas → store in Redis |
 | `0 16 2 * *` (9 AM PT, 2nd of month) | `/api/cron/renick-pipeline` | Scrape Renick analytics → extract patterns → add to idea queue |
 | `0 16 3 * *` (9 AM PT, 3rd of month) | `/api/cron/required-topics-coverage` | Audit required evergreen topics; seed gaps as ideas |
+| `0 17 * * 1` (10 AM PT Mon) | `/api/cron/refresh-evaluation` | Evaluate all published posts for refresh eligibility; build queue; send email digest |
 | `0 16 25 * *` (9 AM PT, 25th of month) | `/api/cron/events-research` | Search next-month events → write posts → VA queue |
 | `0 15 * * 4` (8 AM PT Thu) | `/api/cron/idea-digest` | Weekly idea digest email to kiwi@ylopo.com |
 | `0 14 1 * *` (7 AM PT, 1st of month) | `/api/cron/market-reports` | Monthly Altos upload reminder to Barry + missing-report check |
@@ -476,6 +478,97 @@ The bottom of the VA Queue page shows a month-to-date progress panel tracking ou
 - **Behind** — actual < 75% of expected
 
 Color coding: green / amber / red matching the thresholds above.
+
+---
+
+## Phase 7: Content Refresh
+
+### Philosophy
+
+New posts should mature before being touched. The refresh system evaluates all published posts on a cadence, scores them by urgency, and surfaces the highest-priority candidates for operator review. Approved posts are rewritten in-place by Claude — they stay live and update immediately via ISR.
+
+**The rule:** Don't touch posts younger than 90 days. After that, each post gets reviewed on its assigned tier's cadence. Performance triggers (once GA4 is wired up) will accelerate candidates that are declining.
+
+### Refresh Tiers
+
+| Tier | First Review | Subsequent | Auto-assigned from |
+|------|-------------|-----------|-------------------|
+| `fast-changing` | 30 days | 90 days | market-update, cost-breakdown |
+| `news-trend` | 30 days | 90 days | news |
+| `competitive` | 90 days | 180 days | buying-tips, selling-tips, investment, flood-and-risk |
+| `money-page` | 60 days | 120 days | (manually set in Sanity Studio) |
+| `pillar` | 90 days | 180 days | (manually set) |
+| `seasonal` | 60 days before peak | 365 days | (manually set) |
+| `evergreen` | 120 days | 365 days | community-spotlight |
+
+Tier can be overridden per post in Sanity Studio (`Refresh Tier` field). If blank, the system auto-assigns from category.
+
+### Priority Scoring (0–100)
+
+| Component | Max | Logic |
+|-----------|-----|-------|
+| Overdue factor | 30 | 0 if not yet due; scales 0→30 as overdue increases |
+| Topic volatility | 20 | Based on tier — fast-changing=18, news-trend=20, competitive=15 |
+| Category importance | 15 | cost-breakdown=15, buying-tips=13, investment/flood-and-risk=11 |
+| Age score | 15 | <90d=0, 90-180d=5, 180-365d=10, >365d=15 |
+| Seasonal window | 20 | Bonus when season peak is within 60 days |
+
+**Action thresholds:** ≥ 75 → Full Refresh · ≥ 45 → Light Refresh · ≥ 20 → Review Only · < 20 → Do Not Touch
+
+### Admin Workflow
+
+1. **Monday 10 AM PT** — cron runs `/api/cron/refresh-evaluation` → evaluates all published posts, builds Redis queue, sends email digest to operator
+2. **Operator reviews email** → clicks "Review Refresh Queue →"
+3. **Visit `/admin/refresh-queue?secret=…`** → shows scored candidates with tier, age, score, reasons, playbook
+4. For each candidate, operator can:
+   - **Approve & Refresh** — Claude rewrites the post in-place, it goes live immediately
+   - **Skip 30 days** — defers the candidate; it re-appears in next month's queue
+   - **Exclude Forever** — sets `refreshExcluded: true` in Sanity; never appears again
+
+### Refresh Execution
+
+When approved:
+1. Full post fetched from Sanity (body, title, excerpt, meta)
+2. For `fast-changing`/`competitive` + `full-refresh`: 1 Tavily search for fresh context
+3. Claude rewrites: title, excerpt, body, metaTitle, metaDescription
+4. Sanity doc patched in-place: `lastRefreshedAt = now`, `refreshCount++`
+5. Post stays `workflowStatus: 'published'` — live immediately via ISR
+
+### Configuration
+
+All thresholds live in `lib/refresh-config.ts`. To tune:
+- **Minimum age** — change `REFRESH_CONFIG.minAgeDays` (default: 90)
+- **Cadences** — update `REFRESH_CONFIG.cadences[tier]`
+- **Scoring weights** — update `REFRESH_CONFIG.scoring`
+- **Never-refresh posts** — add slugs to `REFRESH_CONFIG.excludedSlugs` or set `refreshExcluded: true` in Sanity Studio
+
+### GA4 Extension Point
+
+Traffic-based scoring is stubbed and ready to wire up. `computeScore()` in `lib/refresh-engine.ts` accepts an optional `ga4Data?: Map<string, GA4PostData>`. When wired: declining sessions, striking-distance rankings (positions 4–15), and high-value declining posts add up to +30 additional points. See `GA4PostData` interface in `lib/refresh-engine.ts`.
+
+### Manual Trigger
+
+```bash
+curl -X POST "https://legacyhometeamlpt.com/api/cron/refresh-evaluation" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"YOUR_ADMIN_SECRET"}'
+# → { "evaluated": N, "queued": N, "emailSent": true }
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/refresh-config.ts` | All constants: cadences, scoring weights, tier→category mapping, thresholds |
+| `lib/refresh-engine.ts` | `classifyPost()`, `computeScore()`, `generatePlaybook()`, `buildRefreshQueue()` |
+| `lib/refresh-store.ts` | Redis ops: save/get queue, skip, audit log |
+| `lib/refresh-writer.ts` | `refreshPost()` — Tavily + Claude rewrite + Sanity patch |
+| `app/api/cron/refresh-evaluation/route.ts` | Weekly cron: builds queue, sends email |
+| `app/api/content/refresh-queue/route.ts` | GET current refresh candidates |
+| `app/api/content/refresh-approve/route.ts` | POST approve → rewrite |
+| `app/api/content/refresh-skip/route.ts` | POST skip → 30-day defer |
+| `app/api/content/refresh-exclude/route.ts` | POST exclude → permanent Sanity flag |
+| `app/admin/refresh-queue/page.tsx` | Admin review UI |
 
 ---
 

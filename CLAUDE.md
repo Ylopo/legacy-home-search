@@ -41,10 +41,11 @@ Shelved — code is intact but not in active use. Will be rebuilt around direct 
 ## AI Content Assistant
 Available at `/admin/assistant` (password-protected). Same architecture as chris-nevada-next. Update `COMMUNITY_PAGES` in `lib/assistant-tools.ts` as pages are added.
 
-## Current Status (April 2026)
+## Current Status (May 2026)
 - Full homepage live: hero with tab switcher, Barry bio, Altos market trends, interactive map, testimonials, contact
 - `/communities` landing page with interactive HamptonRoadsMap (all 6 cities) and card grid
 - Blog pipeline active — daily posts at `/blog`
+- Content refresh subsystem live — weekly cron (Monday 10 AM PT), admin UI at `/admin/refresh-queue`, Claude rewrites posts in-place
 - Market reports pipeline shelved (awaiting Altos data access)
 - All Mapbox maps updated to Standard style (3D buildings, POI, roads)
 - Domain: `legacyhometeamlpt.com` → Vercel (GoDaddy A record + CNAME configured)

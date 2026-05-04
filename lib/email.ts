@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import type { ScoredArticle } from './types'
+import type { RefreshCandidate } from './refresh-engine'
 
 const CATEGORY_LABELS: Record<string, string> = {
   'market-update': 'Market Update',
@@ -292,6 +293,136 @@ export async function sendAltosUploadReminderEmail(monthName: string, year: numb
     from: fromEmail,
     to: barryEmail,
     subject: `Upload your ${monthName} ${year} Altos market reports`,
+    html,
+  })
+}
+
+// ─── Content Refresh Digest Email ─────────────────────────────────────────────
+
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  'full-refresh':   { label: 'Full Refresh',   color: '#dc2626' },
+  'light-refresh':  { label: 'Light Refresh',  color: '#d97706' },
+  'review-only':    { label: 'Review Only',    color: '#2563eb' },
+}
+
+const TIER_COLORS: Record<string, string> = {
+  'fast-changing': '#dc2626',
+  'news-trend':    '#f59e0b',
+  'competitive':   '#7c3aed',
+  'money-page':    '#059669',
+  'pillar':        '#2563eb',
+  'seasonal':      '#0891b2',
+  'evergreen':     '#16a34a',
+}
+
+function refreshCandidateRow(c: RefreshCandidate, index: number): string {
+  const action = ACTION_LABELS[c.recommendedAction] ?? { label: c.recommendedAction, color: '#555' }
+  const tierColor = TIER_COLORS[c.refreshTier] ?? '#555'
+  const ageLabel = c.ageInDays >= 365
+    ? `${Math.floor(c.ageInDays / 365)}y ${Math.floor((c.ageInDays % 365) / 30)}m old`
+    : `${Math.floor(c.ageInDays / 30)}m old`
+  const overdueLabel = c.isOverdue
+    ? `${Math.abs(c.daysUntilDue)}d overdue`
+    : `due in ${c.daysUntilDue}d`
+  const topReason = c.refreshReasons[0] ?? ''
+
+  return `
+    <tr>
+      <td style="padding: 14px 0; border-bottom: 1px solid #e5e3de;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="width: 24px; vertical-align: top; padding-top: 2px;">
+              <span style="color: #2563eb; font-size: 16px; font-weight: 700;">${index + 1}</span>
+            </td>
+            <td style="padding-left: 10px;">
+              <div style="margin-bottom: 5px;">
+                <span style="display:inline-block;background:${tierColor}22;color:${tierColor};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;margin-right:6px;">${c.refreshTier}</span>
+                <span style="display:inline-block;background:${action.color}22;color:${action.color};font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;">${action.label}</span>
+              </div>
+              <div style="font-size:14px;font-weight:600;color:#1a1a1a;line-height:1.4;margin-bottom:4px;">${c.title}</div>
+              <div style="font-size:12px;color:#888884;">${ageLabel} · ${overdueLabel} · Score: <strong style="color:#2563eb;">${c.priorityScore}/100</strong></div>
+              ${topReason ? `<div style="font-size:12px;color:#555550;margin-top:3px;">${topReason}</div>` : ''}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`
+}
+
+export async function sendRefreshDigest(
+  candidates: RefreshCandidate[],
+  queueUrl: string,
+): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.FROM_EMAIL
+  const operatorEmail = process.env.OPERATOR_EMAIL
+  if (!resendKey || !fromEmail || !operatorEmail) return
+
+  const top10 = candidates.slice(0, 10)
+  const fullCount = candidates.length
+  const overdueCount = candidates.filter((c) => c.isOverdue).length
+  const fullRefreshCount = candidates.filter((c) => c.recommendedAction === 'full-refresh').length
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f8f7f4;font-family:Inter,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;border:1px solid #e0ddd8;">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 32px 24px;border-bottom:1px solid #e0ddd8;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">Legacy Home Search · Content Refresh Queue</div>
+            <div style="font-size:22px;font-weight:700;color:#1a1a1a;">${fullCount} post${fullCount === 1 ? '' : 's'} ready for review</div>
+            <div style="font-size:14px;color:#888884;margin-top:4px;">${overdueCount} overdue · ${fullRefreshCount} need full refresh</div>
+          </td>
+        </tr>
+
+        <!-- Candidates -->
+        <tr>
+          <td style="padding:8px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              ${top10.map((c, i) => refreshCandidateRow(c, i)).join('')}
+            </table>
+            ${fullCount > 10 ? `<p style="font-size:13px;color:#888884;text-align:center;margin:12px 0;">+ ${fullCount - 10} more in the queue</p>` : ''}
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:32px;">
+            <a href="${queueUrl}" style="display:block;text-align:center;background:#2563eb;color:#ffffff;font-weight:700;font-size:15px;letter-spacing:0.05em;padding:16px 32px;border-radius:8px;text-decoration:none;">
+              Review Refresh Queue →
+            </a>
+            <div style="font-size:11px;color:#888884;text-align:center;margin-top:12px;">
+              Approve to rewrite with Claude · Skip to defer 30 days · Exclude to remove permanently
+            </div>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 32px;border-top:1px solid #e0ddd8;">
+            <div style="font-size:11px;color:#888884;text-align:center;">
+              Legacy Home Search · Automated Content Refresh Pipeline
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+  const resend = new Resend(resendKey)
+  await resend.emails.send({
+    from: fromEmail,
+    to: operatorEmail,
+    subject: `Content Refresh Queue — ${fullCount} post${fullCount === 1 ? '' : 's'} ready for review`,
     html,
   })
 }

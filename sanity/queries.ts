@@ -313,6 +313,58 @@ export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> 
   }))
 }
 
+// ─── Content Refresh ──────────────────────────────────────────────────────────
+
+export type RefreshPostSummary = {
+  _id: string
+  title: string
+  slug: string
+  category: string
+  publishedAt: string
+  lastRefreshedAt?: string
+  refreshTier?: string
+  refreshExcluded?: boolean
+  refreshCount?: number
+}
+
+export async function getPublishedPostsForRefresh(): Promise<RefreshPostSummary[]> {
+  return client.fetch(
+    `*[_type == "blogPost" && (workflowStatus == "published" || status == "published")] | order(publishedAt asc){
+      _id, title, "slug": slug.current, category, publishedAt,
+      lastRefreshedAt, refreshTier, refreshExcluded, refreshCount
+    }`,
+    {},
+    { next: { revalidate: 0 } }
+  )
+}
+
+export type RefreshablePost = {
+  _id: string
+  title: string
+  slug: string
+  category: string
+  publishedAt: string
+  excerpt?: string
+  body?: any[]
+  metaTitle?: string
+  metaDescription?: string
+  lastRefreshedAt?: string
+  refreshTier?: string
+  refreshCount?: number
+}
+
+export async function getRefreshablePost(id: string): Promise<RefreshablePost | null> {
+  return client.fetch(
+    `*[_type == "blogPost" && _id == $id][0]{
+      _id, title, "slug": slug.current, category, publishedAt,
+      excerpt, body, metaTitle, metaDescription,
+      lastRefreshedAt, refreshTier, refreshCount
+    }`,
+    { id },
+    { next: { revalidate: 0 } }
+  )
+}
+
 export async function getQueueCounts(): Promise<{ media_pending: number; media_ready: number }> {
   const counts = await client.fetch(
     `{

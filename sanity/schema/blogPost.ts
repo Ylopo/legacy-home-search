@@ -196,6 +196,43 @@ export default {
       description: 'Mark if this post was created by the AI blog agent',
       initialValue: false,
     },
+    // ─── Refresh fields ────────────────────────────────────────────────────────
+    {
+      name: 'refreshTier',
+      title: 'Refresh Tier',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Evergreen (review every 12 months)', value: 'evergreen' },
+          { title: 'Pillar (review every 6 months)', value: 'pillar' },
+          { title: 'Competitive (review every 6 months)', value: 'competitive' },
+          { title: 'Fast-Changing (review every 3 months)', value: 'fast-changing' },
+          { title: 'Seasonal (review before season peak)', value: 'seasonal' },
+          { title: 'News/Trend (review every 1–3 months)', value: 'news-trend' },
+          { title: 'Money Page (review every 4 months)', value: 'money-page' },
+        ],
+      },
+      description: 'Determines how frequently this post is reviewed for freshness. Auto-assigned from category if blank.',
+    },
+    {
+      name: 'refreshExcluded',
+      title: 'Exclude from Auto-Refresh',
+      type: 'boolean',
+      description: 'Set to true to permanently prevent this post from appearing in the refresh queue.',
+    },
+    {
+      name: 'lastRefreshedAt',
+      title: 'Last Refreshed At',
+      type: 'datetime',
+      description: 'When this post was last refreshed by the content refresh pipeline.',
+    },
+    {
+      name: 'refreshCount',
+      title: 'Refresh Count',
+      type: 'number',
+      initialValue: 0,
+      description: 'Total number of times this post has been refreshed.',
+    },
   ],
   preview: {
     select: { title: 'title', subtitle: 'publishedAt', media: 'coverImage' },
