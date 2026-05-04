@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getVAQueuePost } from '@/sanity/queries'
 import { publishPostToAll } from '@/lib/publish-service'
+import { getSanityWriteClient } from '@/lib/sanity-write'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -12,15 +13,36 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { postId, socialCopy } = body as { postId: string; socialCopy?: string }
+  const { postId, socialCopy, videoUrl, videoThumbnailUrl } = body as {
+    postId: string
+    socialCopy?: string
+    videoUrl?: string
+    videoThumbnailUrl?: string
+  }
 
   if (!postId) {
     return NextResponse.json({ error: 'postId is required' }, { status: 400 })
   }
 
+  // Save videoUrl to Sanity before fetching the post — covers the case where
+  // the video was uploaded after mark-ready so it's not in Sanity yet
+  if (videoUrl) {
+    const writeClient = getSanityWriteClient()
+    await writeClient.patch(postId).set({
+      videoUrl,
+      ...(videoThumbnailUrl ? { videoThumbnailUrl } : {}),
+    }).commit()
+  }
+
   const post = await getVAQueuePost(postId)
   if (!post) {
     return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+  }
+
+  // Override videoUrl in case the Sanity CDN hasn't propagated the write yet
+  if (videoUrl) {
+    post.videoUrl = videoUrl
+    if (videoThumbnailUrl) post.videoThumbnailUrl = videoThumbnailUrl
   }
 
   if (!['media_ready', 'publish_failed'].includes(post.workflowStatus ?? '')) {

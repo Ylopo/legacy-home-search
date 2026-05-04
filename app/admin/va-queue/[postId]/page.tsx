@@ -80,6 +80,7 @@ export default function VAPostPage() {
   const [heygenState, setHeygenState] = useState<HeyGenState>({ type: 'idle' })
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState<string | null>(null)
   const [uploadingVideoThumb, setUploadingVideoThumb] = useState(false)
+  const [videoUploadedAt, setVideoUploadedAt] = useState<Date | null>(null)
   const [videoPublishState, setVideoPublishState] = useState<
     | { phase: 'idle' }
     | { phase: 'publishing' }
@@ -247,6 +248,7 @@ export default function VAPostPage() {
       })
 
       setVideo({ type: 'ready', url: blob.url, filename: file.name })
+      setVideoUploadedAt(new Date())
     } catch (err) {
       setVideo({ type: 'none' })
       alert(err instanceof Error ? err.message : 'Video upload failed')
@@ -384,13 +386,47 @@ export default function VAPostPage() {
 
   // ── Publish ──────────────────────────────────────────────────────────────────
   async function handlePublish() {
-    setPublishState({ phase: 'publishing' })
+    setPublishState({ phase: 'saving' })
 
     try {
+      // If thumbnail hasn't been uploaded to Sanity yet, do it now
+      if (thumbnail.type === 'upload') {
+        const form = new FormData()
+        form.append('postId', postId)
+        form.append('socialCopy', socialCopy)
+        if (videoScript) form.append('videoScript', videoScript)
+        if (video.type === 'ready') form.append('videoUrl', video.url)
+        if (videoThumbnailUrl) form.append('videoThumbnailUrl', videoThumbnailUrl)
+        form.append('image', thumbnail.file)
+
+        const markRes = await fetch(`/api/content/mark-ready?secret=${encodeURIComponent(secret)}`, {
+          method: 'POST',
+          body: form,
+        })
+        if (!markRes.ok) {
+          const d = await markRes.json()
+          throw new Error(d.error ?? 'Failed to save thumbnail')
+        }
+        setThumbnail({ type: 'saved' })
+        if (video.type === 'ready') {
+          setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
+        }
+      }
+
+      setPublishState({ phase: 'publishing' })
+
+      // Always pass the current video URL — if it was uploaded after mark-ready it won't be in Sanity yet
+      const currentVideoUrl = video.type === 'ready' ? video.url : video.type === 'saved' ? video.url : undefined
+
       const res = await fetch(`/api/content/publish?secret=${encodeURIComponent(secret)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, socialCopy }),
+        body: JSON.stringify({
+          postId,
+          socialCopy,
+          ...(currentVideoUrl ? { videoUrl: currentVideoUrl } : {}),
+          ...(videoThumbnailUrl ? { videoThumbnailUrl } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Publish failed')
@@ -416,6 +452,8 @@ export default function VAPostPage() {
 
       setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
+      // Mark video as saved so the secondary "Publish Video" button doesn't appear
+      setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
 
       const resolved = { facebook: initFb.phase === 'idle', facebookReel: initReel.phase === 'idle', youtube: initYt.phase === 'idle', tiktok: initTt.phase === 'idle' }
       const statuses: Record<string, PlatformStatus> = { facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt }
@@ -486,8 +524,7 @@ export default function VAPostPage() {
 
   const isReady = post?.workflowStatus === 'media_ready'
   const isPublished = post?.workflowStatus === 'published'
-  const canMarkReady = thumbnail.type === 'upload'
-  const canPublish = (isReady || isPublished === false) && thumbnail.type === 'saved'
+  const canPublish = !isPublished && (thumbnail.type === 'saved' || thumbnail.type === 'upload')
   const publishInProgress = ['saving', 'publishing', 'polling'].includes(publishState.phase)
   const hasVideo = video.type === 'ready' || video.type === 'saved'
 
@@ -731,7 +768,7 @@ export default function VAPostPage() {
                   <span style={{ fontSize: 20 }}>🎥</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>
-                      {video.type === 'saved' ? 'Video saved' : 'Video ready'}
+                      {video.type === 'saved' ? 'Video saved' : `Video uploaded at ${videoUploadedAt?.toLocaleTimeString() ?? '—'}`}
                     </div>
                     <div style={{ fontSize: 11, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {video.type === 'ready' ? video.filename : video.url.split('/').pop()}
@@ -838,21 +875,6 @@ export default function VAPostPage() {
               </label>
             )}
 
-            {canMarkReady && (
-              <button
-                onClick={handleMarkReady}
-                disabled={publishInProgress}
-                style={{
-                  width: '100%', padding: '11px 0',
-                  background: '#166534', color: '#fff',
-                  border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
-                  cursor: publishInProgress ? 'wait' : 'pointer',
-                  opacity: publishInProgress ? 0.7 : 1,
-                }}
-              >
-                {publishState.phase === 'saving' ? 'Saving…' : '✓ Mark as Ready'}
-              </button>
-            )}
           </Card>
 
           {/* Publish panel */}
@@ -889,11 +911,6 @@ export default function VAPostPage() {
                 )}
                 {publishState.tiktok.phase !== 'idle' && (
                   <PlatformStatusRow icon="🎵" label="TikTok" status={publishState.tiktok} />
-                )}
-                {publishState.youtube.phase === 'idle' && hasVideo && (
-                  <div style={{ fontSize: 12, color: '#94a3b8', padding: '6px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
-                    ▶️ YouTube — no video URL saved. Did you click "Mark as Ready" after uploading the video?
-                  </div>
                 )}
               </div>
             )}
@@ -995,14 +1012,14 @@ export default function VAPostPage() {
               >
                 {publishState.phase === 'publishing' ? 'Publishing…' :
                  publishState.phase === 'polling'    ? 'Waiting for confirmation…' :
-                 publishState.phase === 'saving'     ? 'Saving thumbnail…' :
+                 publishState.phase === 'saving'     ? 'Preparing…' :
                  '🚀 Publish'}
               </button>
             )}
 
-            {!canPublish && !isPublished && thumbnail.type !== 'saved' && (
+            {!canPublish && !isPublished && (
               <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
-                Generate or upload a thumbnail, then click "Mark as Ready" first.
+                Upload a thumbnail to enable publishing.
               </p>
             )}
           </Card>

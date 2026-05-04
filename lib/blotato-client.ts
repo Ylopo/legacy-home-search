@@ -64,12 +64,16 @@ export type BlotatoPostStatus = {
 
 // ─── Publish ──────────────────────────────────────────────────────────────────
 
+// Facebook Graph API rejects posts with very long text payloads
+const FB_TEXT_LIMIT = 2000
+
 export async function publishToFacebook(
   text: string,
   imageUrl: string,
 ): Promise<BlotatoPublishResult> {
   const accountId = getFacebookAccountId()
   const pageId = getPageId()
+  const safeText = text.length > FB_TEXT_LIMIT ? text.slice(0, FB_TEXT_LIMIT - 3) + '...' : text
 
   const res = await fetch(`${BASE_URL}/posts`, {
     method: 'POST',
@@ -78,7 +82,7 @@ export async function publishToFacebook(
       post: {
         accountId,
         content: {
-          text,
+          text: safeText,
           mediaUrls: [imageUrl],
           platform: 'facebook',
         },
@@ -110,6 +114,7 @@ export async function publishToFacebookReel(
 ): Promise<BlotatoPublishResult> {
   const accountId = getFacebookAccountId()
   const pageId = getPageId()
+  const safeText = text.length > FB_TEXT_LIMIT ? text.slice(0, FB_TEXT_LIMIT - 3) + '...' : text
 
   const res = await fetch(`${BASE_URL}/posts`, {
     method: 'POST',
@@ -118,7 +123,7 @@ export async function publishToFacebookReel(
       post: {
         accountId,
         content: {
-          text,
+          text: safeText,
           mediaUrls: [videoUrl],
           platform: 'facebook',
         },
@@ -151,6 +156,7 @@ export async function publishToYouTube(
   thumbnailUrl?: string,
 ): Promise<BlotatoPublishResult> {
   const accountId = getYouTubeAccountId()
+  const safeTitle = title.length > 100 ? title.slice(0, 97) + '...' : title
 
   const res = await fetch(`${BASE_URL}/posts`, {
     method: 'POST',
@@ -165,7 +171,7 @@ export async function publishToYouTube(
         },
         target: {
           targetType: 'youtube',
-          title,
+          title: safeTitle,
           privacyStatus: 'public',
           shouldNotifySubscribers: true,
           ...(thumbnailUrl ? { thumbnailUrl } : {}),
