@@ -284,7 +284,6 @@ Mike Renick's Sarasota real estate blog into Hampton Roads equivalents for Barry
 **Source of truth files:**
 - \`BLOG_PIPELINE.md\` (this file) — writing rules, voice, structure, categories
 - \`LEARNINGS.md\` — evolving intelligence log, weekly patterns, Barry's approval signals, performance data
-- \`THUMBNAIL.md\` — thumbnail pipeline (runs automatically on approval, same as manual posts)
 
 **Key routes:**
 - \`/api/cron/renick-pipeline\` — Tuesday 8:05 AM PT cron
