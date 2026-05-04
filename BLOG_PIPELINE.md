@@ -375,6 +375,18 @@ Title, category, excerpt, and date. Gives context for building the thumbnail and
 - **🚀 Publish** → publishes to website + Facebook simultaneously (active when thumbnail is set)
 - **▶ Publish Video to YouTube & TikTok** → shown when post is already published AND a video has been uploaded
 
+### VA Tips & Troubleshooting
+
+**If Publish fails:** `workflowStatus` resets to `publish_failed` and the error is shown inline. Click Publish again to retry. If it keeps failing, check the Blotato connection or contact the admin.
+
+**If a generated thumbnail looks wrong:** Edit the prompt and click Generate again — you can regenerate as many times as needed before publishing. The more specific the prompt, the better the result. YouTube-style thumbnails work best: bold text, high contrast, simple composition.
+
+**If a post isn't in the queue:** It's either already published or hasn't been approved yet. Check with the admin.
+
+**Uploading an external thumbnail:** You can upload an image made in Canva, Photoshop, or any other tool instead of generating one — just use the Upload Image button.
+
+**Caption review:** The Facebook caption is auto-generated but always worth a quick read before publishing. The blog post URL is appended automatically.
+
 ---
 
 ## Phase 5: Publishing
