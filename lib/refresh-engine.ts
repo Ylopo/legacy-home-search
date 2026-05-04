@@ -15,6 +15,8 @@ import {
   type RefreshAction,
 } from './refresh-config'
 
+export type { RefreshTier, RefreshAction }
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PostSummary {
