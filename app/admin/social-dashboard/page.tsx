@@ -62,7 +62,8 @@ function StatCard({ label, value, sub, accent = '#1E3A5F' }: {
 function PlatformBar({ label, icon, count, total, color }: {
   label: string; icon: string; count: number; total: number; color: string
 }) {
-  const width = total ? `${Math.max(4, (count / total) * 100)}%` : '4%'
+  const pctVal = total ? (count / total) * 100 : 0
+  const width = `${Math.max(4, isNaN(pctVal) ? 0 : pctVal)}%`
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
       <span style={{ fontSize: 15, width: 20, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
@@ -209,8 +210,8 @@ export default function SocialDashboardHome() {
             <PlatformBar label="Facebook Reel"  icon="🎬" count={stats.withFacebookReel}  total={stats.total} color="#e1306c" />
             <PlatformBar label="YouTube"         icon="▶️" count={stats.withYouTube}      total={stats.total} color="#ff0000" />
             <PlatformBar label="TikTok"          icon="🎵" count={stats.withTikTok}       total={stats.total} color="#010101" />
-            <PlatformBar label="LinkedIn"        icon="💼" count={stats.withLinkedIn}     total={stats.total} color="#0a66c2" />
-            <PlatformBar label="X / Twitter"     icon="𝕏" count={stats.withTwitter}      total={stats.total} color="#000000" />
+            <PlatformBar label="LinkedIn"        icon="💼" count={stats.withLinkedIn ?? 0}     total={stats.total} color="#0a66c2" />
+            <PlatformBar label="X / Twitter"     icon="𝕏" count={stats.withTwitter ?? 0}      total={stats.total} color="#000000" />
           </div>
           <div>
             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
