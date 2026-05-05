@@ -64,5 +64,7 @@ export async function POST(request: Request) {
     facebookReel: result.facebookReel,
     youtube: result.youtube,
     tiktok: result.tiktok,
+    linkedin: result.linkedin,
+    twitter: result.twitter,
   })
 }

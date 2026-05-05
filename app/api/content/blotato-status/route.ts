@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const postSubmissionId = searchParams.get('postSubmissionId')
   const postId = searchParams.get('postId')
-  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'youtube' | 'tiktok'
+  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter'
 
   if (!postSubmissionId || !postId) {
     return NextResponse.json({ error: 'postSubmissionId and postId are required' }, { status: 400 })
@@ -24,9 +24,10 @@ export async function GET(request: Request) {
     if (status.status === 'published' || status.status === 'failed') {
       if (platform === 'facebook') {
         await updateBlotatoStatus(postId, status.status, status.postUrl)
-      } else {
+      } else if (platform === 'youtube' || platform === 'tiktok') {
         await updateVideoPublishStatus(postId, platform, status.status, status.postUrl)
       }
+      // facebookReel, linkedin, twitter: no dedicated URL fields yet — status is UI-only
     }
 
     return NextResponse.json(status)

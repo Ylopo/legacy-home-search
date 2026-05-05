@@ -39,6 +39,8 @@ type PublishState =
       facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
+      linkedin: PlatformStatus
+      twitter: PlatformStatus
     }
   | {
       phase: 'done'
@@ -46,6 +48,8 @@ type PublishState =
       facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
+      linkedin: PlatformStatus
+      twitter: PlatformStatus
     }
   | { phase: 'error'; message: string }
 
@@ -352,7 +356,7 @@ export default function VAPostPage() {
 
   // ── Poll a single platform ───────────────────────────────────────────────────
   function startPoll(
-    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok',
+    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter',
     submissionId: string,
     onUpdate: (status: PlatformStatus) => void,
   ) {
@@ -449,18 +453,39 @@ export default function VAPostPage() {
         : data.tiktok?.error
         ? { phase: 'error', message: data.tiktok.error }
         : { phase: 'idle' }
+      const initLi: PlatformStatus = data.linkedin?.postSubmissionId
+        ? { phase: 'polling', submissionId: data.linkedin.postSubmissionId }
+        : data.linkedin?.error
+        ? { phase: 'error', message: data.linkedin.error }
+        : { phase: 'idle' }
+      const initTw: PlatformStatus = data.twitter?.postSubmissionId
+        ? { phase: 'polling', submissionId: data.twitter.postSubmissionId }
+        : data.twitter?.error
+        ? { phase: 'error', message: data.twitter.error }
+        : { phase: 'idle' }
 
-      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt })
+      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
       // Mark video as saved so the secondary "Publish Video" button doesn't appear
       setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
 
-      const resolved = { facebook: initFb.phase === 'idle', facebookReel: initReel.phase === 'idle', youtube: initYt.phase === 'idle', tiktok: initTt.phase === 'idle' }
-      const statuses: Record<string, PlatformStatus> = { facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt }
+      const resolved = {
+        facebook: initFb.phase === 'idle',
+        facebookReel: initReel.phase === 'idle',
+        youtube: initYt.phase === 'idle',
+        tiktok: initTt.phase === 'idle',
+        linkedin: initLi.phase === 'idle',
+        twitter: initTw.phase === 'idle',
+      }
+      const statuses: Record<string, PlatformStatus> = {
+        facebook: initFb, facebookReel: initReel,
+        youtube: initYt, tiktok: initTt,
+        linkedin: initLi, twitter: initTw,
+      }
 
       function checkAllDone() {
-        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok) {
-          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok })
+        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter) {
+          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter })
         }
       }
 
@@ -506,6 +531,28 @@ export default function VAPostPage() {
         })
       } else {
         resolved.tiktok = true
+      }
+
+      if (data.linkedin?.postSubmissionId) {
+        startPoll('linkedin', data.linkedin.postSubmissionId, (s) => {
+          statuses.linkedin = s
+          resolved.linkedin = true
+          setPublishState(prev => prev.phase === 'polling' ? { ...prev, linkedin: s } : prev)
+          checkAllDone()
+        })
+      } else {
+        resolved.linkedin = true
+      }
+
+      if (data.twitter?.postSubmissionId) {
+        startPoll('twitter', data.twitter.postSubmissionId, (s) => {
+          statuses.twitter = s
+          resolved.twitter = true
+          setPublishState(prev => prev.phase === 'polling' ? { ...prev, twitter: s } : prev)
+          checkAllDone()
+        })
+      } else {
+        resolved.twitter = true
       }
 
       checkAllDone()
@@ -888,6 +935,8 @@ export default function VAPostPage() {
               {hasVideo && <li>Publish as a Facebook Reel</li>}
               {hasVideo && <li>Upload the video to YouTube</li>}
               {hasVideo && <li>Post the video to TikTok</li>}
+              <li>Post to LinkedIn {hasVideo ? '(video)' : '(image)'}</li>
+              <li>Post to X / Twitter {hasVideo ? '(video)' : '(image)'}</li>
             </ul>
 
             {/* Per-platform publish status */}
@@ -911,6 +960,12 @@ export default function VAPostPage() {
                 )}
                 {publishState.tiktok.phase !== 'idle' && (
                   <PlatformStatusRow icon="🎵" label="TikTok" status={publishState.tiktok} />
+                )}
+                {publishState.linkedin.phase !== 'idle' && (
+                  <PlatformStatusRow icon="💼" label="LinkedIn" status={publishState.linkedin} />
+                )}
+                {publishState.twitter.phase !== 'idle' && (
+                  <PlatformStatusRow icon="𝕏" label="X / Twitter" status={publishState.twitter} />
                 )}
               </div>
             )}
@@ -945,6 +1000,16 @@ export default function VAPostPage() {
                 {publishState.tiktok.phase === 'done' && publishState.tiktok.postUrl && (
                   <a href={publishState.tiktok.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
                     View TikTok post →
+                  </a>
+                )}
+                {publishState.linkedin.phase === 'done' && publishState.linkedin.postUrl && (
+                  <a href={publishState.linkedin.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
+                    View LinkedIn post →
+                  </a>
+                )}
+                {publishState.twitter.phase === 'done' && publishState.twitter.postUrl && (
+                  <a href={publishState.twitter.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
+                    View X post →
                   </a>
                 )}
               </div>
