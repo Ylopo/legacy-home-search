@@ -182,7 +182,16 @@ Runs daily at 6 AM PT. Searches Tavily for Hampton Roads real estate news, score
 'Hampton Roads community development news projects 2026'
 ```
 
-**Rotating query pool (42 topics, 5 slots/day cycle through):**
+**End-of-month event queries (days 22–31 only, pinned alongside the above):**
+```
+'Virginia Beach Norfolk Hampton Roads events festivals things to do next month'
+'Hampton Roads community events attractions activities upcoming month'
+'Virginia Beach Norfolk Chesapeake local events concerts festivals calendar'
+```
+
+During the last 10 days of each month these 3 queries are added automatically so the idea queue surfaces upcoming events and attractions for the following month — giving the audience a heads-up they can act on. See [End-of-Month Events Window](#end-of-month-events-window) below.
+
+**Rotating query pool (47 topics, 5 slots/day cycle through):**
 - Virginia Beach home prices / Chesapeake / Norfolk / Suffolk / Newport News / Hampton real estate
 - Hampton Roads rental market / investment returns / short-term rental regulations / Airbnb
 - Virginia HOA law / property tax / zoning / landlord-tenant law
@@ -214,8 +223,22 @@ Scrapes the Renick Blog Analytics dashboard via Tavily HTML extraction (no API).
 | Source Credibility | 10 | Government data, local publication, established real estate source |
 | Novelty | 10 | Not a repeat of recent content; new angle |
 | SEO Potential | 5 | Matches how people actually search |
+| **End-of-Month Event Boost** | **+15** | Applied to `community-spotlight` and `news` ideas on days 25–31; +8 on days 22–24. Automatically surfaces event/attractions content during the last week of every month. |
 
 **Pass threshold:** ≥55/100 stored in Redis. Ideas scoring ≥85 with `timeliness: 'breaking'` flag trigger an immediate urgent email to kiwi@ylopo.com, bypassing the weekly queue.
+
+### End-of-Month Events Window
+
+**What it is:** During the last 10 days of every month (days 22–31), the content pipeline automatically shifts priority toward community events, festivals, and local attractions happening in the upcoming month.
+
+**How it works:**
+1. **Extra research queries** — 3 event-focused Tavily searches are added to the daily pinned set (days 22–31 only), so the raw article pool includes upcoming-event content alongside normal real estate news
+2. **Scoring boost** — Ideas categorized as `community-spotlight` or `news` receive a deterministic bonus applied after all other dimensions: +15 points on days 25–31, +8 points on days 22–24
+3. **Events cron still runs** — On the 25th of each month, `/api/cron/events-research` runs a dedicated search for next-month events and writes posts directly to the VA queue — the scoring boost makes sure those ideas also win if they come through the daily research path instead
+
+**What operators see:** In the idea queue during the last week of each month, community/events ideas will appear at or near the top even when competing with real estate news. The operator picks them as normal — the scoring ensures they're surfaced, but the human still decides what gets written.
+
+**Categories that receive the boost:** `community-spotlight`, `news`
 
 ### Redis Idea Store
 

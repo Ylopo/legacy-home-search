@@ -95,6 +95,23 @@ export function computeNovelty(title: string, coveredTopics: Set<string>): numbe
   return 10                         // fresh topic
 }
 
+// ─── End-of-month event boost ─────────────────────────────────────────────────
+
+/**
+ * During the last week of each month (days 22–31), community and local news
+ * posts get a scoring boost so event/attractions content surfaces above other
+ * categories in the idea queue. Gives operators a heads-up for the upcoming
+ * month's events.
+ */
+export function computeEndOfMonthEventBoost(category: string, now: Date = new Date()): number {
+  const isEventCategory = category === 'community-spotlight' || category === 'news'
+  if (!isEventCategory) return 0
+  const day = now.getDate()
+  if (day >= 25) return 15
+  if (day >= 22) return 8
+  return 0
+}
+
 // ─── Final assembly ───────────────────────────────────────────────────────────
 
 export interface LLMDimensions {
@@ -110,6 +127,7 @@ export function assembleScore(
   sourceCredibility: number,
   novelty: number,
   sourceDomains: string[],
+  category?: string,
 ): IdeaScore {
   // Apply source bonus (caps individual dimension, not total)
   const bestBonus = sourceDomains.length > 0
@@ -123,8 +141,9 @@ export function assembleScore(
   const credScore        = Math.min(10, sourceCredibility)
   const noveltyScore     = Math.min(10, novelty)
   const seoScore         = Math.min(5,  llm.seoPotential)
+  const eventBoost       = category ? computeEndOfMonthEventBoost(category) : 0
 
-  const total = localRelevance + timelinessScore + formatFitScore + audienceScore + credScore + noveltyScore + seoScore
+  const total = localRelevance + timelinessScore + formatFitScore + audienceScore + credScore + noveltyScore + seoScore + eventBoost
 
   return {
     total,

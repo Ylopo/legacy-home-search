@@ -96,14 +96,27 @@ const ROTATING_QUERIES = [
   'Hampton Roads local news big story anniversary notable event',
 ]
 
+// Pinned during the last 10 days of every month (days 22–31) so the idea queue
+// surfaces upcoming events for the next month before operators need to schedule them.
+const END_OF_MONTH_EVENT_QUERIES = [
+  'Virginia Beach Norfolk Hampton Roads events festivals things to do next month',
+  'Hampton Roads community events attractions activities upcoming month',
+  'Virginia Beach Norfolk Chesapeake local events concerts festivals calendar',
+]
+
 function getQueriesForToday(): string[] {
+  const now = new Date()
   const dayOfYear = Math.floor(
-    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+    (Date.now() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000
   )
   const start = (dayOfYear * 5) % ROTATING_QUERIES.length
   const rotating: string[] = []
   for (let i = 0; i < 5; i++) {
     rotating.push(ROTATING_QUERIES[(start + i) % ROTATING_QUERIES.length])
+  }
+  const isEndOfMonthWindow = now.getDate() >= 22
+  if (isEndOfMonthWindow) {
+    return [...PINNED_QUERIES, ...END_OF_MONTH_EVENT_QUERIES, ...rotating]
   }
   return [...PINNED_QUERIES, ...rotating]
 }
@@ -342,6 +355,7 @@ ${articleList}`,
       sourceCredibility,
       novelty,
       [domain],
+      s.category,
     )
 
     // Drop below threshold
