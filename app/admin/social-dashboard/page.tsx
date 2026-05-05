@@ -17,6 +17,8 @@ type DashboardData = {
     withFacebookReel: number
     withYouTube: number
     withTikTok: number
+    withLinkedIn: number
+    withTwitter: number
     recentCount: number
     daysSinceLastPost: number | null
     gscConnected: boolean
@@ -207,6 +209,8 @@ export default function SocialDashboardHome() {
             <PlatformBar label="Facebook Reel"  icon="🎬" count={stats.withFacebookReel}  total={stats.total} color="#e1306c" />
             <PlatformBar label="YouTube"         icon="▶️" count={stats.withYouTube}      total={stats.total} color="#ff0000" />
             <PlatformBar label="TikTok"          icon="🎵" count={stats.withTikTok}       total={stats.total} color="#010101" />
+            <PlatformBar label="LinkedIn"        icon="💼" count={stats.withLinkedIn}     total={stats.total} color="#0a66c2" />
+            <PlatformBar label="X / Twitter"     icon="𝕏" count={stats.withTwitter}      total={stats.total} color="#000000" />
           </div>
           <div>
             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -216,6 +220,8 @@ export default function SocialDashboardHome() {
               { label: 'Facebook analytics',  path: '/admin/social-dashboard/facebook',      count: stats.withFacebook,     color: '#1877f2' },
               { label: 'YouTube analytics',    path: '/admin/social-dashboard/youtube',       count: stats.withYouTube,      color: '#ff0000' },
               { label: 'TikTok analytics',     path: '/admin/social-dashboard/tiktok',        count: stats.withTikTok,       color: '#000' },
+              { label: 'LinkedIn analytics',   path: '/admin/social-dashboard/linkedin',      count: stats.withLinkedIn,     color: '#0a66c2' },
+              { label: 'X / Twitter',          path: '/admin/social-dashboard/twitter',       count: stats.withTwitter,      color: '#000' },
               { label: 'Google Search',        path: '/admin/social-dashboard/google-search', count: gsc?.clicks ?? null,    color: '#2563eb' },
             ].map(({ label, path, count, color }) => (
               <a key={label}

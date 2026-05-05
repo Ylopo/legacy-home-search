@@ -80,6 +80,8 @@ export async function GET(request: Request) {
       withFacebookReel: posts.filter(p => p.hasFacebookReel).length,
       withYouTube:      posts.filter(p => p.hasYouTube).length,
       withTikTok:       posts.filter(p => p.hasTikTok).length,
+      withLinkedIn:     posts.filter(p => p.hasLinkedIn).length,
+      withTwitter:      posts.filter(p => p.hasTwitter).length,
       recentCount:      recentPosts.length,
       daysSinceLastPost,
       gscConnected:      !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,

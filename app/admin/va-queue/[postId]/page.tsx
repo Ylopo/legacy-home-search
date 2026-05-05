@@ -1017,6 +1017,35 @@ export default function VAPostPage() {
 
             {isPublished ? (
               <div>
+                {/* Persistent platform status — shown from Sanity data on reload */}
+                {publishState.phase === 'idle' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                    <PlatformStatusRow icon="🌐" label="Website" status={{ phase: 'done' }} />
+                    <PlatformStatusRow
+                      icon="👥" label="Facebook"
+                      status={post.blotatoPublishStatus === 'published' || post.facebookPostUrl
+                        ? { phase: 'done', postUrl: post.facebookPostUrl }
+                        : post.blotatoPostSubmissionId
+                        ? { phase: 'done' }
+                        : { phase: 'idle' }}
+                    />
+                    {post.facebookReelSubmissionId && (
+                      <PlatformStatusRow icon="🎬" label="Facebook Reel" status={{ phase: 'done' }} />
+                    )}
+                    {post.youtubePostSubmissionId && (
+                      <PlatformStatusRow icon="▶️" label="YouTube" status={{ phase: 'done', postUrl: post.youtubePostUrl }} />
+                    )}
+                    {post.tiktokPostSubmissionId && (
+                      <PlatformStatusRow icon="🎵" label="TikTok" status={{ phase: 'done', postUrl: post.tiktokPostUrl }} />
+                    )}
+                    {post.linkedinPostSubmissionId && (
+                      <PlatformStatusRow icon="💼" label="LinkedIn" status={{ phase: 'done' }} />
+                    )}
+                    {post.twitterPostSubmissionId && (
+                      <PlatformStatusRow icon="𝕏" label="X / Twitter" status={{ phase: 'done' }} />
+                    )}
+                  </div>
+                )}
                 <div style={{ fontSize: 13, color: '#166534', fontWeight: 600, padding: '8px 0', textAlign: 'center', marginBottom: 8 }}>
                   ✓ Already published
                 </div>

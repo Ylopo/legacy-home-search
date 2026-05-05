@@ -270,7 +270,8 @@ export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null>
       workflowStatus, blotatoPostSubmissionId, blotatoPublishStatus,
       blotatoPublishedAt, facebookPostUrl, socialCopy, videoScript,
       videoUrl, videoThumbnailUrl, youtubePostSubmissionId, tiktokPostSubmissionId,
-      youtubePostUrl, tiktokPostUrl
+      youtubePostUrl, tiktokPostUrl, facebookReelSubmissionId,
+      linkedinPostSubmissionId, twitterPostSubmissionId
     }`,
     { id },
     { next: { revalidate: 0 } }
