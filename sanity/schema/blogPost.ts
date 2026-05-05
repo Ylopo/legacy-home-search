@@ -149,6 +149,18 @@ export default {
       description: 'URL of the published TikTok video (returned by Blotato)',
     },
     {
+      name: 'linkedinPostSubmissionId',
+      title: 'LinkedIn Submission ID',
+      type: 'string',
+      description: 'Returned by Blotato after LinkedIn post is submitted',
+    },
+    {
+      name: 'twitterPostSubmissionId',
+      title: 'X (Twitter) Submission ID',
+      type: 'string',
+      description: 'Returned by Blotato after X/Twitter post is submitted',
+    },
+    {
       name: 'coverImage',
       title: 'Cover Image',
       type: 'image',

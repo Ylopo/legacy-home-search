@@ -8,89 +8,148 @@
 import Anthropic from '@anthropic-ai/sdk'
 import imageUrlBuilder from '@sanity/image-url'
 import { createClient } from '@sanity/client'
-import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok } from './blotato-client'
+import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX } from './blotato-client'
 import { markPublishing, markPublished, markPublishFailed, patchSocialSubmission } from './content-workflow'
 import { getSanityWriteClient } from './sanity-write'
 import type { SanityBlogPost } from '../sanity/queries'
 
-// ─── TikTok hashtags ──────────────────────────────────────────────────────────
+// ─── Per-platform hashtags ────────────────────────────────────────────────────
 
-const BASE_HASHTAGS = [
+const TIKTOK_BASE_HASHTAGS = [
   '#hamptonroads', '#virginiabeach', '#realestate', '#realtor',
   '#norfolk', '#chesapeake', '#suffolk', '#portsmouth',
   '#barryjenkinsrealtor', '#legacyhometeam',
 ]
 
-const CATEGORY_HASHTAGS: Record<string, string[]> = {
+const TIKTOK_CATEGORY_HASHTAGS: Record<string, string[]> = {
   'market-update':       ['#realestatemarket', '#housingmarket', '#marketupdate', '#homeprices'],
   'buying-tips':         ['#homebuyer', '#firsttimehomebuyer', '#buyingahome', '#homebuyingtips'],
   'selling-tips':        ['#homeseller', '#sellingyourhome', '#listingagent', '#homesellingtips'],
   'community-spotlight': ['#hamptonroadsliving', '#virginiabeachliving', '#movingtovirginia'],
   'investment':          ['#realestateinvesting', '#investmentproperty', '#rentalincome'],
   'news':                ['#realestatenews', '#housingmarket', '#mortgagerates'],
+  'cost-breakdown':      ['#closingcosts', '#homebuying', '#realestatetips'],
+  'flood-and-risk':      ['#floodinsurance', '#coastalliving', '#hamptonroads'],
+}
+
+const LINKEDIN_CATEGORY_HASHTAGS: Record<string, string[]> = {
+  'market-update':       ['#HousingMarket', '#RealEstateMarket', '#MarketUpdate'],
+  'buying-tips':         ['#HomeBuying', '#HomeBuyer', '#FirstTimeHomeBuyer'],
+  'selling-tips':        ['#HomeSelling', '#ListingAgent', '#HomeValue'],
+  'community-spotlight': ['#VirginiaBeachLiving', '#HamptonRoadsLiving', '#CommunityLife'],
+  'investment':          ['#RealEstateInvesting', '#InvestmentProperty', '#PassiveIncome'],
+  'news':                ['#HousingNews', '#MortgageRates', '#RealEstateNews'],
+  'cost-breakdown':      ['#ClosingCosts', '#HomeBuyingTips', '#RealEstateFinance'],
+  'flood-and-risk':      ['#FloodInsurance', '#CoastalRealEstate', '#RiskManagement'],
+}
+
+const X_CATEGORY_HASHTAGS: Record<string, string> = {
+  'market-update':       '#realestate #housingmarket',
+  'buying-tips':         '#homebuying #realestate',
+  'selling-tips':        '#homeseller #realestate',
+  'community-spotlight': '#virginiabeach #hamptonroads',
+  'investment':          '#realestate #investing',
+  'news':                '#realestate #housingmarket',
+  'cost-breakdown':      '#homebuying #closingcosts',
+  'flood-and-risk':      '#realestate #floodinsurance',
 }
 
 export function buildTikTokCaption(copy: string, category: string | undefined, articleUrl: string): string {
-  const categoryTags = CATEGORY_HASHTAGS[category ?? ''] ?? []
-  const allTags = [...BASE_HASHTAGS, ...categoryTags]
+  const categoryTags = TIKTOK_CATEGORY_HASHTAGS[category ?? ''] ?? []
+  const allTags = [...TIKTOK_BASE_HASHTAGS, ...categoryTags]
   return `${copy}\n\n${articleUrl}\n\n${allTags.join(' ')}`
 }
 
-// ─── Social copy generation ───────────────────────────────────────────────────
+function buildLinkedInCaption(copy: string, category: string | undefined, articleUrl: string): string {
+  const categoryTags = LINKEDIN_CATEGORY_HASHTAGS[category ?? ''] ?? []
+  const baseTags = ['#RealEstate', '#HamptonRoads', '#VirginiaBeach']
+  const allTags = [...baseTags, ...categoryTags]
+  return `${copy}\n\n${articleUrl}\n\n${allTags.join(' ')}`
+}
 
-export async function generateSocialCopy(post: Pick<SanityBlogPost, 'title' | 'excerpt' | 'category'>): Promise<string> {
+function buildXCaption(copy: string, category: string | undefined, articleUrl: string): string {
+  const tags = X_CATEGORY_HASHTAGS[category ?? ''] ?? '#realestate'
+  // X: keep total under 280 chars — copy + url (23) + tags
+  const suffix = `\n\n${articleUrl} ${tags}`
+  const maxCopy = 280 - suffix.length - 3
+  const safeCopy = copy.length > maxCopy ? copy.slice(0, maxCopy) + '...' : copy
+  return `${safeCopy}${suffix}`
+}
+
+// ─── Platform captions ────────────────────────────────────────────────────────
+
+export interface PlatformCaptions {
+  facebook: string
+  linkedin: string
+  twitter: string
+  tiktok: string
+  youtube: string
+}
+
+export async function generatePlatformCaptions(
+  post: Pick<SanityBlogPost, 'title' | 'excerpt' | 'category'>,
+): Promise<PlatformCaptions> {
+  const categoryLabels: Record<string, string> = {
+    'market-update': 'market update', 'buying-tips': 'home buying tips',
+    'selling-tips': 'home selling tips', 'community-spotlight': 'community spotlight',
+    'investment': 'real estate investment', 'news': 'real estate news',
+    'cost-breakdown': 'cost breakdown', 'flood-and-risk': 'flood and risk',
+  }
+
+  const fallback: PlatformCaptions = {
+    facebook: `I've been watching the Hampton Roads market for over 20 years — ${post.title.toLowerCase()} is something every local homeowner and buyer should understand right now.`,
+    linkedin: `New insights for Hampton Roads real estate clients: ${post.title}. Read the full analysis on the Legacy Home Search blog.`,
+    twitter: `${post.title} — what this means for Hampton Roads buyers and sellers.`,
+    tiktok: post.excerpt ?? post.title,
+    youtube: post.excerpt ?? `${post.title} — insights from Barry Jenkins at Legacy Home Team in Virginia Beach.`,
+  }
+
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const categoryLabels: Record<string, string> = {
-      'market-update': 'market update',
-      'buying-tips': 'home buying tips',
-      'selling-tips': 'home selling tips',
-      'community-spotlight': 'community spotlight',
-      'investment': 'real estate investment',
-      'news': 'real estate news',
-    }
-
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+      max_tokens: 800,
       messages: [{
         role: 'user',
-        content: `Write a 2-3 sentence Facebook post caption for a real estate blog article written by Barry Jenkins, a local agent in Hampton Roads, Virginia Beach.
-
-The caption is a teaser — it should make someone stop scrolling and want to read the article. Lead with the most compelling angle of the story, not with Barry's credentials.
-
-HOOK VARIETY — rotate between these approaches based on what fits the article best. Never use the same opener twice:
-- A surprising or counterintuitive fact from the topic ("Most people assume X — but the data says something different.")
-- A question that hits a real concern buyers or sellers have ("Thinking about selling this spring? There's one number you need to see first.")
-- A consequence or stakes opener ("What's happening to mortgage rates right now could change your timeline.")
-- A local-specific hook that makes Hampton Roads residents feel seen ("If you own a home in Virginia Beach, this one's worth reading.")
-- A myth-busting opener ("There's a lot of noise about the housing market right now. Here's what's actually true.")
-- A direct-value opener ("Here's what closing costs actually look like for buyers in Hampton Roads — broken down clearly.")
-- A client-story angle ("A buyer asked me this week if now is a good time. My honest answer is in this article.")
-
-Rules:
-- Write in first person as Barry, but don't open with "I've been in real estate for X years" or any version of his tenure
-- Barry can reference his experience or local knowledge mid-caption or at the end — just not as the hook
-- Conversational, warm, direct. Feels like a trusted neighbor sharing something useful, not a pitch
-- End with a natural call to action that flows from the content
-- No hashtags. Minimal emojis (only if it genuinely fits the tone)
-- 2-3 sentences max
+        content: `Write 5 unique social media captions for the same Hampton Roads real estate blog post by Barry Jenkins. Same core message, different delivery for each platform.
 
 Article:
 Title: ${post.title}
-Category: ${categoryLabels[post.category ?? ''] ?? post.category}
+Category: ${categoryLabels[post.category ?? ''] ?? post.category ?? 'real estate'}
 Excerpt: ${post.excerpt ?? ''}
 
-Return ONLY the caption text, nothing else.`,
+Return a JSON object with EXACTLY these 5 fields. No markdown fences.
+
+{
+  "facebook": "2–3 sentences. First person as Barry. Teaser that makes someone stop scrolling. Pick ONE hook: surprising fact, question, local angle, myth-busting, direct value, or client story. Conversational and warm. No hashtags. Natural CTA.",
+  "linkedin": "2–3 professional sentences. Informative, industry-relevant. Barry's expertise + Hampton Roads market context. No hashtags (those are appended separately). Under 300 chars.",
+  "twitter": "1 punchy sentence under 180 characters. Direct and surprising. No hashtags (appended separately). Create genuine curiosity.",
+  "tiktok": "1–2 short casual sentences. Hook-first. Very conversational. No hashtags (appended separately).",
+  "youtube": "2–3 sentences describing what viewers will learn. Informative. Mention Hampton Roads specifically. No hashtags."
+}`,
       }],
     })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
-    return text
+    const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+    const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim())
+
+    return {
+      facebook: parsed.facebook || fallback.facebook,
+      linkedin: parsed.linkedin || fallback.linkedin,
+      twitter:  parsed.twitter  || fallback.twitter,
+      tiktok:   parsed.tiktok   || fallback.tiktok,
+      youtube:  parsed.youtube  || fallback.youtube,
+    }
   } catch {
-    return `I've been watching this market for over 20 years, and ${post.title.toLowerCase()} is something every Hampton Roads homeowner and buyer should understand right now. Read the full breakdown on the blog.`
+    return fallback
   }
+}
+
+// Keep for backward compatibility (used in generate-caption API route)
+export async function generateSocialCopy(post: Pick<SanityBlogPost, 'title' | 'excerpt' | 'category'>): Promise<string> {
+  const caps = await generatePlatformCaptions(post)
+  return caps.facebook
 }
 
 // ─── Image URL resolver ───────────────────────────────────────────────────────
@@ -120,6 +179,8 @@ export type PublishResult =
       facebookReel: PlatformResult
       youtube: PlatformResult
       tiktok: PlatformResult
+      linkedin: PlatformResult
+      twitter: PlatformResult
     }
   | { ok: false; error: string }
 
@@ -131,21 +192,62 @@ export async function publishSocialOnly(
 ): Promise<PublishResult> {
   const postId = post._id
   try {
-    const copy = socialCopy?.trim() || (await generateSocialCopy(post))
+    const captions = socialCopy
+      ? {
+          facebook: socialCopy,
+          linkedin: socialCopy,
+          twitter: socialCopy,
+          tiktok: socialCopy,
+          youtube: socialCopy,
+        }
+      : await generatePlatformCaptions(post)
+
     const imageUrl = getSanityImageUrl(post.coverImage)
     if (!imageUrl) {
-      return { ok: false, error: 'No cover image — cannot post to Facebook without an image.' }
+      return { ok: false, error: 'No cover image — cannot post without an image.' }
     }
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim())
       ? process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/+$/, '')
       : 'https://www.legacyhometeamlpt.com'
-    const fullCopy = `${copy}\n\n${appUrl}/blog/${post.slug}`
+    const articleUrl = `${appUrl}/blog/${post.slug}`
 
-    const { postSubmissionId } = await publishToFacebook(fullCopy, imageUrl)
-    await patchSocialSubmission(postId, postSubmissionId, copy)
+    const fbCopy     = `${captions.facebook}\n\n${articleUrl}`
+    const liCopy     = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
+    const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
 
-    return { ok: true, facebook: { postSubmissionId }, facebookReel: null, youtube: null, tiktok: null }
+    const [fbRes, liRes, twRes] = await Promise.allSettled([
+      publishToFacebook(fbCopy, imageUrl),
+      publishToLinkedIn(liCopy, imageUrl),
+      publishToX(twitterCopy, imageUrl),
+    ])
+
+    const fbResult: PlatformResult = fbRes.status === 'fulfilled'
+      ? { postSubmissionId: fbRes.value.postSubmissionId }
+      : { error: fbRes.reason instanceof Error ? fbRes.reason.message : 'Facebook publish failed' }
+
+    const liResult: PlatformResult = liRes.status === 'fulfilled'
+      ? { postSubmissionId: liRes.value.postSubmissionId }
+      : { error: liRes.reason instanceof Error ? liRes.reason.message : 'LinkedIn publish failed' }
+
+    const twResult: PlatformResult = twRes.status === 'fulfilled'
+      ? { postSubmissionId: twRes.value.postSubmissionId }
+      : { error: twRes.reason instanceof Error ? twRes.reason.message : 'X publish failed' }
+
+    // Use Facebook submission ID as the primary one for patchSocialSubmission
+    const primaryId = fbResult && 'postSubmissionId' in fbResult ? fbResult.postSubmissionId : ''
+    await patchSocialSubmission(postId, primaryId, captions.facebook)
+
+    // Patch LinkedIn and X submission IDs separately
+    const writeClient = getSanityWriteClient()
+    const extraPatch: Record<string, string> = {}
+    if (liResult && 'postSubmissionId' in liResult) extraPatch.linkedinPostSubmissionId = liResult.postSubmissionId
+    if (twResult && 'postSubmissionId' in twResult) extraPatch.twitterPostSubmissionId = twResult.postSubmissionId
+    if (Object.keys(extraPatch).length > 0) {
+      await writeClient.patch(postId).set(extraPatch).commit()
+    }
+
+    return { ok: true, facebook: fbResult, facebookReel: null, youtube: null, tiktok: null, linkedin: liResult, twitter: twResult }
   } catch (err) {
     console.error('[publish-service] Social-only publish error:', err instanceof Error ? err.message : err)
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown publish error' }
@@ -153,6 +255,29 @@ export async function publishSocialOnly(
 }
 
 // ─── Full publish (website + all social platforms) ────────────────────────────
+
+async function tryVideoThenImage(
+  publishFn: (text: string, url: string) => Promise<{ postSubmissionId: string }>,
+  text: string,
+  videoUrl: string,
+  imageUrl: string,
+  platformLabel: string,
+): Promise<PlatformResult> {
+  try {
+    const r = await publishFn(text, videoUrl)
+    return { postSubmissionId: r.postSubmissionId }
+  } catch (videoErr) {
+    console.warn(`[publish-service] ${platformLabel} video rejected, falling back to image:`, videoErr instanceof Error ? videoErr.message : videoErr)
+    try {
+      const r = await publishFn(text, imageUrl)
+      return { postSubmissionId: r.postSubmissionId }
+    } catch (imgErr) {
+      const msg = imgErr instanceof Error ? imgErr.message : `${platformLabel} publish failed`
+      console.error(`[publish-service] ${platformLabel} fallback image also failed:`, msg)
+      return { error: msg }
+    }
+  }
+}
 
 export async function publishPostToAll(
   post: SanityBlogPost,
@@ -163,73 +288,92 @@ export async function publishPostToAll(
   try {
     await markPublishing(postId)
 
-    const copy = socialCopy?.trim() || (await generateSocialCopy(post))
+    const captions = socialCopy
+      ? { facebook: socialCopy, linkedin: socialCopy, twitter: socialCopy, tiktok: socialCopy, youtube: socialCopy }
+      : await generatePlatformCaptions(post)
 
     const imageUrl = getSanityImageUrl(post.coverImage)
     if (!imageUrl) {
       await markPublishFailed(postId)
-      return { ok: false, error: 'No cover image set — cannot publish to Facebook without an image.' }
+      return { ok: false, error: 'No cover image set — cannot publish without an image.' }
     }
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.trim())
       ? process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/+$/, '')
       : 'https://www.legacyhometeamlpt.com'
-    const fullCopy = `${copy}\n\n${appUrl}/blog/${post.slug}`
+    const articleUrl = `${appUrl}/blog/${post.slug}`
 
-    // Always publish to Facebook
-    const fbResult = await publishToFacebook(fullCopy, imageUrl)
+    const fbCopy      = `${captions.facebook}\n\n${articleUrl}`
+    const liCopy      = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
+    const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
 
-    // Publish to Facebook Reel + YouTube + TikTok only if a video has been uploaded
+    // Always publish to Facebook (image post)
+    const fbResult = await publishToFacebook(fbCopy, imageUrl)
+
     let reelResult: PlatformResult = null
     let ytResult: PlatformResult = null
     let ttResult: PlatformResult = null
+    let liResult: PlatformResult = null
+    let twResult: PlatformResult = null
 
     if (post.videoUrl) {
-      const videoDescription = `${copy}\n\n${appUrl}/blog/${post.slug}`
-      const tiktokCaption = buildTikTokCaption(copy, post.category, `${appUrl}/blog/${post.slug}`)
+      const videoDescription  = `${captions.youtube}\n\n${articleUrl}`
+      const tiktokCaption     = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
 
-      const [reelOutcome, ytOutcome, ttOutcome] = await Promise.allSettled([
-        publishToFacebookReel(fullCopy, post.videoUrl),
+      const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome] = await Promise.allSettled([
+        publishToFacebookReel(fbCopy, post.videoUrl),
         publishToYouTube(post.title, videoDescription, post.videoUrl, post.videoThumbnailUrl),
         publishToTikTok(tiktokCaption, post.videoUrl),
+        // LinkedIn and X: try video, fall back to image on rejection
+        tryVideoThenImage(publishToLinkedIn, liCopy, post.videoUrl, imageUrl, 'LinkedIn'),
+        tryVideoThenImage(publishToX, twitterCopy, post.videoUrl, imageUrl, 'X'),
       ])
 
-      if (reelOutcome.status === 'fulfilled') {
-        reelResult = { postSubmissionId: reelOutcome.value.postSubmissionId }
-      } else {
-        const msg = reelOutcome.reason instanceof Error ? reelOutcome.reason.message : 'Facebook Reel publish failed'
-        console.error('[publish-service] Facebook Reel publish error:', msg)
-        reelResult = { error: msg }
-      }
+      reelResult = reelOutcome.status === 'fulfilled'
+        ? { postSubmissionId: reelOutcome.value.postSubmissionId }
+        : { error: reelOutcome.reason instanceof Error ? reelOutcome.reason.message : 'Facebook Reel publish failed' }
+      if ('error' in (reelResult ?? {})) console.error('[publish-service] Facebook Reel error:', (reelResult as { error: string }).error)
 
-      if (ytOutcome.status === 'fulfilled') {
-        ytResult = { postSubmissionId: ytOutcome.value.postSubmissionId }
-      } else {
-        const msg = ytOutcome.reason instanceof Error ? ytOutcome.reason.message : 'YouTube publish failed'
-        console.error('[publish-service] YouTube publish error:', msg)
-        ytResult = { error: msg }
-      }
+      ytResult = ytOutcome.status === 'fulfilled'
+        ? { postSubmissionId: ytOutcome.value.postSubmissionId }
+        : { error: ytOutcome.reason instanceof Error ? ytOutcome.reason.message : 'YouTube publish failed' }
+      if ('error' in (ytResult ?? {})) console.error('[publish-service] YouTube error:', (ytResult as { error: string }).error)
 
-      if (ttOutcome.status === 'fulfilled') {
-        ttResult = { postSubmissionId: ttOutcome.value.postSubmissionId }
-      } else {
-        const msg = ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok publish failed'
-        console.error('[publish-service] TikTok publish error:', msg)
-        ttResult = { error: msg }
-      }
+      ttResult = ttOutcome.status === 'fulfilled'
+        ? { postSubmissionId: ttOutcome.value.postSubmissionId }
+        : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok publish failed' }
+      if ('error' in (ttResult ?? {})) console.error('[publish-service] TikTok error:', (ttResult as { error: string }).error)
+
+      // tryVideoThenImage returns PlatformResult directly, allSettled wraps the whole thing
+      liResult = liOutcome.status === 'fulfilled' ? liOutcome.value : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn publish failed' }
+      twResult = twOutcome.status === 'fulfilled' ? twOutcome.value : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
+    } else {
+      // No video — LinkedIn and X get image posts
+      const [liOutcome, twOutcome] = await Promise.allSettled([
+        publishToLinkedIn(liCopy, imageUrl),
+        publishToX(twitterCopy, imageUrl),
+      ])
+      liResult = liOutcome.status === 'fulfilled'
+        ? { postSubmissionId: liOutcome.value.postSubmissionId }
+        : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn publish failed' }
+      twResult = twOutcome.status === 'fulfilled'
+        ? { postSubmissionId: twOutcome.value.postSubmissionId }
+        : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
     }
 
     await markPublished(
       postId,
       fbResult.postSubmissionId,
-      'postSubmissionId' in (ytResult ?? {}) ? (ytResult as { postSubmissionId: string }).postSubmissionId : undefined,
-      'postSubmissionId' in (ttResult ?? {}) ? (ttResult as { postSubmissionId: string }).postSubmissionId : undefined,
-      'postSubmissionId' in (reelResult ?? {}) ? (reelResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      ytResult && 'postSubmissionId' in ytResult ? (ytResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      ttResult && 'postSubmissionId' in ttResult ? (ttResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      reelResult && 'postSubmissionId' in reelResult ? (reelResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      liResult && 'postSubmissionId' in liResult ? (liResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      twResult && 'postSubmissionId' in twResult ? (twResult as { postSubmissionId: string }).postSubmissionId : undefined,
     )
 
     if (!socialCopy) {
       const writeClient = getSanityWriteClient()
-      await writeClient.patch(postId).set({ socialCopy: copy }).commit()
+      await writeClient.patch(postId).set({ socialCopy: captions.facebook }).commit()
     }
 
     return {
@@ -238,13 +382,12 @@ export async function publishPostToAll(
       facebookReel: reelResult,
       youtube: ytResult,
       tiktok: ttResult,
+      linkedin: liResult,
+      twitter: twResult,
     }
   } catch (err) {
     console.error('[publish-service] Publish error:', err instanceof Error ? err.message : err)
     try { await markPublishFailed(postId) } catch { /* ignore secondary error */ }
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : 'Unknown publish error',
-    }
+    return { ok: false, error: err instanceof Error ? err.message : 'Unknown publish error' }
   }
 }

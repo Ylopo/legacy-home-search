@@ -176,6 +176,8 @@ export type SanityBlogPost = {
   facebookReelSubmissionId?: string
   youtubePostUrl?: string
   tiktokPostUrl?: string
+  linkedinPostSubmissionId?: string
+  twitterPostSubmissionId?: string
 }
 
 export type WorkflowStatus =
@@ -285,6 +287,8 @@ export type SocialDashboardPost = {
   hasFacebookReel: boolean
   hasYouTube: boolean
   hasTikTok: boolean
+  hasLinkedIn: boolean
+  hasTwitter: boolean
   facebookPostUrl?: string
 }
 
@@ -296,6 +300,8 @@ export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> 
       facebookReelSubmissionId,
       youtubePostSubmissionId,
       tiktokPostSubmissionId,
+      linkedinPostSubmissionId,
+      twitterPostSubmissionId,
     }`,
     {},
     { next: { revalidate: 0 } }
@@ -310,6 +316,8 @@ export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> 
     hasFacebookReel: !!p.facebookReelSubmissionId,
     hasYouTube: !!p.youtubePostSubmissionId,
     hasTikTok: !!p.tiktokPostSubmissionId,
+    hasLinkedIn: !!p.linkedinPostSubmissionId,
+    hasTwitter: !!p.twitterPostSubmissionId,
     facebookPostUrl: p.facebookPostUrl,
   }))
 }

@@ -12,6 +12,8 @@
  *   BLOTATO_FACEBOOK_ACCOUNT_ID    — Blotato account ID for Facebook (29353)
  *   BLOTATO_YOUTUBE_ACCOUNT_ID     — Blotato account ID for YouTube (34912)
  *   BLOTATO_TIKTOK_ACCOUNT_ID      — Blotato account ID for TikTok (39905)
+ *   BLOTATO_LINKEDIN_ACCOUNT_ID    — Blotato account ID for LinkedIn (20512)
+ *   BLOTATO_X_ACCOUNT_ID           — Blotato account ID for X/Twitter (17792)
  *   BLOTATO_FACEBOOK_PAGE_ID       — Facebook Page ID (1101893253009079)
  */
 
@@ -42,6 +44,14 @@ function getTikTokAccountId(): string {
   const id = process.env.BLOTATO_TIKTOK_ACCOUNT_ID
   if (!id) throw new Error('BLOTATO_TIKTOK_ACCOUNT_ID env var is not set')
   return id
+}
+
+function getLinkedInAccountId(): string {
+  return process.env.BLOTATO_LINKEDIN_ACCOUNT_ID ?? '20512'
+}
+
+function getXAccountId(): string {
+  return process.env.BLOTATO_X_ACCOUNT_ID ?? '17792'
 }
 
 function getPageId(): string {
@@ -237,6 +247,85 @@ export async function publishToTikTok(
     throw new Error(`Blotato TikTok response missing postSubmissionId: ${JSON.stringify(data)}`)
   }
 
+  return { postSubmissionId: String(data.postSubmissionId) }
+}
+
+// LinkedIn text limit (3000 chars visible before truncation)
+const LI_TEXT_LIMIT = 3000
+// X/Twitter character limit — leave room for auto-appended link (~23 chars)
+const X_TEXT_LIMIT = 257
+
+export async function publishToLinkedIn(
+  text: string,
+  mediaUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getLinkedInAccountId()
+  const safeText = text.length > LI_TEXT_LIMIT ? text.slice(0, LI_TEXT_LIMIT - 3) + '...' : text
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text: safeText,
+          mediaUrls: [mediaUrl],
+          platform: 'linkedin',
+        },
+        target: {
+          targetType: 'linkedin',
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato LinkedIn publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato LinkedIn response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
+  return { postSubmissionId: String(data.postSubmissionId) }
+}
+
+export async function publishToX(
+  text: string,
+  mediaUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getXAccountId()
+  const safeText = text.length > X_TEXT_LIMIT ? text.slice(0, X_TEXT_LIMIT - 3) + '...' : text
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text: safeText,
+          mediaUrls: [mediaUrl],
+          platform: 'twitter',
+        },
+        target: {
+          targetType: 'twitter',
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato X publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato X response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
   return { postSubmissionId: String(data.postSubmissionId) }
 }
 

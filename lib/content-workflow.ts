@@ -58,6 +58,8 @@ export async function markPublished(
   youtubePostSubmissionId?: string,
   tiktokPostSubmissionId?: string,
   facebookReelSubmissionId?: string,
+  linkedinPostSubmissionId?: string,
+  twitterPostSubmissionId?: string,
 ): Promise<void> {
   const client = getSanityWriteClient()
   const patch: Record<string, unknown> = {
@@ -69,6 +71,8 @@ export async function markPublished(
   if (youtubePostSubmissionId) patch.youtubePostSubmissionId = youtubePostSubmissionId
   if (tiktokPostSubmissionId) patch.tiktokPostSubmissionId = tiktokPostSubmissionId
   if (facebookReelSubmissionId) patch.facebookReelSubmissionId = facebookReelSubmissionId
+  if (linkedinPostSubmissionId) patch.linkedinPostSubmissionId = linkedinPostSubmissionId
+  if (twitterPostSubmissionId) patch.twitterPostSubmissionId = twitterPostSubmissionId
   await client.patch(postId).set(patch).commit()
 }
 

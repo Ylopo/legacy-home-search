@@ -264,7 +264,7 @@ export default function SocialDashboardHome() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              {['Post', 'Published', '👥 FB', '🎬 Reel', '▶️ YT', '🎵 TT'].map((h, i) => (
+              {['Post', 'Published', '👥 FB', '🎬 Reel', '▶️ YT', '🎵 TT', '💼 LI', '𝕏 X'].map((h, i) => (
                 <th key={h} style={{ padding: '10px 16px', textAlign: i <= 1 ? 'left' : 'center', color: '#64748b', fontWeight: 600, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
@@ -295,12 +295,14 @@ export default function SocialDashboardHome() {
                   <td style={{ padding: '10px 16px', textAlign: 'center' }}><Check yes={post.hasFacebookReel} /></td>
                   <td style={{ padding: '10px 16px', textAlign: 'center' }}><Check yes={post.hasYouTube} /></td>
                   <td style={{ padding: '10px 16px', textAlign: 'center' }}><Check yes={post.hasTikTok} /></td>
+                  <td style={{ padding: '10px 16px', textAlign: 'center' }}><Check yes={post.hasLinkedIn} /></td>
+                  <td style={{ padding: '10px 16px', textAlign: 'center' }}><Check yes={post.hasTwitter} /></td>
                 </tr>
               )
             })}
             {filteredPosts.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: '40px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
                   No posts match this filter.
                 </td>
               </tr>
