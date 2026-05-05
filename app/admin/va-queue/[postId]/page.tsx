@@ -692,9 +692,9 @@ export default function VAPostPage() {
           </Card>
 
           {/* Video upload */}
-          <Card title="Video (YouTube + TikTok)">
+          <Card title="Video (YouTube + TikTok + Facebook + LinkedIn + X)">
             <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Optional. Upload a final video to publish to YouTube and TikTok alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
+              Optional. Upload a final video to publish to YouTube, TikTok, Facebook Reel, LinkedIn, and X alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
             </p>
 
             {/* Step 1: HeyGen base generation */}
@@ -793,7 +793,7 @@ export default function VAPostPage() {
                     />
                   </label>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-                    No video uploaded — only Facebook will be published.
+                    No video uploaded — YouTube, TikTok, Facebook Reel, LinkedIn, and X will get image posts instead.
                   </p>
                 </>
               )}
