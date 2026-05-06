@@ -5,7 +5,8 @@ import CommunityMapWrapper from '@/components/CommunityMapWrapper'
 import CommunityHOA from '@/components/CommunityHOA'
 import CommunityComparisons from '@/components/CommunityComparisons'
 import CommunityNewConstruction from '@/components/CommunityNewConstruction'
-import { getLatestMarketReport } from '@/sanity/queries'
+import { getLatestMarketReport, getBlogPostsByCommunity, getFeaturedPostsForCommunity } from '@/sanity/queries'
+import CommunityBlogSection from '@/components/CommunityBlogSection'
 
 export const metadata: Metadata = {
   title: 'Virginia Beach Homes For Sale | Legacy Home Team',
@@ -119,7 +120,11 @@ const newConstructionData = {
 }
 
 export default async function VirginiaBeachPage() {
-  const latestReport = await getLatestMarketReport('virginia-beach')
+  const [latestReport, recentPosts, featuredPosts] = await Promise.all([
+    getLatestMarketReport('virginia-beach'),
+    getBlogPostsByCommunity('Virginia Beach', 5),
+    getFeaturedPostsForCommunity('virginia-beach'),
+  ])
 
   return (
     <main>
@@ -450,6 +455,9 @@ export default async function VirginiaBeachPage() {
         subtitle="Common questions from buyers and sellers navigating the Virginia Beach market."
         faqs={faqs}
       />
+
+      {/* BLOG */}
+      <CommunityBlogSection communityName="Virginia Beach" recentPosts={recentPosts} featuredPosts={featuredPosts} />
 
       {/* CTA */}
       <section id="cta" style={{ background: 'var(--accent)', textAlign: 'center' }}>

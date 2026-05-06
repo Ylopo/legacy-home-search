@@ -28,6 +28,13 @@ export default {
       description: 'Set by the schedule feature — cron fires publish at this UTC time',
     },
     {
+      name: 'pinnedForCommunities',
+      title: 'Pinned for Communities',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: "Community slugs (e.g. virginia-beach) — post appears in that community's Most Popular tab",
+    },
+    {
       name: 'category',
       title: 'Category',
       type: 'string',

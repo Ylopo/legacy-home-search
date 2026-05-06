@@ -160,6 +160,7 @@ export type SanityBlogPost = {
   metaDescription?: string
   aiGenerated?: boolean
   sourceUrl?: string
+  pinnedForCommunities?: string[]
   // Workflow fields (new posts only)
   workflowStatus?: WorkflowStatus
   blotatoPostSubmissionId?: string
@@ -289,6 +290,46 @@ export async function getScheduledPostsDue(now: string): Promise<SanityBlogPost[
     }`,
     { now },
     { next: { revalidate: 0 } }
+  )
+}
+
+// ─── Community Blog Posts ─────────────────────────────────────────────────────
+
+export type CommunityPost = {
+  _id: string
+  title: string
+  slug: string
+  publishedAt: string
+  coverImage?: any
+  coverImageUrl?: string
+  excerpt?: string
+  category?: string
+}
+
+export async function getBlogPostsByCommunity(_communityName: string, limit = 5): Promise<CommunityPost[]> {
+  return client.fetch(
+    `*[_type == "blogPost" && ${PUBLIC_FILTER}]
+     | order(publishedAt desc) [0...$limit]{
+       _id, title, "slug": slug.current, publishedAt,
+       coverImage, "coverImageUrl": coverImage.asset->url,
+       excerpt, category
+     }`,
+    { limit: limit - 1 },
+    { next: { revalidate: 3600 } }
+  )
+}
+
+export async function getFeaturedPostsForCommunity(communitySlug: string): Promise<CommunityPost[]> {
+  return client.fetch(
+    `*[_type == "blogPost" && ${PUBLIC_FILTER}
+       && $slug in pinnedForCommunities]
+     | order(publishedAt desc){
+       _id, title, "slug": slug.current, publishedAt,
+       coverImage, "coverImageUrl": coverImage.asset->url,
+       excerpt, category
+     }`,
+    { slug: communitySlug },
+    { next: { revalidate: 3600 } }
   )
 }
 

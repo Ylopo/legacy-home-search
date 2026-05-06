@@ -14,7 +14,6 @@ import type { IdeaCandidate, BlogPostDraft, PortableTextBlock, PortableTextSpan 
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const SELLER_URL = 'https://listings.legacyhomesearch.com/seller'
-const SELLER_CTA_RE = /\[SELLER_CTA:\s*([^\]]+)\]/
 
 // ─── Portable text helpers ────────────────────────────────────────────────────
 
@@ -41,29 +40,43 @@ function lineToBlock(line: string): PortableTextBlock {
   else if (trimmed.startsWith('### ')) { style = 'h3';         content = trimmed.slice(4) }
   else if (trimmed.startsWith('> '))   { style = 'blockquote'; content = trimmed.slice(2) }
 
-  const match = style === 'normal' ? SELLER_CTA_RE.exec(content) : null
-
-  if (!match) {
+  // Non-paragraph blocks: no inline link processing
+  if (style !== 'normal') {
     return {
       _type: 'block', _key: makeKey(), style, markDefs: [],
       children: [{ _type: 'span', _key: makeKey(), text: content, marks: [] }],
     }
   }
 
-  // Inline seller CTA link
-  const linkText = match[1].trim()
-  const before = content.slice(0, match.index).trimEnd()
-  const after  = content.slice(match.index + match[0].length).trimStart()
-  const linkKey = makeKey()
+  // Expand [SELLER_CTA: text] macros → standard markdown links, then parse all [text](url)
+  const expanded = content.replace(/\[SELLER_CTA:\s*([^\]]+)\]/g, (_, t) => `[${t.trim()}](${SELLER_URL})`)
+  const mdLinks = [...expanded.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)]
 
+  if (mdLinks.length === 0) {
+    return {
+      _type: 'block', _key: makeKey(), style: 'normal', markDefs: [],
+      children: [{ _type: 'span', _key: makeKey(), text: content, marks: [] }],
+    }
+  }
+
+  const markDefs: Array<{ _type: 'link'; _key: string; href: string }> = []
   const children: PortableTextSpan[] = []
-  if (before) children.push({ _type: 'span', _key: makeKey(), text: before + ' ', marks: [] })
-  children.push({ _type: 'span', _key: makeKey(), text: linkText, marks: [linkKey] })
-  if (after)  children.push({ _type: 'span', _key: makeKey(), text: ' ' + after, marks: [] })
+  let cursor = 0
+
+  for (const m of mdLinks) {
+    const before = expanded.slice(cursor, m.index!)
+    if (before) children.push({ _type: 'span', _key: makeKey(), text: before, marks: [] })
+    const linkKey = makeKey()
+    markDefs.push({ _type: 'link', _key: linkKey, href: m[2] })
+    children.push({ _type: 'span', _key: makeKey(), text: m[1], marks: [linkKey] })
+    cursor = m.index! + m[0].length
+  }
+  const tail = expanded.slice(cursor)
+  if (tail) children.push({ _type: 'span', _key: makeKey(), text: tail, marks: [] })
 
   return {
     _type: 'block', _key: makeKey(), style: 'normal',
-    markDefs: [{ _type: 'link', _key: linkKey, href: SELLER_URL }],
+    markDefs,
     children,
   }
 }
@@ -134,6 +147,7 @@ SEO RULES (required):
 1. Target keyword is: ${keyword} — use it naturally in the opening paragraph, in at least one ## heading, and 2–3 times in the body. Never forced.
 2. End with ## Frequently Asked Questions — exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a Hampton Roads buyer, seller, or homeowner would actually search for related to "${keyword}".
 3. Add 1 internal link to a relevant page on the site where it genuinely helps the reader (e.g., /blog, /communities, /virginia-beach, /chesapeake). Use markdown link syntax.
+4. COMMUNITY LINK RULE: On the FIRST mention of any Hampton Roads community by name in the post body, format it as a markdown link to its community page: [Virginia Beach](/virginia-beach), [Chesapeake](/chesapeake), [Norfolk](/norfolk), [Suffolk](/suffolk), [Hampton](/hampton), [Newport News](/newport-news). Only the first mention of each community — leave all later mentions as plain text.
 
 Return a JSON object with EXACTLY these fields:
 {

@@ -5,7 +5,8 @@ import CommunityMapWrapper from '@/components/CommunityMapWrapper'
 import CommunityHOA from '@/components/CommunityHOA'
 import CommunityComparisons from '@/components/CommunityComparisons'
 import CommunityNewConstruction from '@/components/CommunityNewConstruction'
-import { getLatestMarketReport } from '@/sanity/queries'
+import { getLatestMarketReport, getBlogPostsByCommunity, getFeaturedPostsForCommunity } from '@/sanity/queries'
+import CommunityBlogSection from '@/components/CommunityBlogSection'
 
 export const metadata: Metadata = {
   title: 'Suffolk Homes For Sale | Legacy Home Team',
@@ -124,7 +125,11 @@ const newConstructionData = {
 }
 
 export default async function SuffolkPage() {
-  const latestReport = await getLatestMarketReport('suffolk')
+  const [latestReport, recentPosts, featuredPosts] = await Promise.all([
+    getLatestMarketReport('suffolk'),
+    getBlogPostsByCommunity('Suffolk', 5),
+    getFeaturedPostsForCommunity('suffolk'),
+  ])
 
   return (
     <main>
@@ -451,6 +456,9 @@ export default async function SuffolkPage() {
         subtitle="Common questions from buyers and sellers navigating the Suffolk market."
         faqs={faqs}
       />
+
+      {/* BLOG */}
+      <CommunityBlogSection communityName="Suffolk" recentPosts={recentPosts} featuredPosts={featuredPosts} />
 
       {/* CTA */}
       <section id="cta" style={{ background: 'var(--accent)', textAlign: 'center' }}>

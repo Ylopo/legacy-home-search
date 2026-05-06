@@ -5,7 +5,8 @@ import CommunityMapWrapper from '@/components/CommunityMapWrapper'
 import CommunityHOA from '@/components/CommunityHOA'
 import CommunityComparisons from '@/components/CommunityComparisons'
 import CommunityNewConstruction from '@/components/CommunityNewConstruction'
-import { getLatestMarketReport } from '@/sanity/queries'
+import { getLatestMarketReport, getBlogPostsByCommunity, getFeaturedPostsForCommunity } from '@/sanity/queries'
+import CommunityBlogSection from '@/components/CommunityBlogSection'
 
 export const metadata: Metadata = {
   title: 'Newport News Homes For Sale | Legacy Home Team',
@@ -125,7 +126,11 @@ const newConstructionData = {
 }
 
 export default async function NewportNewsPage() {
-  const latestReport = await getLatestMarketReport('newport-news')
+  const [latestReport, recentPosts, featuredPosts] = await Promise.all([
+    getLatestMarketReport('newport-news'),
+    getBlogPostsByCommunity('Newport News', 5),
+    getFeaturedPostsForCommunity('newport-news'),
+  ])
 
   return (
     <main>
@@ -452,6 +457,9 @@ export default async function NewportNewsPage() {
         subtitle="Common questions from buyers and sellers navigating the Newport News market."
         faqs={faqs}
       />
+
+      {/* BLOG */}
+      <CommunityBlogSection communityName="Newport News" recentPosts={recentPosts} featuredPosts={featuredPosts} />
 
       {/* CTA */}
       <section id="cta" style={{ background: 'var(--accent)', textAlign: 'center' }}>
