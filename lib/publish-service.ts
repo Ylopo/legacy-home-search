@@ -8,7 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import imageUrlBuilder from '@sanity/image-url'
 import { createClient } from '@sanity/client'
-import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX } from './blotato-client'
+import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX, publishToThreads } from './blotato-client'
 import { markPublishing, markPublished, markPublishFailed, patchSocialSubmission } from './content-workflow'
 import { getSanityWriteClient } from './sanity-write'
 import type { SanityBlogPost } from '../sanity/queries'
@@ -76,6 +76,11 @@ function buildXCaption(copy: string, category: string | undefined, articleUrl: s
   return `${safeCopy}${suffix}`
 }
 
+function buildThreadsCaption(copy: string, articleUrl: string): string {
+  // Threads: conversational, just copy + link (no hashtag feed)
+  return `${copy}\n\n${articleUrl}`
+}
+
 // ─── Platform captions ────────────────────────────────────────────────────────
 
 export interface PlatformCaptions {
@@ -84,6 +89,7 @@ export interface PlatformCaptions {
   twitter: string
   tiktok: string
   youtube: string
+  threads: string
 }
 
 export async function generatePlatformCaptions(
@@ -102,6 +108,7 @@ export async function generatePlatformCaptions(
     twitter: `${post.title} — what this means for Hampton Roads buyers and sellers.`,
     tiktok: post.excerpt ?? post.title,
     youtube: post.excerpt ?? `${post.title} — insights from Barry Jenkins at Legacy Home Team in Virginia Beach.`,
+    threads: `${post.title} — new post on the Legacy Home Search blog. Thoughts on what this means for Hampton Roads buyers and sellers.`,
   }
 
   try {
@@ -126,7 +133,8 @@ Return a JSON object with EXACTLY these 5 fields. No markdown fences.
   "linkedin": "2–3 professional sentences. Informative, industry-relevant. Barry's expertise + Hampton Roads market context. No hashtags (those are appended separately). Under 300 chars.",
   "twitter": "1 punchy sentence under 180 characters. Direct and surprising. No hashtags (appended separately). Create genuine curiosity.",
   "tiktok": "1–2 short casual sentences. Hook-first. Very conversational. No hashtags (appended separately).",
-  "youtube": "2–3 sentences describing what viewers will learn. Informative. Mention Hampton Roads specifically. No hashtags."
+  "youtube": "2–3 sentences describing what viewers will learn. Informative. Mention Hampton Roads specifically. No hashtags.",
+  "threads": "1–2 conversational sentences under 450 characters. Personal tone, like texting a friend who owns a home. Casual insight or reaction to the topic. No hashtags."
 }`,
       }],
     })
@@ -140,6 +148,7 @@ Return a JSON object with EXACTLY these 5 fields. No markdown fences.
       twitter:  parsed.twitter  || fallback.twitter,
       tiktok:   parsed.tiktok   || fallback.tiktok,
       youtube:  parsed.youtube  || fallback.youtube,
+      threads:  parsed.threads  || fallback.threads,
     }
   } catch {
     return fallback
@@ -181,6 +190,7 @@ export type PublishResult =
       tiktok: PlatformResult
       linkedin: PlatformResult
       twitter: PlatformResult
+      threads: PlatformResult
     }
   | { ok: false; error: string }
 
@@ -199,6 +209,7 @@ export async function publishSocialOnly(
           twitter: socialCopy,
           tiktok: socialCopy,
           youtube: socialCopy,
+          threads: socialCopy,
         }
       : await generatePlatformCaptions(post)
 
@@ -212,14 +223,16 @@ export async function publishSocialOnly(
       : 'https://www.legacyhometeamlpt.com'
     const articleUrl = `${appUrl}/blog/${post.slug}`
 
-    const fbCopy     = `${captions.facebook}\n\n${articleUrl}`
-    const liCopy     = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
+    const fbCopy      = `${captions.facebook}\n\n${articleUrl}`
+    const liCopy      = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
     const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
+    const threadsCopy = buildThreadsCaption(captions.threads, articleUrl)
 
-    const [fbRes, liRes, twRes] = await Promise.allSettled([
+    const [fbRes, liRes, twRes, thRes] = await Promise.allSettled([
       publishToFacebook(fbCopy, imageUrl),
       publishToLinkedIn(liCopy, imageUrl),
       publishToX(twitterCopy, imageUrl),
+      publishToThreads(threadsCopy, imageUrl),
     ])
 
     const fbResult: PlatformResult = fbRes.status === 'fulfilled'
@@ -234,20 +247,25 @@ export async function publishSocialOnly(
       ? { postSubmissionId: twRes.value.postSubmissionId }
       : { error: twRes.reason instanceof Error ? twRes.reason.message : 'X publish failed' }
 
+    const thResult: PlatformResult = thRes.status === 'fulfilled'
+      ? { postSubmissionId: thRes.value.postSubmissionId }
+      : { error: thRes.reason instanceof Error ? thRes.reason.message : 'Threads publish failed' }
+
     // Use Facebook submission ID as the primary one for patchSocialSubmission
     const primaryId = fbResult && 'postSubmissionId' in fbResult ? fbResult.postSubmissionId : ''
     await patchSocialSubmission(postId, primaryId, captions.facebook)
 
-    // Patch LinkedIn and X submission IDs separately
+    // Patch LinkedIn, X, and Threads submission IDs separately
     const writeClient = getSanityWriteClient()
     const extraPatch: Record<string, string> = {}
     if (liResult && 'postSubmissionId' in liResult) extraPatch.linkedinPostSubmissionId = liResult.postSubmissionId
     if (twResult && 'postSubmissionId' in twResult) extraPatch.twitterPostSubmissionId = twResult.postSubmissionId
+    if (thResult && 'postSubmissionId' in thResult) extraPatch.threadsPostSubmissionId = thResult.postSubmissionId
     if (Object.keys(extraPatch).length > 0) {
       await writeClient.patch(postId).set(extraPatch).commit()
     }
 
-    return { ok: true, facebook: fbResult, facebookReel: null, youtube: null, tiktok: null, linkedin: liResult, twitter: twResult }
+    return { ok: true, facebook: fbResult, facebookReel: null, youtube: null, tiktok: null, linkedin: liResult, twitter: twResult, threads: thResult }
   } catch (err) {
     console.error('[publish-service] Social-only publish error:', err instanceof Error ? err.message : err)
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown publish error' }
@@ -290,7 +308,7 @@ export async function publishPostToAll(
     await markPublishing(postId)
 
     const captions = socialCopy
-      ? { facebook: socialCopy, linkedin: socialCopy, twitter: socialCopy, tiktok: socialCopy, youtube: socialCopy }
+      ? { facebook: socialCopy, linkedin: socialCopy, twitter: socialCopy, tiktok: socialCopy, youtube: socialCopy, threads: socialCopy }
       : await generatePlatformCaptions(post)
 
     const imageUrl = getSanityImageUrl(post.coverImage)
@@ -307,6 +325,7 @@ export async function publishPostToAll(
     const fbCopy      = `${captions.facebook}\n\n${articleUrl}`
     const liCopy      = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
     const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
+    const threadsCopy = buildThreadsCaption(captions.threads, articleUrl)
 
     // Always publish to Facebook (image post)
     const fbResult = await publishToFacebook(fbCopy, imageUrl)
@@ -316,18 +335,20 @@ export async function publishPostToAll(
     let ttResult: PlatformResult = null
     let liResult: PlatformResult = null
     let twResult: PlatformResult = null
+    let thResult: PlatformResult = null
 
     if (post.videoUrl) {
       const videoDescription  = `${captions.youtube}\n\n${articleUrl}`
       const tiktokCaption     = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
 
-      const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome] = await Promise.allSettled([
+      const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome, thOutcome] = await Promise.allSettled([
         publishToFacebookReel(fbCopy, post.videoUrl),
         publishToYouTube(post.title, videoDescription, post.videoUrl, post.videoThumbnailUrl),
         publishToTikTok(tiktokCaption, post.videoUrl),
-        // LinkedIn and X: try video, fall back to image on rejection
+        // LinkedIn, X, Threads: try video, fall back to image on rejection
         tryVideoThenImage(publishToLinkedIn, liCopy, post.videoUrl, imageUrl, 'LinkedIn'),
         tryVideoThenImage(publishToX, twitterCopy, post.videoUrl, imageUrl, 'X'),
+        tryVideoThenImage(publishToThreads, threadsCopy, post.videoUrl, imageUrl, 'Threads'),
       ])
 
       reelResult = reelOutcome.status === 'fulfilled'
@@ -345,14 +366,15 @@ export async function publishPostToAll(
         : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok publish failed' }
       if ('error' in (ttResult ?? {})) console.error('[publish-service] TikTok error:', (ttResult as { error: string }).error)
 
-      // tryVideoThenImage returns PlatformResult directly, allSettled wraps the whole thing
       liResult = liOutcome.status === 'fulfilled' ? liOutcome.value : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn publish failed' }
       twResult = twOutcome.status === 'fulfilled' ? twOutcome.value : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
+      thResult = thOutcome.status === 'fulfilled' ? thOutcome.value : { error: thOutcome.reason instanceof Error ? thOutcome.reason.message : 'Threads publish failed' }
     } else {
-      // No video — LinkedIn and X get image posts
-      const [liOutcome, twOutcome] = await Promise.allSettled([
+      // No video — LinkedIn, X, and Threads get image posts
+      const [liOutcome, twOutcome, thOutcome] = await Promise.allSettled([
         publishToLinkedIn(liCopy, imageUrl),
         publishToX(twitterCopy, imageUrl),
+        publishToThreads(threadsCopy, imageUrl),
       ])
       liResult = liOutcome.status === 'fulfilled'
         ? { postSubmissionId: liOutcome.value.postSubmissionId }
@@ -360,6 +382,9 @@ export async function publishPostToAll(
       twResult = twOutcome.status === 'fulfilled'
         ? { postSubmissionId: twOutcome.value.postSubmissionId }
         : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
+      thResult = thOutcome.status === 'fulfilled'
+        ? { postSubmissionId: thOutcome.value.postSubmissionId }
+        : { error: thOutcome.reason instanceof Error ? thOutcome.reason.message : 'Threads publish failed' }
     }
 
     await markPublished(
@@ -370,6 +395,7 @@ export async function publishPostToAll(
       reelResult && 'postSubmissionId' in reelResult ? (reelResult as { postSubmissionId: string }).postSubmissionId : undefined,
       liResult && 'postSubmissionId' in liResult ? (liResult as { postSubmissionId: string }).postSubmissionId : undefined,
       twResult && 'postSubmissionId' in twResult ? (twResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      thResult && 'postSubmissionId' in thResult ? (thResult as { postSubmissionId: string }).postSubmissionId : undefined,
       publishedAtOverride,
     )
 
@@ -386,6 +412,7 @@ export async function publishPostToAll(
       tiktok: ttResult,
       linkedin: liResult,
       twitter: twResult,
+      threads: thResult,
     }
   } catch (err) {
     console.error('[publish-service] Publish error:', err instanceof Error ? err.message : err)

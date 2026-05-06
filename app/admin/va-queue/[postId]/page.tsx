@@ -41,6 +41,7 @@ type PublishState =
       tiktok: PlatformStatus
       linkedin: PlatformStatus
       twitter: PlatformStatus
+      threads: PlatformStatus
     }
   | {
       phase: 'done'
@@ -50,6 +51,7 @@ type PublishState =
       tiktok: PlatformStatus
       linkedin: PlatformStatus
       twitter: PlatformStatus
+      threads: PlatformStatus
     }
   | { phase: 'error'; message: string }
 
@@ -361,7 +363,7 @@ export default function VAPostPage() {
 
   // ── Poll a single platform ───────────────────────────────────────────────────
   function startPoll(
-    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter',
+    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'threads',
     submissionId: string,
     onUpdate: (status: PlatformStatus) => void,
   ) {
@@ -468,8 +470,13 @@ export default function VAPostPage() {
         : data.twitter?.error
         ? { phase: 'error', message: data.twitter.error }
         : { phase: 'idle' }
+      const initTh: PlatformStatus = data.threads?.postSubmissionId
+        ? { phase: 'polling', submissionId: data.threads.postSubmissionId }
+        : data.threads?.error
+        ? { phase: 'error', message: data.threads.error }
+        : { phase: 'idle' }
 
-      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw })
+      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw, threads: initTh })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
       // Mark video as saved so the secondary "Publish Video" button doesn't appear
       setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
@@ -481,16 +488,17 @@ export default function VAPostPage() {
         tiktok: initTt.phase === 'idle',
         linkedin: initLi.phase === 'idle',
         twitter: initTw.phase === 'idle',
+        threads: initTh.phase === 'idle',
       }
       const statuses: Record<string, PlatformStatus> = {
         facebook: initFb, facebookReel: initReel,
         youtube: initYt, tiktok: initTt,
-        linkedin: initLi, twitter: initTw,
+        linkedin: initLi, twitter: initTw, threads: initTh,
       }
 
       function checkAllDone() {
-        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter) {
-          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter })
+        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter && resolved.threads) {
+          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter, threads: statuses.threads })
         }
       }
 
@@ -558,6 +566,17 @@ export default function VAPostPage() {
         })
       } else {
         resolved.twitter = true
+      }
+
+      if (data.threads?.postSubmissionId) {
+        startPoll('threads', data.threads.postSubmissionId, (s) => {
+          statuses.threads = s
+          resolved.threads = true
+          setPublishState(prev => prev.phase === 'polling' ? { ...prev, threads: s } : prev)
+          checkAllDone()
+        })
+      } else {
+        resolved.threads = true
       }
 
       checkAllDone()
@@ -738,9 +757,9 @@ export default function VAPostPage() {
           </Card>
 
           {/* Video upload */}
-          <Card title="Video (YouTube + TikTok + Facebook + LinkedIn + X)">
+          <Card title="Video (YouTube + TikTok + Facebook + LinkedIn + X + Threads)">
             <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Optional. Upload a final video to publish to YouTube, TikTok, Facebook Reel, LinkedIn, and X alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
+              Optional. Upload a final video to publish to YouTube, TikTok, Facebook Reel, LinkedIn, X, and Threads alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
             </p>
 
             {/* Step 1: HeyGen base generation */}
@@ -839,7 +858,7 @@ export default function VAPostPage() {
                     />
                   </label>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-                    No video uploaded — YouTube, TikTok, Facebook Reel, LinkedIn, and X will get image posts instead.
+                    No video uploaded — YouTube, TikTok, Facebook Reel, LinkedIn, X, and Threads will get image posts instead.
                   </p>
                 </>
               )}
@@ -983,6 +1002,7 @@ export default function VAPostPage() {
               {hasVideo && <li>Post the video to TikTok</li>}
               <li>Post to LinkedIn {hasVideo ? '(video)' : '(image)'}</li>
               <li>Post to X / Twitter {hasVideo ? '(video)' : '(image)'}</li>
+              <li>Post to Threads {hasVideo ? '(video)' : '(image)'}</li>
             </ul>
 
             {/* Per-platform publish status */}
@@ -1012,6 +1032,9 @@ export default function VAPostPage() {
                 )}
                 {publishState.twitter.phase !== 'idle' && (
                   <PlatformStatusRow icon="𝕏" label="X / Twitter" status={publishState.twitter} />
+                )}
+                {publishState.threads.phase !== 'idle' && (
+                  <PlatformStatusRow icon="🧵" label="Threads" status={publishState.threads} />
                 )}
               </div>
             )}
@@ -1056,6 +1079,11 @@ export default function VAPostPage() {
                 {publishState.twitter.phase === 'done' && publishState.twitter.postUrl && (
                   <a href={publishState.twitter.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
                     View X post →
+                  </a>
+                )}
+                {publishState.threads.phase === 'done' && publishState.threads.postUrl && (
+                  <a href={publishState.threads.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
+                    View Threads post →
                   </a>
                 )}
               </div>
@@ -1114,6 +1142,9 @@ export default function VAPostPage() {
                     )}
                     {post.twitterPostSubmissionId && (
                       <PlatformStatusRow icon="𝕏" label="X / Twitter" status={{ phase: 'done' }} />
+                    )}
+                    {post.threadsPostSubmissionId && (
+                      <PlatformStatusRow icon="🧵" label="Threads" status={{ phase: 'done' }} />
                     )}
                   </div>
                 )}

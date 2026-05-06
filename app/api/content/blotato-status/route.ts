@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const postSubmissionId = searchParams.get('postSubmissionId')
   const postId = searchParams.get('postId')
-  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter'
+  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'threads'
 
   if (!postSubmissionId || !postId) {
     return NextResponse.json({ error: 'postSubmissionId and postId are required' }, { status: 400 })

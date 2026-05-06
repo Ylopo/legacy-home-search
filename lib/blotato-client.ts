@@ -14,6 +14,7 @@
  *   BLOTATO_TIKTOK_ACCOUNT_ID      — Blotato account ID for TikTok (39905)
  *   BLOTATO_LINKEDIN_ACCOUNT_ID    — Blotato account ID for LinkedIn (20512)
  *   BLOTATO_X_ACCOUNT_ID           — Blotato account ID for X/Twitter (17792)
+ *   BLOTATO_THREADS_ACCOUNT_ID     — Blotato account ID for Threads (6535)
  *   BLOTATO_FACEBOOK_PAGE_ID       — Facebook Page ID (1101893253009079)
  */
 
@@ -52,6 +53,10 @@ function getLinkedInAccountId(): string {
 
 function getXAccountId(): string {
   return process.env.BLOTATO_X_ACCOUNT_ID ?? '17792'
+}
+
+function getThreadsAccountId(): string {
+  return process.env.BLOTATO_THREADS_ACCOUNT_ID ?? '6535'
 }
 
 function getPageId(): string {
@@ -349,6 +354,46 @@ export async function getPostStatus(postSubmissionId: string): Promise<BlotatoPo
     postUrl: data.postUrl ?? data.url ?? undefined,
     errorMessage: data.errorMessage ?? data.error ?? undefined,
   }
+}
+
+// Threads character limit (500 chars)
+const THREADS_TEXT_LIMIT = 500
+
+export async function publishToThreads(
+  text: string,
+  mediaUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getThreadsAccountId()
+  const safeText = text.length > THREADS_TEXT_LIMIT ? text.slice(0, THREADS_TEXT_LIMIT - 3) + '...' : text
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text: safeText,
+          mediaUrls: [mediaUrl],
+          platform: 'threads',
+        },
+        target: {
+          targetType: 'threads',
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato Threads publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato Threads response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
+  return { postSubmissionId: String(data.postSubmissionId) }
 }
 
 // ─── Account/page lookup (future multi-client use) ───────────────────────────

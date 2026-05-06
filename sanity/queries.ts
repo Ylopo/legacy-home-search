@@ -178,6 +178,7 @@ export type SanityBlogPost = {
   tiktokPostUrl?: string
   linkedinPostSubmissionId?: string
   twitterPostSubmissionId?: string
+  threadsPostSubmissionId?: string
   scheduledPublishAt?: string
 }
 
@@ -273,7 +274,7 @@ export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null>
       blotatoPublishedAt, facebookPostUrl, socialCopy, videoScript,
       videoUrl, videoThumbnailUrl, youtubePostSubmissionId, tiktokPostSubmissionId,
       youtubePostUrl, tiktokPostUrl, facebookReelSubmissionId,
-      linkedinPostSubmissionId, twitterPostSubmissionId, scheduledPublishAt
+      linkedinPostSubmissionId, twitterPostSubmissionId, threadsPostSubmissionId, scheduledPublishAt
     }`,
     { id },
     { next: { revalidate: 0 } }
@@ -303,6 +304,7 @@ export type SocialDashboardPost = {
   hasTikTok: boolean
   hasLinkedIn: boolean
   hasTwitter: boolean
+  hasThreads: boolean
   facebookPostUrl?: string
 }
 
@@ -316,6 +318,7 @@ export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> 
       tiktokPostSubmissionId,
       linkedinPostSubmissionId,
       twitterPostSubmissionId,
+      threadsPostSubmissionId,
     }`,
     {},
     { next: { revalidate: 0 } }
@@ -332,6 +335,7 @@ export async function getSocialDashboardPosts(): Promise<SocialDashboardPost[]> 
     hasTikTok: !!p.tiktokPostSubmissionId,
     hasLinkedIn: !!p.linkedinPostSubmissionId,
     hasTwitter: !!p.twitterPostSubmissionId,
+    hasThreads: !!p.threadsPostSubmissionId,
     facebookPostUrl: p.facebookPostUrl,
   }))
 }

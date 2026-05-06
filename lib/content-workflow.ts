@@ -71,6 +71,7 @@ export async function markPublished(
   facebookReelSubmissionId?: string,
   linkedinPostSubmissionId?: string,
   twitterPostSubmissionId?: string,
+  threadsPostSubmissionId?: string,
   publishedAtOverride?: string,
 ): Promise<void> {
   const client = getSanityWriteClient()
@@ -85,6 +86,7 @@ export async function markPublished(
   if (facebookReelSubmissionId) patch.facebookReelSubmissionId = facebookReelSubmissionId
   if (linkedinPostSubmissionId) patch.linkedinPostSubmissionId = linkedinPostSubmissionId
   if (twitterPostSubmissionId) patch.twitterPostSubmissionId = twitterPostSubmissionId
+  if (threadsPostSubmissionId) patch.threadsPostSubmissionId = threadsPostSubmissionId
   await client.patch(postId).set(patch).commit()
 }
 

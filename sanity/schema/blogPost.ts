@@ -168,6 +168,12 @@ export default {
       description: 'Returned by Blotato after X/Twitter post is submitted',
     },
     {
+      name: 'threadsPostSubmissionId',
+      title: 'Threads Submission ID',
+      type: 'string',
+      description: 'Returned by Blotato after Threads post is submitted',
+    },
+    {
       name: 'coverImage',
       title: 'Cover Image',
       type: 'image',
