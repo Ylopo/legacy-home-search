@@ -303,6 +303,8 @@ Both paths call the same underlying writing function. Claude Sonnet 4.6 writes a
 - Ties national/Virginia news back to the local Hampton Roads market
 - Structure: engaging headline → intro → 2–3 body sections (`##` headings) → `## What This Means For You` (3–4 bullets) → closing → source credit (linked)
 - All posts must answer: "What does this mean for Hampton Roads buyers and homeowners?"
+- **COMMUNITY LINK RULE:** On the FIRST mention of any Hampton Roads community by name in the post body, format it as a markdown link to its community page: `[Virginia Beach](/virginia-beach)`, `[Chesapeake](/chesapeake)`, `[Norfolk](/norfolk)`, `[Suffolk](/suffolk)`, `[Hampton](/hampton)`, `[Newport News](/newport-news)`. Only the first mention — leave all later mentions as plain text.
+- **INSTITUTION LINK RULE:** On the first mention of any named school, university, military installation, state park, or local venue, write it as a markdown link to the official website (e.g. `[Old Dominion University](https://www.odu.edu)`). Only link if the URL is known with confidence — never invent a URL.
 
 ### Blog Post Categories
 
@@ -676,30 +678,82 @@ Server-rendered links using `?category=` URL params. Only tabs with at least one
 
 **Community listings widget:** `BlogCommunityListings` renders below the post body. `detectCommunities(title, slug)` matches post content to Hampton Roads cities and shows the relevant YLOPO listings widget (or a Hampton Roads-wide widget if no specific city is detected).
 
-### External Link Policy
+### Community ↔ Blog Integration
 
-Every blog post writer automatically links named entities to their official websites. All links open in a new tab via `target="_blank"` in `components/PortableText.tsx`.
+Blog posts and community pages are bidirectionally linked.
 
-**What gets linked (first mention only):**
-- Named events and festivals (e.g., Chesapeake Jubilee, Town Point Wine Festival)
-- Named venues and parks (e.g., Town Point Park, Chesapeake City Park)
-- Government agencies and programs (e.g., VHDA, City of Norfolk, Virginia Beach City Public Schools)
-- Military installations (e.g., Naval Station Norfolk, NAS Oceana)
-- Named businesses and organizations with public websites
+**Blog → Community (automatic)**
 
-**Rules baked into the Claude prompts:**
-- Only link to URLs Claude is confident are correct and official — never invented or guessed
-- Link only the FIRST mention of each entity, not every occurrence
-- Skip the link if unsure of the official URL
+Every blog post that mentions a Hampton Roads city by name gets a clickable link to that city's community page on the first mention. This happens at two levels:
+- **New posts:** Claude writes the link as `[Virginia Beach](/virginia-beach)` markdown; `lineToBlock()` converts it to a Sanity mark def at write time
+- **All posts (including legacy):** `PortableText.tsx` → `enrichBlocks()` injects the link at render time even if the post predates the generation-time rule — no data migration needed
 
-**Portable Text link format (Sanity):**
-Claude writes links as markdown `[Entity Name](https://url.com)` in the body string. `lib/portable-text-utils.ts` → `markdownToPortableText()` converts these to Sanity `markDefs` with `_type: 'link'`. The renderer picks them up automatically.
+**Community → Blog (via CommunityBlogSection)**
 
-**Retroactive enrichment:**
-```bash
-npx tsx --env-file=.env.local scripts/add-links-to-posts.ts
-```
-Updates the last 6 posts (all statuses). Safe to re-run — Claude is instructed to preserve all existing links during enrichment.
+Every community page (`/virginia-beach`, `/chesapeake`, etc.) renders a `<CommunityBlogSection>` that shows two tabs:
+- **Recent Posts** — a horizontally scrollable carousel of the 5 most recently published posts
+- **Most Popular** — a 2-column card grid of posts manually pinned for that community
+
+**Pinning posts to a community page (Most Popular tab):**
+
+1. Open Sanity Studio → find the blog post
+2. Set the `Pinned for Communities` field to the relevant community slug(s) (e.g. `virginia-beach`)
+3. The post will appear in that community's Most Popular tab immediately (ISR cache clears within 1 hour)
+
+Multiple slugs can be added to the same post if it's relevant to more than one community.
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `components/PortableText.tsx` | Render-time link injection + INSTITUTION_LINKS + COMMUNITY_LINKS maps |
+| `components/CommunityBlogSection.tsx` | Server component — blog section on community pages |
+| `components/CommunityBlogTabs.tsx` | Client component — tab switcher (Recent / Most Popular) |
+| `sanity/queries.ts` → `getBlogPostsByCommunity()` | Fetches 5 most recent published posts |
+| `sanity/queries.ts` → `getFeaturedPostsForCommunity()` | Fetches posts with matching `pinnedForCommunities` slug |
+| `sanity/schema/blogPost.ts` → `pinnedForCommunities` | String array field — community slugs this post is pinned to |
+
+---
+
+### External + Internal Link Policy
+
+Blog posts automatically link named entities and Hampton Roads community pages. The system operates in two layers:
+
+**Layer 1 — Generation time (new posts)**
+
+`lib/idea-writer.ts` → `lineToBlock()` parses any `[text](url)` markdown in Claude's output and stores it as proper Portable Text mark defs in Sanity. Claude is instructed (via the writing prompt) to:
+- Link the **first mention** of each Hampton Roads community to its community page using markdown syntax: `[Virginia Beach](/virginia-beach)`, `[Chesapeake](/chesapeake)`, `[Norfolk](/norfolk)`, `[Suffolk](/suffolk)`, `[Hampton](/hampton)`, `[Newport News](/newport-news)`
+- Link the first mention of named schools, universities, military installations, state parks, and local venues to their official websites
+- Never invent URLs — if unsure, leave as plain text
+
+**Layer 2 — Render time (all posts, including legacy)**
+
+`components/PortableText.tsx` → `enrichBlocks()` post-processes every post's block array before rendering. This ensures even posts written before the generation-time rules were added still get correct links — no Sanity data migration needed.
+
+Three passes in order (first match wins per span, first occurrence wins per name across the whole post):
+
+1. **Markdown link parser** — converts any `[text](url)` literal text stored as a plain span into a proper mark def with the correct href
+2. **Community links** — injects links to the 6 Hampton Roads community pages on first mention of each city name
+3. **Institution links** — injects links to official websites on first mention of 50+ named entities
+
+**Entities with hardcoded links in `components/PortableText.tsx`:**
+
+| Category | Examples |
+|----------|---------|
+| Universities | Old Dominion University, Regent University, Virginia Wesleyan University, Norfolk State University, Tidewater Community College, Hampton University, Christopher Newport University, William & Mary |
+| School districts | Virginia Beach City Public Schools, Chesapeake Public Schools, Norfolk Public Schools, Hampton City Schools, Newport News Public Schools |
+| Private schools | Cape Henry Collegiate, Norfolk Academy, Nansemond-Suffolk Academy |
+| Public high schools | Princess Anne, First Colonial, Ocean Lakes, Tallwood, Kellam, Great Bridge, Oscar Smith, Grassfield |
+| VA State Parks | First Landing State Park, False Cape State Park, Seashore State Park |
+| Federal parks | Back Bay National Wildlife Refuge |
+| Military | Naval Air Station Oceana, NAS Oceana, JEB Little Creek-Fort Story, Joint Base Langley-Eustis, Naval Station Norfolk, NSA Hampton Roads |
+| Research | NASA Langley Research Center |
+| Venues | Norfolk Botanical Garden, Mariners' Museum, Chesapeake Bay Bridge-Tunnel, Virginia Aquarium, Nauticus |
+| Community pages | Virginia Beach, Chesapeake, Norfolk, Suffolk, Hampton, Newport News |
+
+**To add new entries:** Edit the `INSTITUTION_LINKS` map in `components/PortableText.tsx`. Sort order doesn't matter — `ALL_LINKS` is sorted by name length descending at module load to prevent short names from matching before longer prefixes (e.g. "Norfolk" before "Norfolk Academy").
+
+**Internal vs. external links:** Links starting with `http` open in a new tab (`target="_blank"`). Internal paths (community pages starting with `/`) navigate within the app.
 
 ---
 

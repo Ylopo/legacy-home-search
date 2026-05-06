@@ -26,7 +26,9 @@ CSS variables defined in `app/globals.css`:
 - Maps: See `MAPS.md` for all Mapbox configuration (style, pitch, slots, city coordinates)
 
 ## Community Pages
-The `COMMUNITY_PAGES` array in `lib/assistant-tools.ts` is currently empty (`[]`). Add entries as community pages are built.
+All 6 community pages are live: `/virginia-beach`, `/chesapeake`, `/norfolk`, `/suffolk`, `/hampton`, `/newport-news`. Each page has a `CommunityBlogSection` that shows a scrollable Recent Posts carousel and a Most Popular pinned tab (see BLOG_PIPELINE.md → Community ↔ Blog Integration).
+
+Update the `COMMUNITY_PAGES` array in `lib/assistant-tools.ts` if the AI Content Assistant needs to reference these pages.
 
 ## Blog Pipeline
 Automated daily blog pipeline via Vercel Cron. Full details in `BLOG_PIPELINE.md`.
@@ -44,7 +46,10 @@ Available at `/admin/assistant` (password-protected). Same architecture as chris
 ## Current Status (May 2026)
 - Full homepage live: hero with tab switcher, Barry bio, Altos market trends, interactive map, testimonials, contact
 - `/communities` landing page with interactive HamptonRoadsMap (all 6 cities) and card grid
+- All 6 community pages live: `/virginia-beach`, `/chesapeake`, `/norfolk`, `/suffolk`, `/hampton`, `/newport-news`
 - Blog pipeline active — daily posts at `/blog`
+- Community ↔ blog linking live: blog posts auto-link city names to community pages; community pages show `CommunityBlogSection` with recent posts carousel and pinnable Most Popular tab
+- `PortableText.tsx` auto-links 50+ named institutions (schools, universities, parks, military) to their official sites on first mention in any blog post
 - Content refresh subsystem live — weekly cron (Monday 10 AM PT), admin UI at `/admin/refresh-queue`, Claude rewrites posts in-place
 - Market reports pipeline shelved (awaiting Altos data access)
 - All Mapbox maps updated to Standard style (3D buildings, POI, roads)
@@ -52,10 +57,10 @@ Available at `/admin/assistant` (password-protected). Same architecture as chris
 - Mobile-optimized: hero tabs, Barry photo layout, contact form, buttons
 
 ## What's Next
-- Build out 6 individual community pages (`/virginia-beach`, `/chesapeake`, etc.)
-- Add community pages to `COMMUNITY_PAGES` in `lib/assistant-tools.ts`
+- Add community pages to `COMMUNITY_PAGES` in `lib/assistant-tools.ts` (AI Content Assistant)
 - Add team member profiles at `/team`
 - YLOPO integration (when client provides domain)
+- Expand `INSTITUTION_LINKS` in `components/PortableText.tsx` as more local businesses, golf courses, and venues come up in blog posts
 
 ## Environment Variables
 See `.env.local.example` for full list. All same as chris-nevada-next except:
