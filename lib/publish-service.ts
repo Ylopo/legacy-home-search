@@ -282,6 +282,7 @@ async function tryVideoThenImage(
 export async function publishPostToAll(
   post: SanityBlogPost,
   socialCopy?: string,
+  publishedAtOverride?: string,
 ): Promise<PublishResult> {
   const postId = post._id
 
@@ -369,6 +370,7 @@ export async function publishPostToAll(
       reelResult && 'postSubmissionId' in reelResult ? (reelResult as { postSubmissionId: string }).postSubmissionId : undefined,
       liResult && 'postSubmissionId' in liResult ? (liResult as { postSubmissionId: string }).postSubmissionId : undefined,
       twResult && 'postSubmissionId' in twResult ? (twResult as { postSubmissionId: string }).postSubmissionId : undefined,
+      publishedAtOverride,
     )
 
     if (!socialCopy) {

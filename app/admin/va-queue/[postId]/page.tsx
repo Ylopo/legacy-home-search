@@ -97,6 +97,11 @@ export default function VAPostPage() {
   const [publishState, setPublishState] = useState<PublishState>({ phase: 'idle' })
   const pollRefs = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
+  // Schedule state
+  const [publishDelay, setPublishDelay] = useState<number | null>(null) // hours, null = now
+  const [scheduleState, setScheduleState] = useState<'idle' | 'scheduling' | 'cancelling'>('idle')
+  const [scheduleError, setScheduleError] = useState('')
+
   // ── Load post ────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -113,7 +118,7 @@ export default function VAPostPage() {
           setSocialCopy(found.socialCopy ?? '')
           setVideoScript(found.videoScript ?? '')
 
-          if (found.workflowStatus === 'media_ready' || found.workflowStatus === 'published') {
+          if (found.workflowStatus === 'media_ready' || found.workflowStatus === 'published' || found.workflowStatus === 'scheduled') {
             setThumbnail({ type: 'saved' })
           }
 
@@ -561,6 +566,46 @@ export default function VAPostPage() {
     }
   }
 
+  async function handleSchedule() {
+    if (!post || publishDelay === null) return
+    setScheduleError('')
+    setScheduleState('scheduling')
+    try {
+      const scheduledPublishAt = new Date(Date.now() + publishDelay * 3600 * 1000).toISOString()
+      const videoUrl = video.type === 'ready' ? video.url : video.type === 'saved' ? video.url : undefined
+      const res = await fetch(`/api/content/schedule?secret=${encodeURIComponent(secret)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post._id, scheduledPublishAt, videoUrl, videoThumbnailUrl }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to schedule')
+      setPost(prev => prev ? { ...prev, workflowStatus: 'scheduled', scheduledPublishAt } : prev)
+      setScheduleState('idle')
+    } catch (err) {
+      setScheduleError(err instanceof Error ? err.message : 'Failed to schedule')
+      setScheduleState('idle')
+    }
+  }
+
+  async function handleCancelSchedule() {
+    if (!post) return
+    setScheduleState('cancelling')
+    try {
+      const res = await fetch(`/api/content/schedule?secret=${encodeURIComponent(secret)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post._id }),
+      })
+      if (!res.ok) throw new Error('Failed to cancel')
+      setPost(prev => prev ? { ...prev, workflowStatus: 'media_ready', scheduledPublishAt: undefined } : prev)
+      setPublishDelay(null)
+      setScheduleState('idle')
+    } catch {
+      setScheduleState('idle')
+    }
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   const thumbnailPreviewUrl =
@@ -571,7 +616,8 @@ export default function VAPostPage() {
 
   const isReady = post?.workflowStatus === 'media_ready'
   const isPublished = post?.workflowStatus === 'published'
-  const canPublish = !isPublished && (thumbnail.type === 'saved' || thumbnail.type === 'upload')
+  const isScheduled = post?.workflowStatus === 'scheduled'
+  const canPublish = !isPublished && !isScheduled && (thumbnail.type === 'saved' || thumbnail.type === 'upload')
   const publishInProgress = ['saving', 'publishing', 'polling'].includes(publishState.phase)
   const hasVideo = video.type === 'ready' || video.type === 'saved'
 
@@ -1015,6 +1061,31 @@ export default function VAPostPage() {
               </div>
             )}
 
+            {/* ── Scheduled state ── */}
+            {isScheduled && post?.scheduledPublishAt && (
+              <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>
+                  📅 Scheduled
+                </div>
+                <div style={{ fontSize: 13, color: '#1e40af', marginBottom: 10 }}>
+                  {new Date(post.scheduledPublishAt).toLocaleString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+                  })}
+                </div>
+                <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 10, lineHeight: 1.5 }}>
+                  The post will go live on the website and all social platforms at this time.
+                </div>
+                <button
+                  onClick={handleCancelSchedule}
+                  disabled={scheduleState === 'cancelling'}
+                  style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                >
+                  {scheduleState === 'cancelling' ? 'Cancelling…' : 'Cancel scheduled publish'}
+                </button>
+              </div>
+            )}
+
             {isPublished ? (
               <div>
                 {/* Persistent platform status — shown from Sanity data on reload */}
@@ -1091,27 +1162,101 @@ export default function VAPostPage() {
                   </div>
                 )}
               </div>
-            ) : (
-              <button
-                onClick={handlePublish}
-                disabled={!canPublish || publishInProgress}
-                style={{
-                  width: '100%', padding: '13px 0',
-                  background: canPublish && !publishInProgress ? '#1E3A5F' : '#e2e8f0',
-                  color: canPublish && !publishInProgress ? '#fff' : '#94a3b8',
-                  border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700,
-                  cursor: canPublish && !publishInProgress ? 'pointer' : 'not-allowed',
-                  transition: 'background 0.2s',
-                }}
-              >
-                {publishState.phase === 'publishing' ? 'Publishing…' :
-                 publishState.phase === 'polling'    ? 'Waiting for confirmation…' :
-                 publishState.phase === 'saving'     ? 'Preparing…' :
-                 '🚀 Publish'}
-              </button>
-            )}
+            ) : !isScheduled ? (
+              <div>
+                {/* Delay picker */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    When to publish
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {[
+                      { label: 'Now', hours: null },
+                      { label: '+1h', hours: 1 },
+                      { label: '+2h', hours: 2 },
+                      { label: '+4h', hours: 4 },
+                      { label: '+8h', hours: 8 },
+                      { label: '+12h', hours: 12 },
+                      { label: '+1 day', hours: 24 },
+                      { label: '+2 days', hours: 48 },
+                      { label: '+3 days', hours: 72 },
+                    ].map(({ label, hours }) => (
+                      <button
+                        key={label}
+                        onClick={() => setPublishDelay(hours)}
+                        style={{
+                          padding: '5px 10px', fontSize: 12, fontWeight: 600, borderRadius: 6,
+                          border: '1px solid',
+                          borderColor: publishDelay === hours ? '#1E3A5F' : '#e2e8f0',
+                          background: publishDelay === hours ? '#1E3A5F' : '#fff',
+                          color: publishDelay === hours ? '#fff' : '#475569',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {publishDelay !== null && (
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>
+                      Publishes at:{' '}
+                      {new Date(Date.now() + publishDelay * 3600 * 1000).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+                      })}
+                    </div>
+                  )}
+                </div>
 
-            {!canPublish && !isPublished && (
+                {scheduleError && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#991b1b' }}>
+                    {scheduleError}
+                  </div>
+                )}
+
+                {publishDelay === null ? (
+                  <button
+                    onClick={handlePublish}
+                    disabled={!canPublish || publishInProgress}
+                    style={{
+                      width: '100%', padding: '13px 0',
+                      background: canPublish && !publishInProgress ? '#1E3A5F' : '#e2e8f0',
+                      color: canPublish && !publishInProgress ? '#fff' : '#94a3b8',
+                      border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700,
+                      cursor: canPublish && !publishInProgress ? 'pointer' : 'not-allowed',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {publishState.phase === 'publishing' ? 'Publishing…' :
+                     publishState.phase === 'polling'    ? 'Waiting for confirmation…' :
+                     publishState.phase === 'saving'     ? 'Preparing…' :
+                     '🚀 Publish'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSchedule}
+                    disabled={!canPublish || scheduleState === 'scheduling'}
+                    style={{
+                      width: '100%', padding: '13px 0',
+                      background: canPublish && scheduleState !== 'scheduling' ? '#0f766e' : '#e2e8f0',
+                      color: canPublish && scheduleState !== 'scheduling' ? '#fff' : '#94a3b8',
+                      border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700,
+                      cursor: canPublish && scheduleState !== 'scheduling' ? 'pointer' : 'not-allowed',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {scheduleState === 'scheduling' ? 'Scheduling…' : '📅 Schedule'}
+                  </button>
+                )}
+
+                {!canPublish && (
+                  <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
+                    Upload a thumbnail to enable publishing.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            {!canPublish && !isPublished && isScheduled && (
               <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
                 Upload a thumbnail to enable publishing.
               </p>

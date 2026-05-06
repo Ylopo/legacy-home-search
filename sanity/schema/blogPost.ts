@@ -22,6 +22,12 @@ export default {
       type: 'datetime',
     },
     {
+      name: 'scheduledPublishAt',
+      title: 'Scheduled Publish Time',
+      type: 'datetime',
+      description: 'Set by the schedule feature — cron fires publish at this UTC time',
+    },
+    {
       name: 'category',
       title: 'Category',
       type: 'string',
@@ -61,6 +67,7 @@ export default {
           { title: 'Media Ready', value: 'media_ready' },
           { title: 'Publish Pending', value: 'publish_pending' },
           { title: 'Publishing', value: 'publishing' },
+          { title: 'Scheduled', value: 'scheduled' },
           { title: 'Published (live)', value: 'published' },
           { title: 'Publish Failed', value: 'publish_failed' },
         ],

@@ -12,6 +12,7 @@ const STATUS_LABELS: Record<WorkflowStatus, string> = {
   media_ready:     'Ready to Publish',
   publish_pending: 'Publish Pending',
   publishing:      'Publishing…',
+  scheduled:       'Scheduled',
   published:       'Published',
   publish_failed:  'Publish Failed',
 }
@@ -21,6 +22,7 @@ const STATUS_COLORS: Record<WorkflowStatus, { bg: string; text: string; border: 
   media_ready:     { bg: '#f0fdf4', text: '#166534',  border: '#4ade80' },
   publish_pending: { bg: '#eff6ff', text: '#1e40af',  border: '#60a5fa' },
   publishing:      { bg: '#eff6ff', text: '#1e40af',  border: '#60a5fa' },
+  scheduled:       { bg: '#eff6ff', text: '#1d4ed8',  border: '#93c5fd' },
   published:       { bg: '#f0fdf4', text: '#166534',  border: '#86efac' },
   publish_failed:  { bg: '#fef2f2', text: '#991b1b',  border: '#f87171' },
 }

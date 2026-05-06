@@ -178,6 +178,7 @@ export type SanityBlogPost = {
   tiktokPostUrl?: string
   linkedinPostSubmissionId?: string
   twitterPostSubmissionId?: string
+  scheduledPublishAt?: string
 }
 
 export type WorkflowStatus =
@@ -185,6 +186,7 @@ export type WorkflowStatus =
   | 'media_ready'
   | 'publish_pending'
   | 'publishing'
+  | 'scheduled'
   | 'published'
   | 'publish_failed'
 
@@ -219,9 +221,9 @@ export async function getBlogPost(slug: string): Promise<SanityBlogPost | null> 
 
 export async function getVAQueue(): Promise<SanityBlogPost[]> {
   return client.fetch(
-    `*[_type == "blogPost" && workflowStatus in ["media_pending", "media_ready", "publish_pending", "publishing", "publish_failed"]] | order(publishedAt desc){
+    `*[_type == "blogPost" && workflowStatus in ["media_pending", "media_ready", "publish_pending", "publishing", "scheduled", "publish_failed"]] | order(publishedAt desc){
       _id, title, "slug": slug.current, publishedAt, category, excerpt,
-      coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy
+      coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy, scheduledPublishAt
     }`,
     {},
     { next: { revalidate: 0 } }
@@ -271,9 +273,20 @@ export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null>
       blotatoPublishedAt, facebookPostUrl, socialCopy, videoScript,
       videoUrl, videoThumbnailUrl, youtubePostSubmissionId, tiktokPostSubmissionId,
       youtubePostUrl, tiktokPostUrl, facebookReelSubmissionId,
-      linkedinPostSubmissionId, twitterPostSubmissionId
+      linkedinPostSubmissionId, twitterPostSubmissionId, scheduledPublishAt
     }`,
     { id },
+    { next: { revalidate: 0 } }
+  )
+}
+
+export async function getScheduledPostsDue(now: string): Promise<SanityBlogPost[]> {
+  return client.fetch(
+    `*[_type == "blogPost" && workflowStatus == "scheduled" && scheduledPublishAt <= $now]{
+      _id, title, "slug": slug.current, publishedAt, category,
+      workflowStatus, scheduledPublishAt
+    }`,
+    { now },
     { next: { revalidate: 0 } }
   )
 }

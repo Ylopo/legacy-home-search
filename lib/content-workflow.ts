@@ -15,6 +15,7 @@ export const ACTIVE_QUEUE_STATUSES: WorkflowStatus[] = [
   'media_ready',
   'publish_pending',
   'publishing',
+  'scheduled',
   'publish_failed',
 ]
 
@@ -52,6 +53,16 @@ export async function markPublishing(postId: string): Promise<void> {
   await transitionStatus(postId, 'publishing')
 }
 
+export async function markScheduled(postId: string, scheduledPublishAt: string): Promise<void> {
+  const client = getSanityWriteClient()
+  await client.patch(postId).set({ workflowStatus: 'scheduled' as WorkflowStatus, scheduledPublishAt }).commit()
+}
+
+export async function cancelScheduled(postId: string): Promise<void> {
+  const client = getSanityWriteClient()
+  await client.patch(postId).set({ workflowStatus: 'media_ready' as WorkflowStatus }).unset(['scheduledPublishAt']).commit()
+}
+
 export async function markPublished(
   postId: string,
   blotatoPostSubmissionId: string,
@@ -60,11 +71,12 @@ export async function markPublished(
   facebookReelSubmissionId?: string,
   linkedinPostSubmissionId?: string,
   twitterPostSubmissionId?: string,
+  publishedAtOverride?: string,
 ): Promise<void> {
   const client = getSanityWriteClient()
   const patch: Record<string, unknown> = {
     workflowStatus: 'published' as WorkflowStatus,
-    publishedAt: new Date().toISOString(),
+    publishedAt: publishedAtOverride ?? new Date().toISOString(),
     blotatoPostSubmissionId,
     blotatoPublishStatus: 'pending',
   }
