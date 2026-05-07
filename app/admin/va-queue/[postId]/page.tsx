@@ -636,7 +636,8 @@ export default function VAPostPage() {
   const isReady = post?.workflowStatus === 'media_ready'
   const isPublished = post?.workflowStatus === 'published'
   const isScheduled = post?.workflowStatus === 'scheduled'
-  const canPublish = !isPublished && !isScheduled && (thumbnail.type === 'saved' || thumbnail.type === 'upload')
+  const videoUploading = video.type === 'uploading'
+  const canPublish = !isPublished && !isScheduled && (thumbnail.type === 'saved' || thumbnail.type === 'upload') && !videoUploading
   const publishInProgress = ['saving', 'publishing', 'polling'].includes(publishState.phase)
   const hasVideo = video.type === 'ready' || video.type === 'saved'
 
@@ -1244,6 +1245,39 @@ export default function VAPostPage() {
                   </div>
                 )}
 
+                {/* Video upload in-progress lock banner */}
+                {videoUploading && video.type === 'uploading' && (
+                  <div style={{
+                    background: '#fffbeb',
+                    border: '1.5px solid #fbbf24',
+                    borderRadius: 8,
+                    padding: '12px 14px',
+                    marginBottom: 12,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 16 }}>⏳</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>
+                          Video uploading — {video.progress}%
+                        </div>
+                        <div style={{ fontSize: 11, color: '#b45309', lineHeight: 1.4 }}>
+                          Publishing is locked until the upload finishes.
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#d97706' }}>{video.progress}%</span>
+                    </div>
+                    <div style={{ height: 5, background: '#fde68a', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${video.progress}%`,
+                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+                        borderRadius: 99,
+                        transition: 'width 0.4s ease',
+                      }} />
+                    </div>
+                  </div>
+                )}
+
                 {publishDelay === null ? (
                   <button
                     onClick={handlePublish}
@@ -1279,9 +1313,11 @@ export default function VAPostPage() {
                   </button>
                 )}
 
-                {!canPublish && (
-                  <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
-                    Upload a thumbnail to enable publishing.
+                {!canPublish && !publishInProgress && (
+                  <p style={{ fontSize: 12, color: videoUploading ? '#b45309' : '#94a3b8', textAlign: 'center', marginTop: 8 }}>
+                    {videoUploading
+                      ? 'Publishing will unlock once the video upload is complete.'
+                      : 'Upload a thumbnail to enable publishing.'}
                   </p>
                 )}
               </div>
