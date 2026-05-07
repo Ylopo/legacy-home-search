@@ -1,4 +1,5 @@
 import { client } from '@/sanity/client'
+import { fetchBlogGA4Data, type PostGA4Stats } from '@/lib/ga4'
 
 type Props = { searchParams: Promise<{ secret?: string }> }
 
@@ -50,6 +51,24 @@ function postsPerWeek(posts: BlogPost[]): string {
   return (published.length / weeks).toFixed(1)
 }
 
+function fmtNum(n: number): string {
+  return n.toLocaleString()
+}
+
+function fmtSec(sec: number): string {
+  if (sec <= 0) return '—'
+  if (sec < 60) return `${sec}s`
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return s > 0 ? `${m}m ${s}s` : `${m}m`
+}
+
+function fmtPerDay(total: number, ageDays: number): string {
+  const days = Math.min(90, Math.max(1, ageDays))
+  const v = total / days
+  return v < 1 ? v.toFixed(2) : v.toFixed(1)
+}
+
 export default async function BlogDashboardPage({ searchParams }: Props) {
   const { secret } = await searchParams
 
@@ -65,11 +84,14 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
     )
   }
 
-  const posts: BlogPost[] = await client.fetch(`
-    *[_type == "blogPost"] | order(publishedAt desc) {
-      _id, title, slug, category, publishedAt, aiGenerated
-    }
-  `)
+  const [posts, ga4Map] = await Promise.all([
+    client.fetch<BlogPost[]>(`
+      *[_type == "blogPost"] | order(publishedAt desc) {
+        _id, title, slug, category, publishedAt, aiGenerated
+      }
+    `),
+    fetchBlogGA4Data(),
+  ])
 
   const total = posts.length
   const published = posts.filter(p => p.publishedAt)
@@ -84,9 +106,33 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
   const reportDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
-  // Posts in last 90 days
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
   const recent90 = published.filter(p => new Date(p.publishedAt!).getTime() > cutoff)
+
+  // ── GA4 aggregates ────────────────────────────────────────────────────────────
+  const hasGA4 = ga4Map.size > 0
+
+  const postsWithGA4 = published.filter(p => ga4Map.has(p.slug?.current ?? ''))
+
+  const totalPV   = postsWithGA4.reduce((s, p) => s + (ga4Map.get(p.slug?.current ?? '')?.pageViews   ?? 0), 0)
+  const totalSess = postsWithGA4.reduce((s, p) => s + (ga4Map.get(p.slug?.current ?? '')?.sessions    ?? 0), 0)
+  const totalUsers = postsWithGA4.reduce((s, p) => s + (ga4Map.get(p.slug?.current ?? '')?.activeUsers ?? 0), 0)
+  const engSecs   = postsWithGA4.map(p => ga4Map.get(p.slug?.current ?? '')?.avgEngagementSec ?? 0).filter(v => v > 0)
+  const avgEngSec = engSecs.length > 0 ? Math.round(engSecs.reduce((a, b) => a + b, 0) / engSecs.length) : null
+
+  const n = postsWithGA4.length || 1
+  const avgPVPerPostPerDay   = hasGA4 ? parseFloat((totalPV   / n / 90).toFixed(2)) : null
+  const avgSessPerPostPerDay = hasGA4 ? parseFloat((totalSess / n / 90).toFixed(2)) : null
+  const avgUsersPerPostPerDay = hasGA4 ? parseFloat((totalUsers / n / 90).toFixed(2)) : null
+
+  // Top 5 posts by total pageviews
+  const top5 = [...published]
+    .filter(p => (ga4Map.get(p.slug?.current ?? '')?.pageViews ?? 0) > 0)
+    .sort((a, b) =>
+      (ga4Map.get(b.slug?.current ?? '')?.pageViews ?? 0) -
+      (ga4Map.get(a.slug?.current ?? '')?.pageViews ?? 0)
+    )
+    .slice(0, 5)
 
   return (
     <div style={s.page}>
@@ -123,9 +169,11 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             <p style={s.weekSectionText}>
               {total === 0
                 ? 'No posts published yet. Use the blog pipeline to start publishing.'
-                : gaId
-                  ? `The blog has ${total} published posts and Google Analytics is now collecting data. Check back next week for traffic metrics — GA typically takes 7–14 days to accumulate meaningful data on new posts.`
-                  : `The blog has ${total} published posts across ${Object.keys(byCat).length} categories. Google Analytics was connected on ${reportDate} — traffic metrics will appear here as data accumulates over the coming weeks.`
+                : hasGA4
+                  ? `The blog has ${total} published posts and Google Analytics is live. ${postsWithGA4.length} posts have traffic data below. Total pageviews (last 90 days): ${fmtNum(totalPV)} across ${fmtNum(totalSess)} sessions.`
+                  : gaId
+                    ? `The blog has ${total} published posts and Google Analytics is collecting data. Traffic metrics will appear once the GA4 API connection activates.`
+                    : `The blog has ${total} published posts across ${Object.keys(byCat).length} categories.`
               }
               {total > 0 && ` Posting frequency: ${ppw} posts/week over the tracked period.`}
             </p>
@@ -146,17 +194,39 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
         </div>
 
         {/* ─── HEADLINE KPIs ─── */}
-        <h2 style={s.sectionTitle}>Headline numbers ({total} posts)</h2>
+        <h2 style={s.sectionTitle}>Headline numbers ({total} posts · last 90 days)</h2>
 
         <div style={s.kpiGrid}>
           {[
-            { label: 'Pageviews per post per day', bench: '0.15 – 0.35', benchLabel: 'Typical real-estate blog' },
-            { label: 'Sessions per post per day', bench: '0.12 – 0.30', benchLabel: 'Typical real-estate blog' },
-            { label: 'Users per post per day', bench: '0.10 – 0.25', benchLabel: 'Typical real-estate blog' },
-            { label: 'Avg engagement time (sec/session)', bench: '30 – 60 sec', benchLabel: 'Typical real-estate blog' },
+            {
+              label: 'Pageviews per post per day',
+              value: avgPVPerPostPerDay !== null ? String(avgPVPerPostPerDay) : '—',
+              bench: '0.15 – 0.35',
+              live: hasGA4,
+            },
+            {
+              label: 'Sessions per post per day',
+              value: avgSessPerPostPerDay !== null ? String(avgSessPerPostPerDay) : '—',
+              bench: '0.12 – 0.30',
+              live: hasGA4,
+            },
+            {
+              label: 'Users per post per day',
+              value: avgUsersPerPostPerDay !== null ? String(avgUsersPerPostPerDay) : '—',
+              bench: '0.10 – 0.25',
+              live: hasGA4,
+            },
+            {
+              label: 'Avg engagement time',
+              value: avgEngSec !== null ? fmtSec(avgEngSec) : '—',
+              bench: '30 – 60 sec',
+              live: hasGA4,
+            },
           ].map((kpi) => (
             <div key={kpi.label} style={s.kpiCard}>
-              <div style={s.kpiValue}>—</div>
+              <div style={{ ...s.kpiValue, color: kpi.live && kpi.value !== '—' ? '#2563eb' : '#94a3b8' }}>
+                {kpi.value}
+              </div>
               <div style={s.kpiLabel}>{kpi.label}</div>
               <div style={s.kpiBench}>
                 Typical real-estate blog: <strong>{kpi.bench}</strong>
@@ -165,21 +235,66 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
           ))}
         </div>
 
-        {/* ─── GA SETUP CALLOUT ─── */}
+        {/* ─── GA STATUS BANNER ─── */}
         {!gaId ? (
           <div style={s.gaWarning}>
             <div style={s.gaWarningTitle}>Google Analytics not connected</div>
             <p style={s.gaWarningText}>
               Add <code style={s.code}>NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX</code> to your Vercel environment
-              variables to activate traffic tracking. Once set, all four KPIs above will populate automatically
-              as GA accumulates data (typically 7–14 days for meaningful numbers).
+              variables to activate traffic tracking.
             </p>
           </div>
-        ) : (
+        ) : hasGA4 ? (
           <div style={s.gaSuccess}>
-            <strong>Google Analytics connected</strong> — Measurement ID: <code style={s.code}>{gaId}</code>.
-            Traffic metrics will populate as GA accumulates data. This dashboard updates live on each page load.
+            <strong>Google Analytics connected and live</strong> — Measurement ID: <code style={s.code}>{gaId}</code> ·
+            Property ID: <code style={s.code}>{process.env.GA4_PROPERTY_ID}</code> ·
+            {postsWithGA4.length} of {published.length} posts have traffic data (last 90 days).
           </div>
+        ) : (
+          <div style={s.gaWarning}>
+            <div style={s.gaWarningTitle}>Google Analytics tracking active — API pending</div>
+            <p style={s.gaWarningText}>
+              GA4 Measurement ID <code style={s.code}>{gaId}</code> is collecting data.
+              Add <code style={s.code}>GA4_PROPERTY_ID</code> + <code style={s.code}>GA4_SERVICE_ACCOUNT_JSON</code> to
+              Vercel env vars to pull live traffic data into this dashboard.
+            </p>
+          </div>
+        )}
+
+        {/* ─── TOP PERFORMERS ─── */}
+        {top5.length > 0 && (
+          <>
+            <h2 style={s.sectionTitle}>Top performing posts (last 90 days)</h2>
+            <div style={s.topGrid}>
+              {top5.map((post, rank) => {
+                const stats = ga4Map.get(post.slug?.current ?? '') as PostGA4Stats
+                const days = Math.min(90, Math.max(1, daysSince(post.publishedAt) ?? 90))
+                return (
+                  <div key={post._id} style={s.topCard}>
+                    <div style={s.topRank}>#{rank + 1}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <a
+                        href={`/blog/${post.slug?.current}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={s.topTitle}
+                      >
+                        {post.title}
+                      </a>
+                      <div style={s.topMeta}>
+                        <span style={{ ...s.catPill, background: (CATEGORY_COLORS[post.category] ?? '#94a3b8') + '18', color: CATEGORY_COLORS[post.category] ?? '#64748b' }}>
+                          {CATEGORY_LABELS[post.category] ?? post.category}
+                        </span>
+                        <span style={s.topStat}>👁 {fmtNum(stats.pageViews)} views</span>
+                        <span style={s.topStat}>📈 {fmtPerDay(stats.pageViews, days)}/day</span>
+                        <span style={s.topStat}>⏱ {fmtSec(stats.avgEngagementSec)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
 
         {/* ─── BENCHMARK TABLE ─── */}
@@ -200,17 +315,51 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             </thead>
             <tbody>
               {[
-                ['Pageviews / post / day', '— (GA pending)', '0.15 – 0.35', 'Will update as GA data arrives'],
-                ['Avg engagement time', '— (GA pending)', '30 – 60 sec', 'Will update as GA data arrives'],
-                ['Organic search share', '— (GA pending)', '55 – 70%', 'Will update as GA data arrives'],
-                ['Direct share', '— (GA pending)', '15 – 25%', 'Will update as GA data arrives'],
-                ['Sessions / post / day', '— (GA pending)', '0.12 – 0.30', 'Will update as GA data arrives'],
-                ['Posts published', String(total), 'varies', total >= 20 ? 'Healthy volume' : total > 0 ? 'Building — keep publishing' : 'No posts yet'],
-                ['Posts / week', ppw, '3 – 7', ppw === '—' ? 'Not enough data' : parseFloat(ppw) >= 3 ? 'On target' : 'Below target — increase cadence'],
+                [
+                  'Pageviews / post / day',
+                  avgPVPerPostPerDay !== null ? String(avgPVPerPostPerDay) : '— (GA pending)',
+                  '0.15 – 0.35',
+                  avgPVPerPostPerDay === null ? 'Will update as GA data arrives'
+                    : avgPVPerPostPerDay >= 0.35 ? '🟢 Above benchmark'
+                    : avgPVPerPostPerDay >= 0.15 ? '🟡 Within benchmark range'
+                    : '🔴 Below benchmark — increase promotion',
+                ],
+                [
+                  'Avg engagement time',
+                  avgEngSec !== null ? fmtSec(avgEngSec) : '— (GA pending)',
+                  '30 – 60 sec',
+                  avgEngSec === null ? 'Will update as GA data arrives'
+                    : avgEngSec >= 60 ? '🟢 Above benchmark'
+                    : avgEngSec >= 30 ? '🟡 Within benchmark range'
+                    : '🔴 Below benchmark — improve content depth',
+                ],
+                [
+                  'Sessions / post / day',
+                  avgSessPerPostPerDay !== null ? String(avgSessPerPostPerDay) : '— (GA pending)',
+                  '0.12 – 0.30',
+                  avgSessPerPostPerDay === null ? 'Will update as GA data arrives'
+                    : avgSessPerPostPerDay >= 0.30 ? '🟢 Above benchmark'
+                    : avgSessPerPostPerDay >= 0.12 ? '🟡 Within benchmark range'
+                    : '🔴 Below benchmark',
+                ],
+                [
+                  'Posts published',
+                  String(total),
+                  'varies',
+                  total >= 20 ? 'Healthy volume' : total > 0 ? 'Building — keep publishing' : 'No posts yet',
+                ],
+                [
+                  'Posts / week',
+                  ppw,
+                  '3 – 7',
+                  ppw === '—' ? 'Not enough data'
+                    : parseFloat(ppw) >= 3 ? '🟢 On target'
+                    : '🔴 Below target — increase cadence',
+                ],
               ].map(([metric, us, bench, note], i) => (
                 <tr key={metric} style={{ background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
                   <td style={s.td}><strong>{metric}</strong></td>
-                  <td style={s.td}>{us}</td>
+                  <td style={{ ...s.td, fontWeight: 600 }}>{us}</td>
                   <td style={s.td}>{bench}</td>
                   <td style={{ ...s.td, color: '#64748b', fontSize: 12 }}>{note}</td>
                 </tr>
@@ -238,10 +387,9 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
 
         {/* ─── CHANNEL TABLE (placeholder) ─── */}
         <h2 style={s.sectionTitle}>Where the traffic comes from</h2>
-        {!gaId && (
+        {!hasGA4 && (
           <p style={s.metaNote}>
-            Connect Google Analytics (see callout above) to see channel data. Once connected, this table will show
-            Organic Search, Direct, Social, and Referral breakdowns for all posts.
+            Channel breakdown requires GA4 API access (see status banner above).
           </p>
         )}
         <div style={s.tableWrap}>
@@ -266,12 +414,19 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             </tbody>
           </table>
         </div>
+        {!hasGA4 && (
+          <p style={{ ...s.metaNote, marginTop: 6 }}>
+            Channel breakdown needs a channel grouping dimension query — coming once the GA4 API is active.
+          </p>
+        )}
 
         {/* ─── POST-BY-POST TABLE ─── */}
-        <h2 style={s.sectionTitle}>Post-by-post results ({total} posts)</h2>
-        <p style={s.metaNote}>
-          Traffic metrics show — until Google Analytics data accumulates. Posts are sorted newest-first.
-        </p>
+        <h2 style={s.sectionTitle}>Post-by-post results ({total} posts · last 90 days)</h2>
+        {!hasGA4 && (
+          <p style={s.metaNote}>
+            Traffic metrics show — until Google Analytics API data is active.
+          </p>
+        )}
 
         {total === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
@@ -282,20 +437,26 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             <table style={s.table}>
               <thead>
                 <tr>
-                  <th style={{ ...s.th, width: '40%' }}>Post</th>
+                  <th style={{ ...s.th, width: '38%' }}>Post</th>
                   <th style={s.th}>Category</th>
                   <th style={s.th}>Published</th>
-                  <th style={s.th}>Age (days)</th>
+                  <th style={s.th}>Age</th>
+                  <th style={s.th}>Views</th>
                   <th style={s.th}>PV/day</th>
                   <th style={s.th}>Sess/day</th>
-                  <th style={s.th}>Engage (sec)</th>
+                  <th style={s.th}>Engage</th>
                 </tr>
               </thead>
               <tbody>
                 {posts.map((post, i) => {
-                  const days = daysSince(post.publishedAt)
+                  const days = daysSince(post.publishedAt) ?? 0
+                  const stats = ga4Map.get(post.slug?.current ?? '')
+                  const pvDay   = stats ? fmtPerDay(stats.pageViews, days) : '—'
+                  const sessDay = stats ? fmtPerDay(stats.sessions, days) : '—'
+                  const engage  = stats ? fmtSec(stats.avgEngagementSec) : '—'
+                  const isTop = top5.some(t => t._id === post._id)
                   return (
-                    <tr key={post._id} style={{ background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
+                    <tr key={post._id} style={{ background: isTop ? '#fffbeb' : i % 2 === 0 ? '#fff' : '#fafaf8' }}>
                       <td style={s.td}>
                         <a
                           href={`/blog/${post.slug?.current}`}
@@ -305,9 +466,8 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
                         >
                           {post.title}
                         </a>
-                        {post.aiGenerated && (
-                          <span style={s.aiBadge}>AI</span>
-                        )}
+                        {isTop && <span style={s.topBadge}>Top</span>}
+                        {post.aiGenerated && <span style={s.aiBadge}>AI</span>}
                       </td>
                       <td style={s.td}>
                         <span style={{
@@ -322,11 +482,14 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
                         {formatDate(post.publishedAt)}
                       </td>
                       <td style={{ ...s.td, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
-                        {days !== null ? days : '—'}
+                        {days > 0 ? `${days}d` : '—'}
                       </td>
-                      <td style={{ ...s.td, color: '#94a3b8', textAlign: 'center' }}>—</td>
-                      <td style={{ ...s.td, color: '#94a3b8', textAlign: 'center' }}>—</td>
-                      <td style={{ ...s.td, color: '#94a3b8', textAlign: 'center' }}>—</td>
+                      <td style={{ ...s.td, textAlign: 'center', fontWeight: stats ? 600 : 400, color: stats ? '#1a1a1a' : '#94a3b8' }}>
+                        {stats ? fmtNum(stats.pageViews) : '—'}
+                      </td>
+                      <td style={{ ...s.td, textAlign: 'center', color: stats ? '#1a1a1a' : '#94a3b8' }}>{pvDay}</td>
+                      <td style={{ ...s.td, textAlign: 'center', color: stats ? '#1a1a1a' : '#94a3b8' }}>{sessDay}</td>
+                      <td style={{ ...s.td, textAlign: 'center', color: stats ? '#1a1a1a' : '#94a3b8' }}>{engage}</td>
                     </tr>
                   )
                 })}
@@ -407,7 +570,7 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     padding: '20px 24px',
   },
-  kpiValue: { fontSize: 36, fontWeight: 800, color: '#2563eb', letterSpacing: '-0.03em', marginBottom: 4 },
+  kpiValue: { fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 4 },
   kpiLabel: { fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 8, lineHeight: 1.4 },
   kpiBench: { fontSize: 12, color: '#888884', lineHeight: 1.5 },
   gaWarning: {
@@ -436,6 +599,39 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     fontSize: 12,
   },
+  topGrid: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 10,
+    marginBottom: 8,
+  },
+  topCard: {
+    background: '#fff',
+    border: '1px solid #e0ddd8',
+    borderRadius: 10,
+    padding: '14px 18px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 14,
+  },
+  topRank: {
+    fontSize: 20,
+    fontWeight: 800,
+    color: '#2563eb',
+    minWidth: 32,
+    lineHeight: 1.3,
+  },
+  topTitle: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#1a1a1a',
+    textDecoration: 'none',
+    lineHeight: 1.4,
+    display: 'block',
+    marginBottom: 6,
+  },
+  topMeta: { display: 'flex', flexWrap: 'wrap' as const, gap: 8, alignItems: 'center' },
+  topStat: { fontSize: 12, color: '#64748b' },
   tableWrap: { overflowX: 'auto' as const, marginBottom: 8 },
   table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 },
   th: {
@@ -459,6 +655,18 @@ const s: Record<string, React.CSSProperties> = {
     textDecoration: 'none',
     fontWeight: 500,
     lineHeight: 1.4,
+  },
+  topBadge: {
+    display: 'inline-block',
+    marginLeft: 6,
+    fontSize: 10,
+    fontWeight: 700,
+    background: '#fffbeb',
+    color: '#d97706',
+    border: '1px solid #fde68a',
+    padding: '1px 5px',
+    borderRadius: 4,
+    verticalAlign: 'middle',
   },
   aiBadge: {
     display: 'inline-block',
