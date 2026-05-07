@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Post not found' }, { status: 404 })
   }
 
-  if (!['media_ready', 'publish_failed', 'scheduled'].includes(post.workflowStatus ?? '')) {
+  if (!['media_pending', 'media_ready', 'publish_failed', 'scheduled'].includes(post.workflowStatus ?? '')) {
     return NextResponse.json(
       { error: `Post cannot be scheduled from status: ${post.workflowStatus}` },
       { status: 400 },

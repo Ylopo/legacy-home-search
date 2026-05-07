@@ -590,6 +590,29 @@ export default function VAPostPage() {
     setScheduleError('')
     setScheduleState('scheduling')
     try {
+      // Save thumbnail + video URL to Sanity if not already done (mirrors handlePublish)
+      if (thumbnail.type === 'upload') {
+        const form = new FormData()
+        form.append('postId', postId)
+        form.append('socialCopy', socialCopy)
+        if (videoScript) form.append('videoScript', videoScript)
+        if (video.type === 'ready') form.append('videoUrl', video.url)
+        if (videoThumbnailUrl) form.append('videoThumbnailUrl', videoThumbnailUrl)
+        form.append('image', thumbnail.file)
+        const markRes = await fetch(`/api/content/mark-ready?secret=${encodeURIComponent(secret)}`, {
+          method: 'POST',
+          body: form,
+        })
+        if (!markRes.ok) {
+          const d = await markRes.json()
+          throw new Error(d.error ?? 'Failed to save thumbnail')
+        }
+        setThumbnail({ type: 'saved' })
+        if (video.type === 'ready') {
+          setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
+        }
+      }
+
       const scheduledPublishAt = new Date(Date.now() + publishDelay * 3600 * 1000).toISOString()
       const videoUrl = video.type === 'ready' ? video.url : video.type === 'saved' ? video.url : undefined
       const res = await fetch(`/api/content/schedule?secret=${encodeURIComponent(secret)}`, {
