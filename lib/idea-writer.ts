@@ -111,6 +111,39 @@ export async function writePostFromIdea(
     ? `\nRESEARCH / SOURCE MATERIAL:\n${idea.researchData.slice(0, 5000)}`
     : ''
 
+  const isLocalHistory = idea.contentType === 'Local History'
+
+  const writingRules = isLocalHistory ? `WRITING RULES (LOCAL HISTORY — STORYTELLING FORMAT):
+- Voice: vivid, narrative, journalistic. Barry is a lifelong Hampton Roads resident who genuinely loves the area's history. Write like you're telling a story over coffee, not like a Wikipedia article.
+- Open with the most dramatic or surprising fact — a scene, a date, a specific detail that makes the reader say "wait, what?" Examples: "November 22, 1718. A naval officer sailed into Hampton harbor with a severed head hanging from his bow." Drop readers into the moment before explaining who, what, where.
+- NEVER start with "Did you know..." — that's overused. Start with the scene or fact itself.
+- Structure: dramatic opening hook → historical context (who, what, when, where) → 2–3 ## sections going deeper → ## Why It Still Matters Today (connect history to living in Hampton Roads now) → ## Frequently Asked Questions
+- 600–900 words — this format earns longer reads because the story is genuinely interesting
+- No Seller CTA for local history posts — this content is for community authority, not lead gen
+- Tie the history back to the specific neighborhood, park, landmark, or military base buyers and locals recognize today
+- Use real names, dates, and specific details — precision builds credibility
+- Avoid: vague generalities, "Hampton Roads has a rich history", "You might be surprised to learn"
+
+SEO RULES (required):
+1. Target keyword is: ${keyword} — use it naturally in the opening paragraph, in at least one ## heading, and 2–3 times in the body. Never forced.
+2. End with ## Frequently Asked Questions — exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a local resident or visitor would actually search for related to "${keyword}".
+3. Add 1 internal link to a relevant page (e.g., /virginia-beach, /norfolk, /hampton, /communities). Use markdown link syntax.
+4. COMMUNITY LINK RULE: On the FIRST mention of any Hampton Roads community by name in the post body, format it as a markdown link: [Virginia Beach](/virginia-beach), [Chesapeake](/chesapeake), [Norfolk](/norfolk), [Suffolk](/suffolk), [Hampton](/hampton), [Newport News](/newport-news). Only the first mention of each.` : `WRITING RULES:
+- Voice: knowledgeable, warm, direct. Feels like advice from a trusted neighbor who knows the market cold — not a pitch.
+- Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. Example: "Closing costs in Virginia Beach typically run 2–5% of the purchase price." This is the featured snippet hook.
+- Always tie insights back to what they mean for Hampton Roads buyers/sellers/homeowners specifically
+- Include a military/PCS angle where it naturally fits
+- Structure: intro (with direct answer) → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullet points) → brief closing → ## Frequently Asked Questions
+- 400–500 words total
+- SELLER CTA RULE: where the post mentions sellers, homeowners with equity, or what a home is worth, end that sentence with [SELLER_CTA: Find out what your home is worth →] inline. Max 2 times per post, only where it genuinely fits.
+- Avoid: salesy language, generic "tips", "as a real estate agent I recommend", excessive CTAs
+
+SEO RULES (required):
+1. Target keyword is: ${keyword} — use it naturally in the opening paragraph, in at least one ## heading, and 2–3 times in the body. Never forced.
+2. End with ## Frequently Asked Questions — exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a Hampton Roads buyer, seller, or homeowner would actually search for related to "${keyword}".
+3. Add 1 internal link to a relevant page on the site where it genuinely helps the reader (e.g., /blog, /communities, /virginia-beach, /chesapeake). Use markdown link syntax.
+4. COMMUNITY LINK RULE: On the FIRST mention of any Hampton Roads community by name in the post body, format it as a markdown link to its community page: [Virginia Beach](/virginia-beach), [Chesapeake](/chesapeake), [Norfolk](/norfolk), [Suffolk](/suffolk), [Hampton](/hampton), [Newport News](/newport-news). Only the first mention of each community — leave all later mentions as plain text.`
+
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 6000,
@@ -133,21 +166,7 @@ BLOG LEARNINGS & STYLE GUIDE (follow all active instructions):
 ${learningsContext.slice(0, 4000)}
 ${researchSection}
 
-WRITING RULES:
-- Voice: knowledgeable, warm, direct. Feels like advice from a trusted neighbor who knows the market cold — not a pitch.
-- Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. Example: "Closing costs in Virginia Beach typically run 2–5% of the purchase price." This is the featured snippet hook.
-- Always tie insights back to what they mean for Hampton Roads buyers/sellers/homeowners specifically
-- Include a military/PCS angle where it naturally fits
-- Structure: intro (with direct answer) → 2–3 body sections with ## headings → ## What This Means For You (3–4 bullet points) → brief closing → ## Frequently Asked Questions
-- 400–500 words total
-- SELLER CTA RULE: where the post mentions sellers, homeowners with equity, or what a home is worth, end that sentence with [SELLER_CTA: Find out what your home is worth →] inline. Max 2 times per post, only where it genuinely fits.
-- Avoid: salesy language, generic "tips", "as a real estate agent I recommend", excessive CTAs
-
-SEO RULES (required):
-1. Target keyword is: ${keyword} — use it naturally in the opening paragraph, in at least one ## heading, and 2–3 times in the body. Never forced.
-2. End with ## Frequently Asked Questions — exactly 3 questions as ### headings, each with a 2–3 sentence answer. Choose questions a Hampton Roads buyer, seller, or homeowner would actually search for related to "${keyword}".
-3. Add 1 internal link to a relevant page on the site where it genuinely helps the reader (e.g., /blog, /communities, /virginia-beach, /chesapeake). Use markdown link syntax.
-4. COMMUNITY LINK RULE: On the FIRST mention of any Hampton Roads community by name in the post body, format it as a markdown link to its community page: [Virginia Beach](/virginia-beach), [Chesapeake](/chesapeake), [Norfolk](/norfolk), [Suffolk](/suffolk), [Hampton](/hampton), [Newport News](/newport-news). Only the first mention of each community — leave all later mentions as plain text.
+${writingRules}
 
 Return a JSON object with EXACTLY these fields:
 {
