@@ -222,7 +222,8 @@ export async function getBlogPost(slug: string): Promise<SanityBlogPost | null> 
 }
 
 export async function getVAQueue(): Promise<SanityBlogPost[]> {
-  return client.fetch(
+  // Active (non-published) posts — all of them
+  const active = await client.fetch(
     `*[_type == "blogPost" && workflowStatus in ["media_pending", "media_ready", "publish_pending", "publishing", "scheduled", "publish_failed"]] | order(publishedAt desc){
       _id, title, "slug": slug.current, publishedAt, category, excerpt,
       coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy, scheduledPublishAt
@@ -230,6 +231,16 @@ export async function getVAQueue(): Promise<SanityBlogPost[]> {
     {},
     { next: { revalidate: 0 } }
   )
+  // Published posts — most recent 30 so past posts are reachable for video replacement
+  const published = await client.fetch(
+    `*[_type == "blogPost" && workflowStatus == "published"] | order(publishedAt desc)[0...30]{
+      _id, title, "slug": slug.current, publishedAt, category, excerpt,
+      coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy, scheduledPublishAt
+    }`,
+    {},
+    { next: { revalidate: 0 } }
+  )
+  return [...active, ...published]
 }
 
 // Posts published to the blog but not yet posted to Facebook (last 21 days)
