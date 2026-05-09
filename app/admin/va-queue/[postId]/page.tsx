@@ -90,7 +90,7 @@ export default function VAPostPage() {
   const [videoPublishState, setVideoPublishState] = useState<
     | { phase: 'idle' }
     | { phase: 'publishing' }
-    | { phase: 'done'; facebookReel: { postSubmissionId?: string; error?: string }; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string } }
+    | { phase: 'done'; facebookReel: { postSubmissionId?: string; error?: string }; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string }; linkedin: { postSubmissionId?: string; error?: string }; twitter: { postSubmissionId?: string; error?: string }; threads: { postSubmissionId?: string; error?: string } }
     | { phase: 'error'; message: string }
   >({ phase: 'idle' })
   const heygenPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -273,7 +273,7 @@ export default function VAPostPage() {
     setVideo({ type: 'none' })
   }
 
-  // ── Publish video only (YouTube + TikTok) for already-published posts ────────
+  // ── Re-publish video to all platforms for already-published posts ───────────
   async function handlePublishVideoOnly() {
     if (video.type !== 'ready') return
     setVideoPublishState({ phase: 'publishing' })
@@ -289,10 +289,24 @@ export default function VAPostPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Publish failed')
-      setVideoPublishState({ phase: 'done', facebookReel: data.facebookReel ?? {}, youtube: data.youtube ?? {}, tiktok: data.tiktok ?? {} })
+      setVideoPublishState({
+        phase: 'done',
+        facebookReel: data.facebookReel ?? {},
+        youtube:      data.youtube      ?? {},
+        tiktok:       data.tiktok       ?? {},
+        linkedin:     data.linkedin     ?? {},
+        twitter:      data.twitter      ?? {},
+        threads:      data.threads      ?? {},
+      })
     } catch (err) {
       setVideoPublishState({ phase: 'error', message: err instanceof Error ? err.message : 'Publish failed' })
     }
+  }
+
+  // ── Replace saved video on a published post ──────────────────────────────────
+  function handleReplaceVideo() {
+    setVideo({ type: 'none' })
+    setVideoPublishState({ phase: 'idle' })
   }
 
   async function handleVideoThumbnailSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -781,7 +795,7 @@ export default function VAPostPage() {
           </Card>
 
           {/* Video upload */}
-          <Card title="Video (YouTube + TikTok + Facebook + LinkedIn + X + Threads)">
+          <Card title={isPublished ? 'Video — Replace & Re-publish' : 'Video (YouTube + TikTok + Facebook + LinkedIn + X + Threads)'}>
             <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.5 }}>
               Optional. Upload a final video to publish to YouTube, TikTok, Facebook Reel, LinkedIn, X, and Threads alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
             </p>
@@ -916,6 +930,14 @@ export default function VAPostPage() {
                       style={{ fontSize: 12, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
                     >
                       Remove
+                    </button>
+                  )}
+                  {video.type === 'saved' && isPublished && (
+                    <button
+                      onClick={handleReplaceVideo}
+                      style={{ fontSize: 12, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', fontWeight: 600 }}
+                    >
+                      Replace
                     </button>
                   )}
                 </div>
@@ -1185,30 +1207,27 @@ export default function VAPostPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    ▶️ Publish Video to Facebook Reel, YouTube & TikTok
+                    ▶️ Re-publish Video to All Platforms
                   </button>
                 )}
                 {videoPublishState.phase === 'publishing' && (
-                  <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: '8px 0' }}>Publishing video…</div>
+                  <div style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: '8px 0' }}>Publishing video to all platforms…</div>
                 )}
                 {videoPublishState.phase === 'done' && (
                   <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: 12, fontSize: 13 }}>
-                    <div style={{ fontWeight: 700, color: '#166534', marginBottom: 6 }}>Video published!</div>
-                    {videoPublishState.facebookReel.error ? (
-                      <div style={{ color: '#991b1b' }}>🎬 Facebook Reel: {videoPublishState.facebookReel.error}</div>
-                    ) : (
-                      <div style={{ color: '#166534' }}>🎬 Facebook Reel: queued</div>
-                    )}
-                    {videoPublishState.youtube.error ? (
-                      <div style={{ color: '#991b1b', marginTop: 4 }}>▶️ YouTube: {videoPublishState.youtube.error}</div>
-                    ) : (
-                      <div style={{ color: '#166534', marginTop: 4 }}>▶️ YouTube: queued</div>
-                    )}
-                    {videoPublishState.tiktok.error ? (
-                      <div style={{ color: '#991b1b', marginTop: 4 }}>🎵 TikTok: {videoPublishState.tiktok.error}</div>
-                    ) : (
-                      <div style={{ color: '#166534', marginTop: 4 }}>🎵 TikTok: queued</div>
-                    )}
+                    <div style={{ fontWeight: 700, color: '#166534', marginBottom: 8 }}>✓ Video re-published!</div>
+                    {[
+                      { icon: '🎬', label: 'Facebook Reel', result: videoPublishState.facebookReel },
+                      { icon: '▶️', label: 'YouTube',       result: videoPublishState.youtube },
+                      { icon: '🎵', label: 'TikTok',        result: videoPublishState.tiktok },
+                      { icon: '💼', label: 'LinkedIn',      result: videoPublishState.linkedin },
+                      { icon: '𝕏',  label: 'X / Twitter',   result: videoPublishState.twitter },
+                      { icon: '🧵', label: 'Threads',       result: videoPublishState.threads },
+                    ].map(({ icon, label, result }) => (
+                      <div key={label} style={{ color: result.error ? '#991b1b' : '#166534', marginTop: 4 }}>
+                        {icon} {label}: {result.error ? result.error : 'queued'}
+                      </div>
+                    ))}
                   </div>
                 )}
                 {videoPublishState.phase === 'error' && (

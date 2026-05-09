@@ -60,14 +60,14 @@ export function buildTikTokCaption(copy: string, category: string | undefined, a
   return `${copy}\n\n${articleUrl}\n\n${allTags.join(' ')}`
 }
 
-function buildLinkedInCaption(copy: string, category: string | undefined, articleUrl: string): string {
+export function buildLinkedInCaption(copy: string, category: string | undefined, articleUrl: string): string {
   const categoryTags = LINKEDIN_CATEGORY_HASHTAGS[category ?? ''] ?? []
   const baseTags = ['#RealEstate', '#HamptonRoads', '#VirginiaBeach']
   const allTags = [...baseTags, ...categoryTags]
   return `${copy}\n\n${articleUrl}\n\n${allTags.join(' ')}`
 }
 
-function buildXCaption(copy: string, category: string | undefined, articleUrl: string): string {
+export function buildXCaption(copy: string, category: string | undefined, articleUrl: string): string {
   const tags = X_CATEGORY_HASHTAGS[category ?? ''] ?? '#realestate'
   // X: keep total under 280 chars — copy + url (23) + tags
   const suffix = `\n\n${articleUrl} ${tags}`
@@ -76,7 +76,7 @@ function buildXCaption(copy: string, category: string | undefined, articleUrl: s
   return `${safeCopy}${suffix}`
 }
 
-function buildThreadsCaption(copy: string, articleUrl: string): string {
+export function buildThreadsCaption(copy: string, articleUrl: string): string {
   // Threads: conversational, just copy + link (no hashtag feed)
   return `${copy}\n\n${articleUrl}`
 }

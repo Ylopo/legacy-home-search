@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { getVAQueuePost } from '@/sanity/queries'
 import { getSanityWriteClient } from '@/lib/sanity-write'
-import { publishToFacebookReel, publishToYouTube, publishToTikTok } from '@/lib/blotato-client'
-import { generateSocialCopy, buildTikTokCaption } from '@/lib/publish-service'
+import { publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX, publishToThreads } from '@/lib/blotato-client'
+import { generatePlatformCaptions, buildTikTokCaption, buildLinkedInCaption, buildXCaption, buildThreadsCaption } from '@/lib/publish-service'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Publishes video to Facebook Reel + YouTube + TikTok — for posts already
-// published to the website and Facebook post that need video platforms pushed.
+// Republishes video to all video-capable platforms for an already-published post.
+// Use this when replacing a video with a corrected version — the website and
+// Facebook text post are untouched; only the video platforms are updated.
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url)
   if (searchParams.get('secret') !== process.env.ADMIN_SECRET) {
@@ -27,40 +28,68 @@ export async function POST(request: Request) {
   const post = await getVAQueuePost(postId)
   if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 })
 
+  // Save the new video URL to Sanity before publishing
   const client = getSanityWriteClient()
   const patch: Record<string, string> = { videoUrl }
   if (videoThumbnailUrl) patch.videoThumbnailUrl = videoThumbnailUrl
   await client.patch(postId).set(patch).commit()
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.legacyhometeamlpt.com').replace(/\/+$/, '')
-  const copy = post.socialCopy ?? (await generateSocialCopy(post))
-  const fullCopy = `${copy}\n\n${appUrl}/blog/${post.slug}`
-  const videoDescription = `${copy}\n\n${appUrl}/blog/${post.slug}`
-  const tiktokCaption = buildTikTokCaption(copy, post.category, `${appUrl}/blog/${post.slug}`)
+  const articleUrl = `${appUrl}/blog/${post.slug}`
 
-  const [reelOutcome, ytOutcome, ttOutcome] = await Promise.allSettled([
-    publishToFacebookReel(fullCopy, videoUrl),
-    publishToYouTube(post.title, videoDescription, videoUrl, videoThumbnailUrl),
+  const captions = post.socialCopy
+    ? { facebook: post.socialCopy, linkedin: post.socialCopy, twitter: post.socialCopy, tiktok: post.socialCopy, youtube: post.socialCopy, threads: post.socialCopy }
+    : await generatePlatformCaptions(post)
+
+  const fbCopy       = `${captions.facebook}\n\n${articleUrl}`
+  const liCopy       = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
+  const twitterCopy  = buildXCaption(captions.twitter, post.category, articleUrl)
+  const threadsCopy  = buildThreadsCaption(captions.threads, articleUrl)
+  const ytDesc       = `${captions.youtube}\n\n${articleUrl}`
+  const tiktokCaption = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
+
+  const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome, thOutcome] = await Promise.allSettled([
+    publishToFacebookReel(fbCopy, videoUrl),
+    publishToYouTube(post.title, ytDesc, videoUrl, videoThumbnailUrl),
     publishToTikTok(tiktokCaption, videoUrl),
+    publishToLinkedIn(liCopy, videoUrl),
+    publishToX(twitterCopy, videoUrl),
+    publishToThreads(threadsCopy, videoUrl),
   ])
 
   const facebookReel = reelOutcome.status === 'fulfilled'
     ? { postSubmissionId: reelOutcome.value.postSubmissionId }
-    : { error: reelOutcome.reason instanceof Error ? reelOutcome.reason.message : 'Facebook Reel publish failed' }
+    : { error: reelOutcome.reason instanceof Error ? reelOutcome.reason.message : 'Facebook Reel failed' }
 
   const youtube = ytOutcome.status === 'fulfilled'
     ? { postSubmissionId: ytOutcome.value.postSubmissionId }
-    : { error: ytOutcome.reason instanceof Error ? ytOutcome.reason.message : 'YouTube publish failed' }
+    : { error: ytOutcome.reason instanceof Error ? ytOutcome.reason.message : 'YouTube failed' }
 
   const tiktok = ttOutcome.status === 'fulfilled'
     ? { postSubmissionId: ttOutcome.value.postSubmissionId }
-    : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok publish failed' }
+    : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok failed' }
 
+  const linkedin = liOutcome.status === 'fulfilled'
+    ? { postSubmissionId: liOutcome.value.postSubmissionId }
+    : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn failed' }
+
+  const twitter = twOutcome.status === 'fulfilled'
+    ? { postSubmissionId: twOutcome.value.postSubmissionId }
+    : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X failed' }
+
+  const threads = thOutcome.status === 'fulfilled'
+    ? { postSubmissionId: thOutcome.value.postSubmissionId }
+    : { error: thOutcome.reason instanceof Error ? thOutcome.reason.message : 'Threads failed' }
+
+  // Update Sanity submission IDs for the new videos
   const idPatch: Record<string, string> = {}
-  if ('postSubmissionId' in facebookReel && facebookReel.postSubmissionId) idPatch.facebookReelSubmissionId = facebookReel.postSubmissionId
-  if ('postSubmissionId' in youtube && youtube.postSubmissionId) idPatch.youtubePostSubmissionId = youtube.postSubmissionId
-  if ('postSubmissionId' in tiktok && tiktok.postSubmissionId) idPatch.tiktokPostSubmissionId = tiktok.postSubmissionId
+  if ('postSubmissionId' in facebookReel && facebookReel.postSubmissionId) idPatch.facebookReelSubmissionId   = facebookReel.postSubmissionId
+  if ('postSubmissionId' in youtube     && youtube.postSubmissionId)        idPatch.youtubePostSubmissionId    = youtube.postSubmissionId
+  if ('postSubmissionId' in tiktok      && tiktok.postSubmissionId)         idPatch.tiktokPostSubmissionId     = tiktok.postSubmissionId
+  if ('postSubmissionId' in linkedin    && linkedin.postSubmissionId)       idPatch.linkedinPostSubmissionId   = linkedin.postSubmissionId
+  if ('postSubmissionId' in twitter     && twitter.postSubmissionId)        idPatch.twitterPostSubmissionId    = twitter.postSubmissionId
+  if ('postSubmissionId' in threads     && threads.postSubmissionId)        idPatch.threadsPostSubmissionId    = threads.postSubmissionId
   if (Object.keys(idPatch).length) await client.patch(postId).set(idPatch).commit()
 
-  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok })
+  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok, linkedin, twitter, threads })
 }
