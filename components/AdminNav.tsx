@@ -5,8 +5,9 @@ import { useRef, useState } from 'react'
 import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const PIPELINE = [
-  { label: 'Idea Review', path: '/admin/idea-review' },
-  { label: 'Media Queue', path: '/admin/va-queue' },
+  { label: 'Idea Review',    path: '/admin/idea-review' },
+  { label: 'Media Queue',    path: '/admin/va-queue' },
+  { label: 'Analytics',      path: '/admin/analytics' },
 ] as const
 
 const CONTENT_MACHINE_BASE = '/admin/social-dashboard'
