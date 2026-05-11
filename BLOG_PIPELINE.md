@@ -84,6 +84,146 @@ VA opens a post → /admin/va-queue/[postId]
 
 ---
 
+## Content Type Guide
+
+Every post written by this system has a `contentType` that determines its voice, structure, length, and what Claude is allowed to say. This is the master reference for all content types — use it when onboarding a new client to select which types fit their market and audience.
+
+---
+
+### Local History *(added May 2026)*
+
+**Purpose:** Differentiate the agent as a deep local expert, not just a transaction facilitator. History posts attract readers who are researching a place to live — not just buyers — and build brand recall.
+
+**Voice:** Narrative storytelling. Reads like a magazine feature, not a real estate post. Opens with a dramatic scene, specific date, or vivid detail. Connects the historical event to present-day Hampton Roads.
+
+**Structure:**
+1. Dramatic opening hook (specific date, place, or event — no generic intro)
+2. Story arc with real names, ships, battles, decisions
+3. Legacy paragraph — "how this shaped the area you're considering"
+4. Soft close: invite the reader to explore the area, not to call about listings
+
+**Length:** 600–900 words
+
+**Hard rules:**
+- NO seller urgency language ("now is a great time to sell")
+- NO price-drop or market-timing CTAs
+- NO "if you're looking to buy or sell" closes
+- Links to community pages and nearby landmarks are encouraged
+
+**Writer handling:** `lib/idea-writer.ts` — `isLocalHistory` branch triggers when `idea.contentType === 'Local History'`
+
+**Hampton Roads story bank (pre-seeded):**
+- King Neptune statue — Virginia Beach boardwalk origin
+- Blackbeard's last battle — Ocracoke Inlet 1718, Hampton Roads connection
+- USS Monitor vs CSS Virginia — Hampton Roads 1862, ironclad warfare changed naval history
+- First Landing 1607 — Cape Henry, the actual first European landing before Jamestown
+- WWII U-boats off the Virginia coast — coastal blackouts, torpedoed tankers, 1942
+- Naval Station Norfolk founding — the 1917 fleet that never left
+
+**To add new stories:** Use the inject route at `/api/content/ideas/inject` (POST with secret). Pre-fill `researchData` with 4–6 specific facts so Claude has the material to work with.
+
+---
+
+### Evergreen Guides
+
+**Purpose:** Durable SEO value. Answers the questions buyers and sellers search for before they ever call an agent. These are the posts that rank for years.
+
+**Voice:** Expert advisor. Practical, step-by-step, confidence-building. The reader should feel equipped after reading, not just informed.
+
+**Structure:**
+1. Clear statement of what the post answers
+2. Numbered steps or H2 sections
+3. Local context woven in (Virginia-specific laws, Hampton Roads pricing norms)
+4. CTA: contact Barry or visit a community page
+
+**Length:** 800–1,400 words
+
+**Examples:**
+- Cost to sell a house in Virginia Beach
+- Virginia Beach flood zone buyer guide
+- How Virginia property taxes work for home buyers
+- What happens after your offer is accepted in Virginia
+
+---
+
+### Market Updates
+
+**Purpose:** Timeliness signal to Google and readers. Positions the agent as an active market participant, not just a static website.
+
+**Voice:** Data-driven, neutral, brief. Report the facts; give a one-paragraph interpretation. Not alarmist, not cheerleading.
+
+**Structure:**
+1. What the data shows right now
+2. What changed vs last period
+3. What it means for buyers / sellers (one paragraph each)
+4. CTA: schedule a consultation
+
+**Length:** 400–700 words
+
+---
+
+### Community Spotlights
+
+**Purpose:** Build topical authority for specific neighborhoods and cities. These pages feed into community page blog sections and help the agent rank for "[City] real estate" searches.
+
+**Voice:** Local enthusiast, celebratory. The agent loves this neighborhood and wants readers to love it too.
+
+**Structure:**
+1. What makes this place distinctive
+2. Practical details: schools, commute, price range, housing stock
+3. Who it's best for (families, military, first-time buyers, retirees)
+4. CTA: explore community page
+
+**Length:** 600–1,000 words
+
+---
+
+### Events Coverage
+
+**Purpose:** Attract non-buyer readers who are researching Hampton Roads as a place to live. Events content captures early-funnel awareness before anyone is ready to transact.
+
+**Voice:** Excited local. "You're going to want to come to this." Warm, welcoming, practical.
+
+**Structure:**
+1. What the event is + why it matters
+2. When, where, how to attend (logistics)
+3. What it says about the community
+4. Soft close: "Hampton Roads has something going on every weekend" + community page link
+
+**Length:** 400–600 words
+
+**Timing:** Events research cron runs on the 25th of each month targeting next month's calendar. The end-of-month research window (days 22–31) also sweeps for upcoming events.
+
+---
+
+### Required Evergreen (Coverage System)
+
+**Purpose:** Fill systematic gaps. These are not creative ideas — they are high-performing templates that must exist for every city the agent serves.
+
+**Trigger:** Monthly coverage audit (`/api/cron/required-topics-coverage`) seeds gaps as `IdeaCandidate` objects with `source: 'internal'`.
+
+**44 required goals** across 7 templates × Hampton Roads cities. See [Required Evergreen Topics](#required-evergreen-topics-coverage-system) for the full registry.
+
+---
+
+## Content Mix Targets
+
+The intended weekly content distribution. These are starting defaults — the bi-weekly performance review adjusts them automatically based on GA4 engagement data.
+
+| Content Type | Target % | Rationale |
+|---|---|---|
+| Evergreen Guides | 40% | Highest durable SEO value; the long tail |
+| Market Updates | 20% | Timeliness signal; keeps the site "alive" to Google |
+| Community Spotlights + Events | 20% | Local authority; community page integration |
+| Local History | 15% | Differentiator; narrative engagement; early-funnel |
+| Breaking / trending news | 5% | When relevant to Hampton Roads real estate |
+
+**How the mix is enforced:** The idea scoring system reads performance weights from Redis (`lhs:strategy:performance-weights`). When the bi-weekly review fires, winning categories get a score multiplier up to 1.5×; underperforming categories get down to 0.7×. This nudges the top of the idea queue toward what's working without overriding human review — the operator still approves every idea.
+
+**To override the mix for a specific client:** Adjust the baseline category weights in the inject route or tweak the multiplier caps in `app/api/cron/performance-review/route.ts`.
+
+---
+
 ## Admin Pages
 
 All admin pages are secret-gated via `?secret=ADMIN_SECRET`. Never share these URLs publicly.
@@ -113,6 +253,53 @@ All admin pages are secret-gated via `?secret=ADMIN_SECRET`. Never share these U
 | `0 16 25 * *` (9 AM PT, 25th of month) | `/api/cron/events-research` | Search next-month events → write posts → VA queue |
 | `0 15 * * 4` (8 AM PT Thu) | `/api/cron/idea-digest` | Weekly idea digest email to kiwi@ylopo.com |
 | `0 14 1 * *` (7 AM PT, 1st of month) | `/api/cron/market-reports` | Monthly Altos upload reminder to Barry + missing-report check |
+| `0 14 1,15 * *` (7 AM PT, 1st + 15th) | `/api/cron/performance-review` | Bi-weekly: fetch GA4/YouTube/Facebook → compute category weights → update Redis → email operator |
+
+---
+
+## Bi-Weekly Performance Review
+
+The content machine is designed to improve itself. Every two weeks — on the 1st and 15th of each month — an automated review cron fires that looks back at what was published, measures how it performed, and adjusts the idea pipeline going forward.
+
+### What it does
+
+1. **Fetches performance data** from GA4 (per-blog-post pageviews), YouTube (channel + video stats), and Facebook (page reach + engagement) for the last 28 days
+2. **Maps posts to categories** — joins GA4 data with Sanity post metadata (category, publishedAt, slug) to get a per-category performance picture
+3. **Computes category multipliers** — calculates each category's average pageviews vs the overall baseline; winners get a multiplier up to 1.5×, underperformers down to 0.7×
+4. **Asks Claude for insights** — generates a 3–4 sentence plain-English summary of what's working and why
+5. **Stores weights to Redis** at `lhs:strategy:performance-weights` with a 90-day TTL
+6. **Adjusts idea scoring** — the research cron reads these weights each run and applies the multiplier when scoring new ideas; winning categories surface more frequently without overriding human review
+7. **Sends the operator an email** with:
+   - Period summary (posts published, estimated reach)
+   - Category performance table (avg views + vs baseline)
+   - Top 3 posts this period
+   - AI-generated insights paragraph
+   - What will be prioritized / deprioritized next period
+   - Link to the full analytics dashboard
+
+### What the operator does
+
+Nothing — unless they want to override. The system adjusts automatically. If the operator disagrees with a suggested shift (e.g. "we want more market updates even if they underperform"), they can:
+- Skip ideas of a given type on the Idea Review page to starve it naturally
+- Manually set a category's weight in Redis: `lhs:strategy:performance-weights` → edit the `weights` map
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `app/api/cron/performance-review/route.ts` | Cron handler: fetch → analyze → store → email |
+| `lib/idea-store.ts` | `getPerformanceWeights()` / `setPerformanceWeights()` |
+| `lib/email.ts` | `sendPerformanceReviewEmail()` |
+| `lib/research.ts` | Reads weights from Redis and applies multiplier during idea scoring |
+
+### Manual trigger
+
+```bash
+curl -X POST "https://legacyhometeamlpt.com/api/cron/performance-review" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"YOUR_ADMIN_SECRET"}'
+# → { "ok": true, "categoriesAnalyzed": 5, "emailSent": true }
+```
 
 ---
 
@@ -1044,9 +1231,13 @@ curl -X POST "https://legacyhometeamlpt.com/api/cron/refresh-evaluation" \
 6. **Community photos** — add `public/community-photos/[city]/` assets for the new market + update the static manifest in `lib/thumbnail-asset-resolver.ts`
 7. **Agent photo** — replace `public/barry-transparent.png` with the new agent's transparent PNG
 8. **Production URL** — update `NEXT_PUBLIC_APP_URL` in Vercel env vars
-9. **Emails** — update `OPERATOR_EMAIL` and `BARRY_EMAIL` in Vercel env vars
+9. **Emails** — update `OPERATOR_EMAIL` and `BARRY_EMAIL` in Vercel env vars; `OPERATOR_EMAIL` receives the bi-weekly performance review digest — set to the account manager for client-facing installs
 10. **Blog post categories** — verify the category list in `sanity/schema/blogPost.ts` matches the client's content strategy; add/remove as needed
 11. **YLOPO widget** — update `detectCommunities()` in `app/(site)/blog/[slug]/page.tsx` to match the new market's city names
 12. **HeyGen avatar** — configure avatar ID and voice ID for the client's agent; VA enters these in the VA editor per post
+13. **Content mix** — review [Content Mix Targets](#content-mix-targets) and adjust the starting percentages for the new market's audience (e.g. military-heavy markets → more Local History; retirement markets → more Community Spotlights)
+14. **Content types** — disable types that don't fit the market (e.g. no military history in a non-military-adjacent market); comment out the relevant `contentType` values in the research prompt pool in `lib/research.ts`
+15. **Historical topics** — replace Hampton Roads history stories with 5–6 local history stories relevant to the new market; pre-seed them via the inject route at `POST /api/content/ideas/inject` with full `researchData` so Claude has the facts to work with
+16. **Required evergreen topics** — update `lib/required-topics.ts` with the new market's cities and any market-specific templates (e.g. hurricane prep for coastal Florida, HOA law for Arizona desert communities)
 
 **Phase 2 multi-client (future):** A Sanity `clientConfig` document will store Blotato credentials, agent photo, Facebook/YouTube/TikTok account IDs, and market config per client. `lib/blotato-client.ts` is designed so `getAccountId()` / `getPageId()` can be swapped from env vars to Sanity config without changing the publish call.

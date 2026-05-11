@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { loadArticles, recordShownArticles } from '@/lib/store'
 import { writePost } from '@/lib/writer'
 import { publishBlogPost } from '@/lib/sanity-write'
+import { checkFairHousing, saveFHResult } from '@/lib/fair-housing'
+import { sendFairHousingAlertEmail } from '@/lib/email'
 
 export const maxDuration = 300
 
@@ -44,12 +46,34 @@ export async function POST(request: Request) {
     await recordShownArticles(skippedUrls)
   }
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://legacyhometeamlpt.com').replace(/\/+$/, '')
+
   const settled = await Promise.allSettled(
     selectedArticles.map(async (article) => {
       console.log(`[publish] Writing post for: ${article!.title}`)
       const draft = await writePost(article!)
       const sanityId = await publishBlogPost(draft)
       console.log(`[publish] Published: ${draft.title} → /blog/${draft.slug}`)
+
+      // Fair Housing check (non-blocking — never fails the publish)
+      try {
+        const fhContent = [draft.title, draft.excerpt, ...draft.body.map((b: any) =>
+          b.children?.map((c: any) => c.text ?? '').join('') ?? ''
+        )].filter(Boolean).join('\n')
+        const fhResult = await checkFairHousing(fhContent, 'blog-post')
+        await saveFHResult(sanityId, fhResult)
+        if (fhResult.severity === 'violation') {
+          await sendFairHousingAlertEmail({
+            postId: sanityId,
+            postTitle: draft.title,
+            vaQueueUrl: `${appUrl}/admin/va-queue/${sanityId}?secret=${encodeURIComponent(adminSecret)}`,
+            result: fhResult,
+          }).catch(e => console.error('[publish] FH alert email failed:', e?.message))
+        }
+      } catch (e: any) {
+        console.error('[publish] FH check failed:', e?.message)
+      }
+
       return { id: sanityId, title: draft.title, slug: draft.slug }
     })
   )

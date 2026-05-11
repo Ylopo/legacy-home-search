@@ -3,7 +3,7 @@ import type { RawArticle, ScoredArticle, ArticleCategory, IdeaCandidate, IdeaAud
 import { getSkippedUrls } from './store'
 import { isDisqualified, sourceTypeLabel, sourceCredibilityScore } from './source-rules'
 import { computeTimeliness, computeNovelty, assembleScore, SCORE_THRESHOLD } from './scoring'
-import { buildWeekId } from './idea-store'
+import { buildWeekId, getPerformanceWeights, type PerformanceWeights } from './idea-store'
 
 // These 3 queries run EVERY day — broad daily coverage across market, community, and local news
 const PINNED_QUERIES = [
@@ -333,6 +333,14 @@ ${articleList}`,
 
   const ideas: IdeaCandidate[] = []
 
+  // Load performance weights once for this run — may be null if no review has run yet
+  let perfWeights: PerformanceWeights | null = null
+  try {
+    perfWeights = await getPerformanceWeights()
+  } catch {
+    // Non-fatal — scoring proceeds without weights
+  }
+
   for (const s of richScores) {
     if (s.drop) continue
 
@@ -357,6 +365,16 @@ ${articleList}`,
       [domain],
       s.category,
     )
+
+    // Apply bi-weekly performance weight multiplier if available
+    if (perfWeights?.weights) {
+      const multiplier = perfWeights.weights[s.category] ?? 1.0
+      if (multiplier !== 1.0) {
+        const boosted = Math.min(99, Math.round(score.total * multiplier))
+        console.log(`[research] ${multiplier > 1 ? 'boosting' : 'reducing'} "${s.proposedTitle}" (${s.category}) ${score.total} → ${boosted} (${multiplier}x)`)
+        score.total = boosted
+      }
+    }
 
     // Drop below threshold
     if (score.total < SCORE_THRESHOLD) continue

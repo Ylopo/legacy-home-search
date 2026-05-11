@@ -44,6 +44,7 @@ export default function VAQueuePage() {
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+  const [fhStatuses, setFhStatuses] = useState<Record<string, 'clear' | 'warning' | 'violation'>>({})
 
   const [monthlyStats, setMonthlyStats] = useState<{ totalPosts: number; videoPosts: number } | null>(null)
 
@@ -64,7 +65,22 @@ export default function VAQueuePage() {
 
     fetch(`/api/content/queue?secret=${encodeURIComponent(secret)}`)
       .then(r => r.ok ? r.json() : Promise.reject('Unauthorized'))
-      .then(setPosts)
+      .then((loadedPosts: SanityBlogPost[]) => {
+        setPosts(loadedPosts)
+        const ids = loadedPosts.map(p => p._id).join(',')
+        if (ids) {
+          fetch(`/api/content/fh-status?secret=${encodeURIComponent(secret)}&postIds=${encodeURIComponent(ids)}`)
+            .then(r => r.ok ? r.json() : {})
+            .then((map: Record<string, { severity: 'clear' | 'warning' | 'violation' }>) => {
+              const severities: Record<string, 'clear' | 'warning' | 'violation'> = {}
+              for (const [id, result] of Object.entries(map)) {
+                severities[id] = result.severity
+              }
+              setFhStatuses(severities)
+            })
+            .catch(() => {})
+        }
+      })
       .catch(() => setError('Failed to load queue'))
       .finally(() => setLoading(false))
 
@@ -111,7 +127,7 @@ export default function VAQueuePage() {
         {pending.length > 0 && (
           <Section title="Needs Media" count={pending.length} accent="#9a3412" bg="#fed7aa">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {pending.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
+              {pending.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} fhStatus={fhStatuses[post._id]} />)}
             </div>
           </Section>
         )}
@@ -120,7 +136,7 @@ export default function VAQueuePage() {
         {ready.length > 0 && (
           <Section title="Ready to Publish" count={ready.length}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {ready.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
+              {ready.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} fhStatus={fhStatuses[post._id]} />)}
             </div>
           </Section>
         )}
@@ -129,7 +145,7 @@ export default function VAQueuePage() {
         {other.length > 0 && (
           <Section title="In Progress / Recent" count={other.length}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-              {other.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} />)}
+              {other.map(post => <PostCard key={post._id} post={post} secret={secret} onDelete={handleDelete} fhStatus={fhStatuses[post._id]} />)}
             </div>
           </Section>
         )}
@@ -316,7 +332,7 @@ function Section({ title, count, accent = '#1a1a1a', bg = '#e2e8f0', subtitle, c
 
 // ─── Workflow post card (links to VA editor) ──────────────────────────────────
 
-function PostCard({ post, secret, onDelete }: { post: SanityBlogPost; secret: string; onDelete: (id: string) => void }) {
+function PostCard({ post, secret, onDelete, fhStatus }: { post: SanityBlogPost; secret: string; onDelete: (id: string) => void; fhStatus?: 'clear' | 'warning' | 'violation' }) {
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -360,9 +376,21 @@ function PostCard({ post, secret, onDelete }: { post: SanityBlogPost; secret: st
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#64748b' }}>
                 {post.category?.replace(/-/g, ' ')}
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, background: colors.bg, color: colors.text, borderRadius: 99, padding: '2px 8px' }}>
-                {label}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {fhStatus === 'violation' && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#fef2f2', color: '#dc2626', borderRadius: 99, padding: '2px 7px', border: '1px solid #fca5a5' }}>
+                    FH Hold
+                  </span>
+                )}
+                {fhStatus === 'warning' && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: '#fffbeb', color: '#b45309', borderRadius: 99, padding: '2px 7px', border: '1px solid #fcd34d' }}>
+                    FH Review
+                  </span>
+                )}
+                <span style={{ fontSize: 11, fontWeight: 700, background: colors.bg, color: colors.text, borderRadius: 99, padding: '2px 8px' }}>
+                  {label}
+                </span>
+              </div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', lineHeight: 1.4, marginBottom: 8 }}>{post.title}</div>
             <div style={{ fontSize: 12, color: '#94a3b8' }}>{post.publishedAt ? fmtDate(post.publishedAt) : 'Unpublished'}</div>

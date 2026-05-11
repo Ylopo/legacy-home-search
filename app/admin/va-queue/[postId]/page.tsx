@@ -76,6 +76,11 @@ export default function VAPostPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Fair Housing state
+  const [fhResult, setFhResult] = useState<{ severity: 'clear' | 'warning' | 'violation'; violations: any[]; checkedAt: string; reviewedAt?: string } | null>(null)
+  const [fhExpanded, setFhExpanded] = useState(true)
+  const [markingReviewed, setMarkingReviewed] = useState(false)
+
   // Media editor state
   const [thumbnail, setThumbnail] = useState<ThumbnailState>({ type: 'none' })
   const [socialCopy, setSocialCopy] = useState('')
@@ -130,6 +135,17 @@ export default function VAPostPage() {
           if (found.videoThumbnailUrl) {
             setVideoThumbnailUrl(found.videoThumbnailUrl)
           }
+
+          // Fetch FH result
+          fetch(`/api/content/fh-status?secret=${encodeURIComponent(secret)}&postIds=${encodeURIComponent(found._id)}`)
+            .then(r => r.ok ? r.json() : {})
+            .then((map: Record<string, any>) => {
+              const result = map[found._id]
+              if (result && (result.severity === 'warning' || result.severity === 'violation')) {
+                setFhResult(result)
+              }
+            })
+            .catch(() => {})
         }
       } catch {
         setError('Failed to load post')
@@ -145,6 +161,21 @@ export default function VAPostPage() {
     Object.values(pollRefs.current).forEach(clearInterval)
     if (heygenPollRef.current) clearInterval(heygenPollRef.current)
   }, [])
+
+  // ── Mark FH reviewed ────────────────────────────────────────────────────────
+  async function handleMarkFHReviewed() {
+    setMarkingReviewed(true)
+    try {
+      await fetch(`/api/content/fh-mark-reviewed?secret=${encodeURIComponent(secret)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      })
+      setFhResult(prev => prev ? { ...prev, reviewedAt: new Date().toISOString() } : prev)
+    } catch { /* ignore */ } finally {
+      setMarkingReviewed(false)
+    }
+  }
 
   // ── Generate Facebook caption ────────────────────────────────────────────────
   async function handleGenerateCaption() {
@@ -695,6 +726,69 @@ export default function VAPostPage() {
           </span>
         )}
       </div>
+
+      {/* Fair Housing panel */}
+      {fhResult && (
+        <div style={{
+          margin: '0 auto',
+          maxWidth: 1200,
+          padding: '0 24px',
+          marginTop: 16,
+        }}>
+          <div style={{
+            border: fhResult.severity === 'violation' ? '1.5px solid #fca5a5' : '1.5px solid #fcd34d',
+            borderRadius: 10,
+            background: fhResult.severity === 'violation' ? '#fef2f2' : '#fffbeb',
+            overflow: 'hidden',
+          }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setFhExpanded(p => !p)}
+            >
+              <span style={{ fontSize: 16 }}>{fhResult.severity === 'violation' ? '🚨' : '⚠️'}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: fhResult.severity === 'violation' ? '#dc2626' : '#b45309', flex: 1 }}>
+                Fair Housing {fhResult.severity === 'violation' ? 'Hold' : 'Review'} — {fhResult.violations.length} issue{fhResult.violations.length !== 1 ? 's' : ''} flagged
+                {fhResult.reviewedAt && <span style={{ fontWeight: 400, color: '#64748b', marginLeft: 8 }}>· Reviewed</span>}
+              </span>
+              {!fhResult.reviewedAt && (
+                <button
+                  onClick={e => { e.stopPropagation(); handleMarkFHReviewed() }}
+                  disabled={markingReviewed}
+                  style={{
+                    padding: '5px 14px', background: '#fff', border: '1px solid #e2e8f0',
+                    borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: markingReviewed ? 'wait' : 'pointer',
+                    color: '#475569',
+                  }}
+                >
+                  {markingReviewed ? 'Saving…' : 'Mark as Reviewed'}
+                </button>
+              )}
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>{fhExpanded ? '▲' : '▼'}</span>
+            </div>
+            {fhExpanded && (
+              <div style={{ borderTop: `1px solid ${fhResult.severity === 'violation' ? '#fca5a5' : '#fcd34d'}`, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {fhResult.violations.map((v: any, i: number) => (
+                  <div key={i} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: v.severity === 'violation' ? '#dc2626' : '#b45309' }}>
+                        {v.severity}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 13, fontStyle: 'italic', color: '#374151', background: '#f8f7f4', borderRadius: 6, padding: '6px 10px', marginBottom: 6 }}>
+                      "{v.excerpt}"
+                    </div>
+                    <div style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}><strong>Why:</strong> {v.reason}</div>
+                    <div style={{ fontSize: 13, color: '#059669' }}><strong>Use instead:</strong> {v.suggestion}</div>
+                  </div>
+                ))}
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
+                  Edit the flagged text in Sanity Studio, then click "Mark as Reviewed" above to clear the hold.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 32, alignItems: 'start' }}>
 

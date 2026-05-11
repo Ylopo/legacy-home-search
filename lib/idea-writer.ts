@@ -11,6 +11,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import type { IdeaCandidate, BlogPostDraft, PortableTextBlock, PortableTextSpan } from './types'
+import { FAIR_HOUSING_RULES } from './fair-housing'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const SELLER_URL = 'https://listings.legacyhomesearch.com/seller'
@@ -166,6 +167,7 @@ BLOG LEARNINGS & STYLE GUIDE (follow all active instructions):
 ${learningsContext.slice(0, 4000)}
 ${researchSection}
 
+${FAIR_HOUSING_RULES}
 ${writingRules}
 
 Return a JSON object with EXACTLY these fields:

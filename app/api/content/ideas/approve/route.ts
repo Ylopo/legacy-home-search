@@ -3,6 +3,8 @@ import { getIdea, updateIdeaStatus, addCoveredTopic } from '@/lib/idea-store'
 import { writePostFromIdea } from '@/lib/idea-writer'
 import { readLearnings } from '@/lib/learnings'
 import { publishBlogPost } from '@/lib/sanity-write'
+import { checkFairHousing, saveFHResult } from '@/lib/fair-housing'
+import { sendFairHousingAlertEmail } from '@/lib/email'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120 // writing takes ~20-30s
@@ -32,7 +34,32 @@ export async function POST(req: NextRequest) {
     // ── 3. Publish to Sanity as media_pending ───────────────────────────
     const postId = await publishBlogPost(draft)
 
-    // ── 4. Mark idea approved + record topic as covered ─────────────────
+    // ── 4. Fair Housing check ───────────────────────────────────────────
+    const fhContent = [draft.title, draft.excerpt, ...draft.body.map((b: any) =>
+      b.children?.map((c: any) => c.text ?? '').join('') ?? ''
+    )].filter(Boolean).join('\n')
+
+    let fhSeverity: 'clear' | 'warning' | 'violation' = 'clear'
+    try {
+      const fhResult = await checkFairHousing(fhContent, 'blog-post')
+      fhSeverity = fhResult.severity
+      await saveFHResult(postId, fhResult)
+
+      if (fhResult.severity === 'violation') {
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://legacyhometeamlpt.com').replace(/\/+$/, '')
+        const adminSecret = process.env.ADMIN_SECRET ?? ''
+        await sendFairHousingAlertEmail({
+          postId,
+          postTitle: draft.title,
+          vaQueueUrl: `${appUrl}/admin/va-queue/${postId}?secret=${encodeURIComponent(adminSecret)}`,
+          result: fhResult,
+        }).catch(e => console.error('[ideas/approve] FH alert email failed:', e?.message))
+      }
+    } catch (e: any) {
+      console.error('[ideas/approve] FH check failed:', e?.message)
+    }
+
+    // ── 5. Mark idea approved + record topic as covered ─────────────────
     await updateIdeaStatus(ideaId, 'approved')
     await addCoveredTopic(draft.slug)
 
@@ -42,6 +69,7 @@ export async function POST(req: NextRequest) {
       slug: draft.slug,
       title: draft.title,
       vaQueueUrl: `/admin/va-queue/${postId}`,
+      fairHousing: fhSeverity,
     })
   } catch (err) {
     console.error('[ideas/approve] Error:', err)

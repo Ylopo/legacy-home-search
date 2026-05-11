@@ -1,6 +1,19 @@
 import { Resend } from 'resend'
 import type { ScoredArticle } from './types'
 import type { RefreshCandidate } from './refresh-engine'
+import type { PerformanceWeights } from './idea-store'
+import type { FHCheckResult } from './fair-housing'
+
+export type PerformanceReviewData = {
+  periodStart: string
+  periodEnd: string
+  postsPublishedCount: number
+  estimatedReach: number
+  weights: PerformanceWeights
+  youtubeViews: number
+  facebookReach: number
+  analyticsUrl: string
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   'market-update': 'Market Update',
@@ -441,5 +454,302 @@ export async function sendMarketReportMissingEmail(missingCities: string[]): Pro
     to: operatorEmail,
     subject: `Market reports missing for: ${missingCities.join(', ')}`,
     html: `<p style="font-family:Inter,sans-serif;font-size:15px;">No Altos market report email was received this month for: <strong>${missingCities.join(', ')}</strong>.</p><p style="font-family:Inter,sans-serif;font-size:14px;color:#555;">Check your Altos campaign settings to make sure the campaigns are set to deliver to your inbound address.</p>`,
+  })
+}
+
+// ─── Fair Housing Alert Email ─────────────────────────────────────────────────
+
+export async function sendFairHousingAlertEmail(opts: {
+  postId: string
+  postTitle: string
+  vaQueueUrl: string
+  result: FHCheckResult
+}): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.FROM_EMAIL
+  const operatorEmail = process.env.OPERATOR_EMAIL
+  if (!resendKey || !fromEmail || !operatorEmail) return
+
+  const { postTitle, vaQueueUrl, result } = opts
+  const violationRows = result.violations.map((v) => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #fee2e2;vertical-align:top;">
+        <div style="font-size:12px;font-weight:700;color:${v.severity === 'violation' ? '#dc2626' : '#d97706'};letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">${v.severity}</div>
+        <div style="font-size:14px;color:#1a1a1a;background:#fef2f2;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-style:italic;">"${v.excerpt}"</div>
+        <div style="font-size:13px;color:#374151;margin-bottom:4px;"><strong>Why:</strong> ${v.reason}</div>
+        <div style="font-size:13px;color:#059669;"><strong>Use instead:</strong> ${v.suggestion}</div>
+      </td>
+    </tr>
+  `).join('')
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f8f7f4;font-family:Inter,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;border:2px solid #fca5a5;">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:28px 32px 20px;border-bottom:1px solid #fca5a5;background:#fef2f2;border-radius:12px 12px 0 0;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#dc2626;margin-bottom:8px;">Fair Housing — Post Held</div>
+            <div style="font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.4;">${postTitle}</div>
+            <div style="font-size:14px;color:#7f1d1d;margin-top:6px;">This post has been saved as a draft. It will not publish until you review and clear the hold.</div>
+          </td>
+        </tr>
+
+        <!-- What was flagged -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a1a;margin-bottom:12px;">
+              ${result.violations.length} issue${result.violations.length !== 1 ? 's' : ''} found
+            </div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              ${violationRows}
+            </table>
+          </td>
+        </tr>
+
+        <!-- What to do -->
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <div style="font-size:13px;color:#374151;line-height:1.7;background:#f8f7f4;border-radius:8px;padding:14px 16px;border-left:3px solid #dc2626;">
+              <strong>Next steps:</strong> Open the VA Queue editor, edit the flagged text in Sanity Studio if needed, then click "Mark as Reviewed" to clear the hold and proceed with thumbnail, social copy, and publishing.
+            </div>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:28px 32px;">
+            <a href="${vaQueueUrl}" style="display:block;text-align:center;background:#dc2626;color:#ffffff;font-weight:700;font-size:15px;letter-spacing:0.05em;padding:16px 32px;border-radius:8px;text-decoration:none;">
+              Review Post →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 32px;border-top:1px solid #e0ddd8;">
+            <div style="font-size:11px;color:#888884;text-align:center;">
+              Legacy Home Search · Fair Housing Compliance · Automated Alert
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+  const resend = new Resend(resendKey)
+  await resend.emails.send({
+    from: fromEmail,
+    to: operatorEmail,
+    subject: `Fair Housing Hold — "${postTitle}" needs review`,
+    html,
+  })
+}
+
+// ─── Bi-Weekly Performance Review Email ───────────────────────────────────────
+
+function formatDate(iso: string): string {
+  return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function trendArrow(multiplier: number): string {
+  if (multiplier >= 1.3) return '<span style="color:#059669;font-weight:700;">↑↑</span>'
+  if (multiplier >= 1.1) return '<span style="color:#059669;font-weight:700;">↑</span>'
+  if (multiplier <= 0.75) return '<span style="color:#dc2626;font-weight:700;">↓↓</span>'
+  if (multiplier <= 0.9) return '<span style="color:#dc2626;font-weight:700;">↓</span>'
+  return '<span style="color:#888884;">→</span>'
+}
+
+function categoryLabel(cat: string): string {
+  const map: Record<string, string> = {
+    'market-update': 'Market Update',
+    'buying-tips': 'Buying Tips',
+    'selling-tips': 'Selling Tips',
+    'community-spotlight': 'Community Spotlight',
+    'investment': 'Investment',
+    'news': 'News',
+    'cost-breakdown': 'Cost Breakdown',
+    'flood-and-risk': 'Flood & Risk',
+    'local-history': 'Local History',
+    'local-interest': 'Local Interest',
+  }
+  return map[cat] ?? cat.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+export async function sendPerformanceReviewEmail(data: PerformanceReviewData): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.FROM_EMAIL
+  const operatorEmail = process.env.OPERATOR_EMAIL
+  if (!resendKey || !fromEmail || !operatorEmail) return
+
+  const { periodStart, periodEnd, postsPublishedCount, estimatedReach, weights, youtubeViews, facebookReach, analyticsUrl } = data
+
+  const focusLabels = weights.nextPeriodFocus.map(categoryLabel).join(', ') || 'no clear leaders yet'
+  const deprioritized = weights.categoryBreakdown
+    .filter((e) => e.weightMultiplier <= 0.85)
+    .map((e) => categoryLabel(e.category))
+    .slice(0, 2)
+
+  const categoryRows = weights.categoryBreakdown
+    .slice(0, 8)
+    .map((e) => `
+      <tr>
+        <td style="padding:8px 12px;font-size:13px;color:#1a1a1a;border-bottom:1px solid #f0ede8;">${categoryLabel(e.category)}</td>
+        <td style="padding:8px 12px;font-size:13px;color:#1a1a1a;border-bottom:1px solid #f0ede8;text-align:right;">${e.avgPageViews.toLocaleString()}</td>
+        <td style="padding:8px 12px;font-size:13px;border-bottom:1px solid #f0ede8;text-align:right;">${trendArrow(e.weightMultiplier)} ${e.weightMultiplier.toFixed(1)}x</td>
+        <td style="padding:8px 12px;font-size:12px;color:#888884;border-bottom:1px solid #f0ede8;text-align:right;">${e.postsAnalyzed} posts</td>
+      </tr>
+    `).join('')
+
+  const topPostRows = weights.topPosts.slice(0, 3).map((p, i) => `
+    <tr>
+      <td style="padding:8px 0;width:24px;vertical-align:top;">
+        <span style="color:#2563eb;font-size:16px;font-weight:700;">${i + 1}</span>
+      </td>
+      <td style="padding:8px 0 8px 10px;border-bottom:1px solid #f0ede8;">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a;line-height:1.4;">${p.title}</div>
+        <div style="font-size:11px;color:#888884;margin-top:2px;">${categoryLabel(p.category)} · ${p.pageViews.toLocaleString()} views</div>
+      </td>
+    </tr>
+  `).join('')
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f8f7f4;font-family:Inter,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;border:1px solid #e0ddd8;">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 32px 24px;border-bottom:1px solid #e0ddd8;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">Legacy Home Search · Bi-Weekly Performance Review</div>
+            <div style="font-size:22px;font-weight:700;color:#1a1a1a;">${formatDate(periodStart)} — ${formatDate(periodEnd)}</div>
+            <div style="font-size:14px;color:#888884;margin-top:4px;">Here's what the content machine did, what worked, and what's changing.</div>
+          </td>
+        </tr>
+
+        <!-- Summary stats row -->
+        <tr>
+          <td style="padding:24px 32px;border-bottom:1px solid #e0ddd8;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="width:33%;text-align:center;padding:0 8px;">
+                  <div style="font-size:28px;font-weight:700;color:#1a1a1a;">${postsPublishedCount}</div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#888884;margin-top:4px;">Posts Published</div>
+                </td>
+                <td style="width:33%;text-align:center;padding:0 8px;border-left:1px solid #e0ddd8;border-right:1px solid #e0ddd8;">
+                  <div style="font-size:28px;font-weight:700;color:#1a1a1a;">${estimatedReach > 0 ? estimatedReach.toLocaleString() : '—'}</div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#888884;margin-top:4px;">Est. Reach</div>
+                </td>
+                <td style="width:33%;text-align:center;padding:0 8px;">
+                  <div style="font-size:28px;font-weight:700;color:#1a1a1a;">${youtubeViews > 0 ? youtubeViews.toLocaleString() : '—'}</div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#888884;margin-top:4px;">YouTube Views</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Category performance table -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a1a;margin-bottom:12px;">Content Performance by Category</div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0ddd8;border-radius:8px;overflow:hidden;">
+              <tr style="background:#f8f7f4;">
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#888884;text-align:left;">Category</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#888884;text-align:right;">Avg Views</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#888884;text-align:right;">vs Baseline</th>
+                <th style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#888884;text-align:right;">Posts</th>
+              </tr>
+              ${categoryRows || '<tr><td colspan="4" style="padding:16px;font-size:13px;color:#888884;text-align:center;">Insufficient data for this period</td></tr>'}
+            </table>
+          </td>
+        </tr>
+
+        <!-- Top posts -->
+        ${topPostRows ? `
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a1a;margin-bottom:12px;">Top Posts This Period</div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              ${topPostRows}
+            </table>
+          </td>
+        </tr>` : ''}
+
+        <!-- AI Insights -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px;">Analysis</div>
+            <div style="font-size:14px;color:#374151;line-height:1.7;background:#f8f7f4;border-radius:8px;padding:16px;border-left:3px solid #2563eb;">
+              ${weights.insights}
+            </div>
+          </td>
+        </tr>
+
+        <!-- What changes next period -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#1a1a1a;margin-bottom:10px;">What Changes Next Period</div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:10px 14px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0;margin-bottom:8px;">
+                  <span style="font-size:12px;font-weight:700;color:#059669;letter-spacing:0.06em;text-transform:uppercase;">Prioritizing more of</span><br>
+                  <span style="font-size:14px;color:#1a1a1a;">${focusLabels}</span>
+                </td>
+              </tr>
+              ${deprioritized.length > 0 ? `
+              <tr>
+                <td style="padding:10px 14px;background:#fef2f2;border-radius:6px;border:1px solid #fecaca;margin-top:8px;">
+                  <span style="font-size:12px;font-weight:700;color:#dc2626;letter-spacing:0.06em;text-transform:uppercase;">Pulling back on</span><br>
+                  <span style="font-size:14px;color:#1a1a1a;">${deprioritized.join(', ')}</span>
+                </td>
+              </tr>` : ''}
+            </table>
+            <div style="font-size:12px;color:#888884;margin-top:10px;">These weights are applied automatically to idea scoring. You can override them any time on the Idea Review page by approving or skipping ideas.</div>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:32px;">
+            <a href="${analyticsUrl}" style="display:block;text-align:center;background:#2563eb;color:#ffffff;font-weight:700;font-size:15px;letter-spacing:0.05em;padding:16px 32px;border-radius:8px;text-decoration:none;">
+              View Full Analytics Dashboard →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 32px;border-top:1px solid #e0ddd8;">
+            <div style="font-size:11px;color:#888884;text-align:center;">
+              Legacy Home Search · Bi-Weekly Performance Review · Automated
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+  const resend = new Resend(resendKey)
+  await resend.emails.send({
+    from: fromEmail,
+    to: operatorEmail,
+    subject: `Content Performance Review — ${formatDate(periodStart)} to ${formatDate(periodEnd)}`,
+    html,
   })
 }

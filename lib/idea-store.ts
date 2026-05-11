@@ -165,3 +165,36 @@ export function buildWeekId(date?: Date): string {
   const d = date ?? new Date()
   return d.toISOString().slice(0, 10) // YYYY-MM-DD
 }
+
+// ─── Performance weights (bi-weekly review feedback loop) ─────────────────────
+
+const PERFORMANCE_WEIGHTS_KEY = 'lhs:strategy:performance-weights'
+const PERFORMANCE_WEIGHTS_TTL = 90 * 24 * 60 * 60 // 90 days
+
+export type CategoryBreakdownEntry = {
+  category: string
+  avgPageViews: number
+  postsAnalyzed: number
+  weightMultiplier: number
+}
+
+export type PerformanceWeights = {
+  updatedAt: string
+  weights: Record<string, number>
+  insights: string
+  topPosts: { title: string; category: string; pageViews: number; slug: string }[]
+  nextPeriodFocus: string[]
+  categoryBreakdown: CategoryBreakdownEntry[]
+}
+
+export async function getPerformanceWeights(): Promise<PerformanceWeights | null> {
+  const redis = getRedis()
+  const raw = await redis.get<string>(PERFORMANCE_WEIGHTS_KEY)
+  if (!raw) return null
+  return typeof raw === 'string' ? JSON.parse(raw) : raw
+}
+
+export async function setPerformanceWeights(weights: PerformanceWeights): Promise<void> {
+  const redis = getRedis()
+  await redis.set(PERFORMANCE_WEIGHTS_KEY, JSON.stringify(weights), { ex: PERFORMANCE_WEIGHTS_TTL })
+}

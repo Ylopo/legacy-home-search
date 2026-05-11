@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ScoredArticle, BlogPostDraft } from './types'
+import { FAIR_HOUSING_RULES } from './fair-housing'
 import { markdownToPortableText, lineToBlock } from './portable-text-utils'
 
 function slugify(text: string): string {
@@ -35,6 +36,8 @@ WHY IT MATTERS: ${article.whyItMatters}
 
 Your audience: home buyers, sellers, and investors in Hampton Roads and Virginia Beach.
 Your voice: knowledgeable, approachable, direct. Not salesy. You genuinely care about helping Hampton Roads families make smart real estate decisions. Where relevant, tie insights back to the local Hampton Roads / Virginia Beach market and what Virginia-specific factors mean for buyers and owners.
+
+${FAIR_HOUSING_RULES}
 
 SEO RULES (required):
 1. Open with 1–2 sentences that directly answer the reader's most likely question — short, factual, Hampton Roads-specific. Example: "Closing costs in Virginia Beach typically run 2–5% of the purchase price." This helps Google feature the answer in search results.

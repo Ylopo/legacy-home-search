@@ -7,6 +7,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import imageUrlBuilder from '@sanity/image-url'
+import { FAIR_HOUSING_RULES } from './fair-housing'
 import { createClient } from '@sanity/client'
 import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX, publishToThreads } from './blotato-client'
 import { markPublishing, markPublished, markPublishFailed, patchSocialSubmission } from './content-workflow'
@@ -125,6 +126,8 @@ Article:
 Title: ${post.title}
 Category: ${categoryLabels[post.category ?? ''] ?? post.category ?? 'real estate'}
 Excerpt: ${post.excerpt ?? ''}
+
+${FAIR_HOUSING_RULES}
 
 Return a JSON object with EXACTLY these 5 fields. No markdown fences.
 
