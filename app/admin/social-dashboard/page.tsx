@@ -20,6 +20,7 @@ type DashboardData = {
     withLinkedIn: number
     withTwitter: number
     withThreads: number
+    withInstagram: number
     recentCount: number
     daysSinceLastPost: number | null
     gscConnected: boolean
@@ -214,6 +215,7 @@ export default function SocialDashboardHome() {
             <PlatformBar label="LinkedIn"        icon="💼" count={stats.withLinkedIn ?? 0}     total={stats.total} color="#0a66c2" />
             <PlatformBar label="X / Twitter"     icon="𝕏" count={stats.withTwitter ?? 0}      total={stats.total} color="#000000" />
             <PlatformBar label="Threads"         icon="🧵" count={stats.withThreads ?? 0}      total={stats.total} color="#000000" />
+            <PlatformBar label="Instagram"       icon="📸" count={stats.withInstagram ?? 0}    total={stats.total} color="#e1306c" />
           </div>
           <div>
             <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -226,6 +228,7 @@ export default function SocialDashboardHome() {
               { label: 'LinkedIn analytics',   path: '/admin/social-dashboard/linkedin',      count: stats.withLinkedIn,     color: '#0a66c2' },
               { label: 'X / Twitter',          path: '/admin/social-dashboard/twitter',       count: stats.withTwitter,      color: '#000' },
               { label: 'Threads',              path: '/admin/social-dashboard/threads',       count: stats.withThreads,      color: '#000' },
+              { label: 'Instagram',            path: '/admin/social-dashboard/instagram',     count: stats.withInstagram,    color: '#e1306c' },
               { label: 'Google Search',        path: '/admin/social-dashboard/google-search', count: gsc?.clicks ?? null,    color: '#2563eb' },
             ].map(({ label, path, count, color }) => (
               <a key={label}

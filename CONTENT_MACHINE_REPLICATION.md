@@ -246,6 +246,7 @@ Every env var the pipeline requires, what it controls, and whether it can be reu
 | `BLOTATO_LINKEDIN_ACCOUNT_ID` | Blotato | ❌ New | Connect client's LI → note account ID |
 | `BLOTATO_X_ACCOUNT_ID` | Blotato | ❌ New | Connect client's X → note account ID |
 | `BLOTATO_THREADS_ACCOUNT_ID` | Blotato | ❌ New | Connect client's Threads → note account ID |
+| `BLOTATO_INSTAGRAM_ACCOUNT_ID` | Blotato | ❌ New | Connect client's Instagram → note account ID |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 | ❌ New | Client's GA4 property measurement ID |
 | `GA4_PROPERTY_ID` | GA4 | ❌ New | Client's GA4 numeric property ID |
 | `GA4_SERVICE_ACCOUNT_JSON` | GA4 | ❌ New | Service account JSON (one-line stringified) |

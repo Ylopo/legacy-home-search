@@ -181,6 +181,12 @@ export default {
       description: 'Returned by Blotato after Threads post is submitted',
     },
     {
+      name: 'instagramPostSubmissionId',
+      title: 'Instagram Submission ID',
+      type: 'string',
+      description: 'Returned by Blotato after Instagram post is submitted',
+    },
+    {
       name: 'coverImage',
       title: 'Cover Image',
       type: 'image',

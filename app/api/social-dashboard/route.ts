@@ -83,6 +83,7 @@ export async function GET(request: Request) {
       withLinkedIn:     posts.filter(p => p.hasLinkedIn).length,
       withTwitter:      posts.filter(p => p.hasTwitter).length,
       withThreads:      posts.filter(p => p.hasThreads).length,
+      withInstagram:    posts.filter(p => p.hasInstagram).length,
       recentCount:      recentPosts.length,
       daysSinceLastPost,
       gscConnected:      !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,

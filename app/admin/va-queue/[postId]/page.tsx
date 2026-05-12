@@ -42,6 +42,7 @@ type PublishState =
       linkedin: PlatformStatus
       twitter: PlatformStatus
       threads: PlatformStatus
+      instagram: PlatformStatus
     }
   | {
       phase: 'done'
@@ -52,6 +53,7 @@ type PublishState =
       linkedin: PlatformStatus
       twitter: PlatformStatus
       threads: PlatformStatus
+      instagram: PlatformStatus
     }
   | { phase: 'error'; message: string }
 
@@ -408,7 +410,7 @@ export default function VAPostPage() {
 
   // ── Poll a single platform ───────────────────────────────────────────────────
   function startPoll(
-    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'threads',
+    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'threads' | 'instagram',
     submissionId: string,
     onUpdate: (status: PlatformStatus) => void,
   ) {
@@ -520,8 +522,13 @@ export default function VAPostPage() {
         : data.threads?.error
         ? { phase: 'error', message: data.threads.error }
         : { phase: 'idle' }
+      const initIg: PlatformStatus = data.instagram?.postSubmissionId
+        ? { phase: 'polling', submissionId: data.instagram.postSubmissionId }
+        : data.instagram?.error
+        ? { phase: 'error', message: data.instagram.error }
+        : { phase: 'idle' }
 
-      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw, threads: initTh })
+      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw, threads: initTh, instagram: initIg })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
       // Mark video as saved so the secondary "Publish Video" button doesn't appear
       setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
@@ -534,16 +541,17 @@ export default function VAPostPage() {
         linkedin: initLi.phase === 'idle',
         twitter: initTw.phase === 'idle',
         threads: initTh.phase === 'idle',
+        instagram: initIg.phase === 'idle',
       }
       const statuses: Record<string, PlatformStatus> = {
         facebook: initFb, facebookReel: initReel,
         youtube: initYt, tiktok: initTt,
-        linkedin: initLi, twitter: initTw, threads: initTh,
+        linkedin: initLi, twitter: initTw, threads: initTh, instagram: initIg,
       }
 
       function checkAllDone() {
-        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter && resolved.threads) {
-          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter, threads: statuses.threads })
+        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter && resolved.threads && resolved.instagram) {
+          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter, threads: statuses.threads, instagram: statuses.instagram })
         }
       }
 
@@ -622,6 +630,17 @@ export default function VAPostPage() {
         })
       } else {
         resolved.threads = true
+      }
+
+      if (data.instagram?.postSubmissionId) {
+        startPoll('instagram', data.instagram.postSubmissionId, (s) => {
+          statuses.instagram = s
+          resolved.instagram = true
+          setPublishState(prev => prev.phase === 'polling' ? { ...prev, instagram: s } : prev)
+          checkAllDone()
+        })
+      } else {
+        resolved.instagram = true
       }
 
       checkAllDone()
@@ -1143,6 +1162,7 @@ export default function VAPostPage() {
               <li>Post to LinkedIn {hasVideo ? '(video)' : '(image)'}</li>
               <li>Post to X / Twitter {hasVideo ? '(video)' : '(image)'}</li>
               <li>Post to Threads {hasVideo ? '(video)' : '(image)'}</li>
+              <li>Post to Instagram {hasVideo ? '(Reel)' : '(image)'}</li>
             </ul>
 
             {/* Per-platform publish status */}
@@ -1175,6 +1195,9 @@ export default function VAPostPage() {
                 )}
                 {publishState.threads.phase !== 'idle' && (
                   <PlatformStatusRow icon="🧵" label="Threads" status={publishState.threads} />
+                )}
+                {publishState.instagram.phase !== 'idle' && (
+                  <PlatformStatusRow icon="📸" label="Instagram" status={publishState.instagram} />
                 )}
               </div>
             )}

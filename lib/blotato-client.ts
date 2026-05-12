@@ -8,13 +8,14 @@
  * Phase 2+: swap account ID resolvers to read from Sanity clientConfig doc.
  *
  * Env vars required:
- *   BLOTATO_API_KEY                — API key
+ *   BLOTATO_API_KEY                 — API key
  *   BLOTATO_FACEBOOK_ACCOUNT_ID    — Blotato account ID for Facebook (29353)
  *   BLOTATO_YOUTUBE_ACCOUNT_ID     — Blotato account ID for YouTube (34912)
  *   BLOTATO_TIKTOK_ACCOUNT_ID      — Blotato account ID for TikTok (39905)
  *   BLOTATO_LINKEDIN_ACCOUNT_ID    — Blotato account ID for LinkedIn (20512)
  *   BLOTATO_X_ACCOUNT_ID           — Blotato account ID for X/Twitter (17792)
  *   BLOTATO_THREADS_ACCOUNT_ID     — Blotato account ID for Threads (6535)
+ *   BLOTATO_INSTAGRAM_ACCOUNT_ID   — Blotato account ID for Instagram (45624)
  *   BLOTATO_FACEBOOK_PAGE_ID       — Facebook Page ID (1101893253009079)
  */
 
@@ -57,6 +58,12 @@ function getXAccountId(): string {
 
 function getThreadsAccountId(): string {
   return process.env.BLOTATO_THREADS_ACCOUNT_ID ?? '6535'
+}
+
+function getInstagramAccountId(): string {
+  const id = process.env.BLOTATO_INSTAGRAM_ACCOUNT_ID
+  if (!id) throw new Error('BLOTATO_INSTAGRAM_ACCOUNT_ID env var is not set')
+  return id
 }
 
 function getPageId(): string {
@@ -330,6 +337,83 @@ export async function publishToX(
   const data = await res.json()
   if (!data.postSubmissionId) {
     throw new Error(`Blotato X response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
+  return { postSubmissionId: String(data.postSubmissionId) }
+}
+
+// Instagram character limit (2200 chars visible before truncation)
+const IG_TEXT_LIMIT = 2200
+
+export async function publishToInstagram(
+  text: string,
+  mediaUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getInstagramAccountId()
+  const safeText = text.length > IG_TEXT_LIMIT ? text.slice(0, IG_TEXT_LIMIT - 3) + '...' : text
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text: safeText,
+          mediaUrls: [mediaUrl],
+          platform: 'instagram',
+        },
+        target: {
+          targetType: 'instagram',
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato Instagram publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato Instagram response missing postSubmissionId: ${JSON.stringify(data)}`)
+  }
+  return { postSubmissionId: String(data.postSubmissionId) }
+}
+
+export async function publishToInstagramReel(
+  text: string,
+  videoUrl: string,
+): Promise<BlotatoPublishResult> {
+  const accountId = getInstagramAccountId()
+  const safeText = text.length > IG_TEXT_LIMIT ? text.slice(0, IG_TEXT_LIMIT - 3) + '...' : text
+
+  const res = await fetch(`${BASE_URL}/posts`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      post: {
+        accountId,
+        content: {
+          text: safeText,
+          mediaUrls: [videoUrl],
+          platform: 'instagram_reels',
+        },
+        target: {
+          targetType: 'instagram_reels',
+        },
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Blotato Instagram Reel publish failed (${res.status}): ${body}`)
+  }
+
+  const data = await res.json()
+  if (!data.postSubmissionId) {
+    throw new Error(`Blotato Instagram Reel response missing postSubmissionId: ${JSON.stringify(data)}`)
   }
   return { postSubmissionId: String(data.postSubmissionId) }
 }
