@@ -153,7 +153,16 @@ Every piece of AI-generated content passes through two layers before being saved
 Fair Housing rules are embedded directly in every Claude writing prompt. The AI is instructed to never generate violating language in the first place.
 
 ### Layer 2: Verification (Post-Generation Check)
-After content is generated — but before it is saved to Sanity or published — a compliance check runs automatically using Claude with FH-specific instructions.
+After content is generated — but before it is saved to Sanity or published — a compliance check runs automatically.
+
+**Technical details:**
+- **Model:** Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) — fast, cheap, structured JSON output
+- **When it runs:** Immediately after post generation, before any Sanity write
+- **Cache:** Redis key `lhs:fh:{postId}`, 90-day TTL — result is available to the VA Queue in real time
+- **Both pipeline paths covered:**
+  - `/api/content/ideas/approve` — Idea Review path (primary)
+  - `/api/blog/publish` — Blog Picker path (fast-track)
+- **Social captions:** `FAIR_HOUSING_RULES` is injected into the caption generation prompt (prevention-only). Captions are short enough that prompt injection catches violations before they're generated; no post-generation check is run on captions.
 
 **Results:**
 

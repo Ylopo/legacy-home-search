@@ -30,7 +30,11 @@ Weekly Idea Digest (Cron — Thu/Fri 8 AM PT)
 
 Operator approves an idea on /admin/idea-review
   └─ /api/content/ideas/approve (POST)
-       └─ Claude Sonnet writes full blog post
+       └─ Claude Sonnet writes full blog post (FAIR_HOUSING_RULES injected into prompt)
+       └─ Fair Housing check runs (Claude Haiku) — result cached in Redis (lhs:fh:{postId}, 90-day TTL)
+            └─ severity = 'violation': operator alert email sent; VA Queue shows red "FH Hold" badge
+            └─ severity = 'warning': VA Queue shows yellow "FH Review" badge (post proceeds normally)
+            └─ severity = 'clear': no badge shown
        └─ Sanity doc created: workflowStatus: 'media_pending'
        └─ Page redirects to /admin/va-queue automatically
 
@@ -42,7 +46,8 @@ Operator visits /admin/blog-picker/[date]?secret=…
   └─ Shows articles scored by daily research cron (from Redis)
   └─ Operator selects 1–5 articles and clicks "Write & Queue"
   └─ /api/blog/publish (POST)
-       └─ Claude Sonnet writes full blog post for each selected article
+       └─ Claude Sonnet writes full blog post for each selected article (FAIR_HOUSING_RULES injected)
+       └─ Fair Housing check runs per post (same logic as PATH A — badge + alert email if needed)
        └─ Sanity doc created: workflowStatus: 'media_pending'
        └─ Success screen shows "Queued" + link to /admin/va-queue
 
@@ -72,6 +77,13 @@ VA opens a post → /admin/va-queue/[postId]
     └─ Edit the downloaded video externally (add B-roll, captions, etc.)
     └─ Upload final video → /api/content/upload-video (Vercel Blob, random suffix)
     └─ Optional: upload a video thumbnail image separately
+
+  FAIR HOUSING PANEL (shown when violations/warnings exist)
+    └─ Collapsible panel at top of post editor — only shown when FH check result exists in Redis
+    └─ Displays each flagged phrase, which protected class it triggers, and suggested replacement
+    └─ "Mark as Reviewed" button → stores reviewedAt timestamp in Redis; badge clears from list page
+    └─ For hard violations: edit the flagged text in Sanity Studio before marking reviewed
+    └─ See FAIR_HOUSING.md for full operator guidance
 
   STEP 4 — Publish
     └─ "🚀 Publish" → /api/content/publish
@@ -277,6 +289,15 @@ The content machine is designed to improve itself. Every two weeks — on the 1s
    - What will be prioritized / deprioritized next period
    - Link to the full analytics dashboard
 
+### How weights feed back into the idea queue
+
+`lib/research.ts` reads `getPerformanceWeights()` from Redis at the start of every research run. Each IdeaCandidate's total score is multiplied by the category's `weightMultiplier` (range: 0.7–1.5×):
+
+- **≥ 1.2×** — boosted categories surface higher in the queue and get priority in email digests
+- **≤ 0.85×** — underperforming categories score lower and appear less frequently
+- Multiplier is capped at 1.5× / floor at 0.7× to prevent extreme swings
+- Change is gradual — the operator still approves every idea, so they can override any weight by simply approving or skipping ideas regardless of score
+
 ### What the operator does
 
 Nothing — unless they want to override. The system adjusts automatically. If the operator disagrees with a suggested shift (e.g. "we want more market updates even if they underperform"), they can:
@@ -357,6 +378,22 @@ Edit `lib/required-topics.ts` → append a generator to `REQUIRED_TOPICS`. The n
 ---
 
 ## Phase 1: Research & Idea Engine
+
+### LEARNINGS.md — Living Voice & Style Guide
+
+`LEARNINGS.md` at the project root is the system's content intelligence file. It is **read by `lib/idea-writer.ts` at write time** to inject brand voice, topic translations, and style guidance into every post Claude generates.
+
+**How it's updated:** The `/api/cron/learnings-update` cron fires every Wednesday at 7 AM PT. It reads recent approval decisions, skips, and GA4 data, then asks Claude Opus to write a new weekly entry summarizing what's working. The entry is committed back to the file via GitHub.
+
+**What it contains:**
+- Approved voice/style principles (e.g., "open with the surprising fact, not the background")
+- Renick Blog → Hampton Roads topic translation table (high-performing formats adapted to this market)
+- City priority weighting (Virginia Beach > Chesapeake > Norfolk > Suffolk > Hampton/Newport News)
+- Mandatory angles (military/PCS, flood zone, Virginia-specific quirks)
+
+**First automated entries** will appear after week 1 of live traffic. The file is pre-seeded with a Week 1 baseline covering core voice principles and the Renick pattern library.
+
+---
 
 ### Research Cron (`/api/cron/research`)
 
