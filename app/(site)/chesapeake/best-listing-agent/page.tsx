@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 
 // ── Skill: keyword-research ───────────────────────────────────────────────────
@@ -250,9 +251,10 @@ export default function BestListingAgentChesapeake() {
       </div>
 
       {/* Hero */}
-      <section style={{ background: 'var(--accent)', padding: '64px 0 72px', marginTop: 0, borderTop: 'none' }}>
+      <section style={{ background: 'var(--accent)', padding: '64px 0 0', marginTop: 0, borderTop: 'none', overflow: 'hidden' }}>
         <div className="container">
-          <div style={{ maxWidth: 760 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '48px', alignItems: 'flex-end' }}>
+            <div style={{ paddingBottom: 72 }}>
             <div className="hero-eyebrow" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', marginBottom: 20 }}>
               Chesapeake · Hampton Roads
             </div>
@@ -273,6 +275,22 @@ export default function BestListingAgentChesapeake() {
               <Link href="/chesapeake" className="btn-outline" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
                 Explore Chesapeake →
               </Link>
+            </div>
+            </div>
+            {/* Barry Jenkins */}
+            <div style={{ alignSelf: 'flex-end' }}>
+              <Image
+                src="/barry-transparent.png"
+                alt="Barry Jenkins — Licensed Real Estate Agent, Legacy Home Team"
+                width={300}
+                height={420}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+                priority
+              />
+              <div style={{ background: 'var(--text)', padding: '14px 24px', textAlign: 'center' }}>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 18, lineHeight: 1.2 }}>Barry Jenkins</div>
+                <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Licensed Real Estate Agent</div>
+              </div>
             </div>
           </div>
         </div>
