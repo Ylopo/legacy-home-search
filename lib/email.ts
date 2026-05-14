@@ -753,3 +753,65 @@ export async function sendPerformanceReviewEmail(data: PerformanceReviewData): P
     html,
   })
 }
+
+export async function sendAEODailyEmail(
+  pages: Array<{ h1: string; url: string; city: string }>,
+  round: number,
+  totalRounds: number,
+): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.FROM_EMAIL ?? 'noreply@legacyhometeamlpt.com'
+  const operatorEmail = process.env.OPERATOR_EMAIL ?? 'kiwi@ylopo.com'
+  if (!resendKey) return
+
+  const pageRows = pages.map(p => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#111827;">${p.h1}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#374151;">${p.city}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;">
+        <a href="https://legacyhometeamlpt.com${p.url}" style="color:#2563eb;text-decoration:none;">/${p.url.replace(/^\//, '')}</a>
+      </td>
+    </tr>`).join('')
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/></head>
+<body style="font-family:system-ui,sans-serif;background:#f9fafb;margin:0;padding:32px;">
+  <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="background:#1e3a5f;padding:28px 32px;">
+      <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">AEO Page Generator · Daily Report</div>
+      <h1 style="color:#fff;margin:0;font-size:22px;font-weight:800;">${pages.length} Pages Published Today</h1>
+      <div style="color:rgba(255,255,255,0.6);font-size:14px;margin-top:8px;">Round ${round + 1} of ${totalRounds} · ${totalRounds - round - 1} rounds remaining</div>
+    </div>
+    <div style="padding:32px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;">Page</th>
+            <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;">City</th>
+            <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;">URL</th>
+          </tr>
+        </thead>
+        <tbody>${pageRows}</tbody>
+      </table>
+      ${round + 1 >= totalRounds ? `
+      <div style="margin-top:24px;background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;color:#166534;font-weight:600;">
+        All ${totalRounds * pages.length} AEO pages have been generated. The campaign is complete.
+      </div>` : `
+      <div style="margin-top:24px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;color:#1e40af;font-size:13px;">
+        Next batch generates tomorrow. ${(totalRounds - round - 1) * pages.length} pages remaining across ${totalRounds - round - 1} rounds.
+      </div>`}
+    </div>
+  </div>
+</body>
+</html>`
+
+  const resend = new Resend(resendKey)
+  await resend.emails.send({
+    from: fromEmail,
+    to: operatorEmail,
+    subject: `AEO Pages: ${pages.length} new pages published (Round ${round + 1}/${totalRounds})`,
+    html,
+  })
+}
