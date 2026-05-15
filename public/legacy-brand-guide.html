@@ -701,6 +701,88 @@
     margin-top: 10px;
   }
 
+  /* ── AI Prompt block ────────────────────────────────────────────── */
+  .prompt-shell {
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d1117;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  }
+
+  .prompt-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: #161b22;
+    border-bottom: 1px solid #2d3748;
+  }
+
+  .prompt-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .prompt-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .prompt-filename {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #8b949e;
+    margin-left: 8px;
+    letter-spacing: 0.03em;
+  }
+
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    background: var(--navy);
+    color: #e2e8f0;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .copy-btn:hover { background: #1a3050; border-color: var(--light-gray); }
+  .copy-btn.copied { background: #166534; color: #bbf7d0; border-color: #166534; }
+
+  .prompt-body {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.75;
+    color: #c9d1d9;
+    padding: 24px 28px;
+    white-space: pre-wrap;
+    max-height: 420px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #0d1117;
+    tab-size: 2;
+  }
+
+  .prompt-body::-webkit-scrollbar { width: 6px; }
+  .prompt-body::-webkit-scrollbar-track { background: #0d1117; }
+  .prompt-body::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+  @media print {
+    .prompt-shell { display: none; }
+    .copy-btn { display: none; }
+  }
+
   /* ── Print ───────────────────────────────────────────────────────── */
   @media print {
     @page { margin: 0; size: A4 landscape; }
@@ -1315,6 +1397,203 @@
       </div>
     </div>
 
+    <!-- §8 AI Brand Prompt ──────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">08 — AI Brand Prompt</div>
+      <div class="section-title">Copy &amp; Paste into Any AI Tool</div>
+
+      <p style="font-size:12px;color:var(--mid-gray);line-height:1.6;margin-bottom:20px;max-width:72ch;">
+        Paste this prompt at the start of any conversation with ChatGPT, Claude, Gemini, Midjourney, or any other AI tool before asking it to create images, graphics, copy, or social content. It gives the model a complete picture of Legacy Home Team's brand so everything it produces is on-brand from the first output.
+      </p>
+
+      <div class="prompt-shell">
+        <div class="prompt-topbar">
+          <div class="prompt-topbar-left">
+            <span class="prompt-dot" style="background:#ff5f57;"></span>
+            <span class="prompt-dot" style="background:#febc2e;"></span>
+            <span class="prompt-dot" style="background:#28c840;"></span>
+            <span class="prompt-filename">legacy-home-team-brand-prompt.md</span>
+          </div>
+          <button class="copy-btn" onclick="copyPrompt()" id="copyBtn">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Copy Prompt
+          </button>
+        </div>
+        <div class="prompt-body" id="promptText"># Legacy Home Team — AI Brand Context Prompt
+
+You are helping create content, graphics, copy, or images for **Legacy Home Team**, a real estate team based in Virginia Beach, Virginia, led by **Barry Jenkins**.
+
+Before producing anything, internalize and apply every rule in this document. Do not deviate from these guidelines unless explicitly told to by the operator.
+
+---
+
+## Who We Are
+
+**Agent:** Barry Jenkins
+**Team:** Legacy Home Team
+**Market:** Hampton Roads, Virginia — primarily Virginia Beach, Chesapeake, Norfolk, Suffolk, Hampton, and Newport News
+**Experience:** 20+ years in Hampton Roads real estate, ranked #9 nationally (Real Trends), thousands of homes sold
+**Website:** legacyhometeamlpt.com
+
+Barry is a lifelong Hampton Roads resident who genuinely loves this community. He is not a typical salesperson — he is a trusted local expert who informs first and sells second.
+
+---
+
+## Brand Colors
+
+Use ONLY these colors. Do not introduce any others.
+
+| Name        | Hex       | Use                                                    |
+|-------------|-----------|--------------------------------------------------------|
+| Deep Navy   | #0F1D2E   | Primary. Backgrounds, headers, dominant elements       |
+| Deep Teal   | #0D2624   | Secondary. Accents, supporting elements, hover states  |
+| Silver Gray | #C9C9C9   | Accent ONLY. Lines, dividers, subtle highlights        |
+| Warm White  | #F8F7F4   | Page/card backgrounds                                  |
+| White       | #FFFFFF   | Clean surfaces, reversed text backgrounds              |
+| Charcoal    | #1A1A1A   | Body copy, primary text                                |
+| Mid Gray    | #8A8990   | Captions, labels, secondary text                       |
+
+### ❌ Colors to NEVER Use
+Gold, bronze, antique gold, metallic gold, champagne, or any warm yellow-brown metallic tone.
+These are default AI choices for real estate — they are off-brand and must always be replaced with Silver Gray (#C9C9C9).
+
+Also avoid: purple gradients, neon accents, red, orange, or any color not listed above.
+
+---
+
+## Typography
+
+**Primary Serif:** Cormorant Garamond (Google Fonts)
+- Use for: headlines, hero text, display titles, pull quotes, editorial moments
+- Style: often italic, weights 300–700
+- Feel: refined, editorial, warm luxury
+
+**Primary Sans-Serif:** Inter (Google Fonts)
+- Use for: body copy, UI text, captions, labels, data, social captions
+- Style: clean, never decorative
+- Feel: functional, modern, trustworthy
+
+### Type Rules
+- Hero/display headlines: Cormorant Garamond, italic, 40–60px, Deep Navy
+- Section headings: Inter, bold (700), uppercase, tight tracking, Deep Navy
+- Body copy: Inter, regular (400), 13–15px, Charcoal, line-height 1.6
+- Labels/eyebrows: Inter, semibold (600), 9–11px, ALL CAPS, 0.3em letter-spacing, Mid Gray
+- Pull quotes: Cormorant Garamond, italic, 20–26px, with Silver Gray left border
+
+Do NOT use: Arial, Helvetica, Roboto, Open Sans, Playfair Display, Lora, or any font not listed above.
+
+---
+
+## Logo Rules
+
+- The logo is a circle containing a house/door icon, paired with "LEGACY" (serif, uppercase) and "HOME TEAM" (sans, small caps below)
+- Approved background colors: White (#FFFFFF), Deep Navy (#0F1D2E), Deep Teal (#0D2624), Warm White (#F8F7F4)
+- On dark backgrounds: logo renders in white
+- On light backgrounds: logo renders in Deep Navy (#0F1D2E)
+- Minimum clear space: equal to the cap-height of the "L" on all sides
+- NEVER: stretch, skew, recolor (especially not gold), add drop shadows, glows, or decorative effects
+- NEVER: place the logo directly on a busy photo without a solid color box or overlay
+
+---
+
+## Voice & Tone
+
+### We Sound Like:
+- A trusted neighbor with 20 years of market knowledge — direct, warm, informative
+- Knowledgeable without being condescending
+- Local: every insight connects to Hampton Roads specifically
+- Honest: real numbers, real places, real people
+- Proud of this community — genuine affection for Virginia Beach and Hampton Roads
+
+### We Do NOT Sound Like:
+- A salesperson ("incredible opportunity!", "dream home", "act fast!")
+- A generic real estate blog ("10 tips for homebuyers")
+- A corporate press release (stiff, formal, impersonal)
+- An AI assistant ("As a real estate professional, I recommend…")
+- A national brand with no local specificity
+
+### Opening Rule
+When writing blog posts or social captions: open with a direct, specific answer or a vivid scene — never "Did you know…", never "In today's market…", never a rhetorical question.
+
+---
+
+## Imagery & Visual Direction
+
+### Photography Style
+- Real Hampton Roads locations — named neighborhoods, landmarks, waterfronts
+- Natural light: golden hour for exteriors, bright and airy for interiors
+- No heavy HDR, no over-saturated skies, no stock-photo feel
+- Honest representation — what the home and neighborhood actually look like
+
+### Graphic Design Style
+- Clean, editorial, quiet luxury
+- Generous white space
+- The Silver Gray (#C9C9C9) accent line is the ONLY metallic note in any design
+- No glitter, shimmer, sparkle, or glow effects
+- No gold borders, no metallic textures
+
+### Photo Overlays
+When placing text over photos: use Deep Navy (#0F1D2E) or Deep Teal (#0D2624) as a semi-transparent overlay at minimum 60% opacity. Never use a generic black gradient.
+
+---
+
+## AI Image Generation — Style Prompts
+
+### For Property / Exterior Photos
+Append to your image prompt:
+`architecture photography, Hampton Roads Virginia, natural daylight, deep navy color grade, clean composition, no HDR, quiet luxury aesthetic, no gold accents, no metallic borders, editorial quality`
+
+### For Social Graphics / Brand Graphics
+Append to your image prompt:
+`minimal real estate brand graphic, dark navy background #0F1D2E, white typography, silver gray accent line only, clean layout, generous white space, professional editorial, avoid gold bronze purple gradients`
+
+### For Team / Headshot Photos
+Append to your image prompt:
+`professional portrait photography, natural window light, shallow depth of field, deep navy or off-white background, warm confident approachable expression, no ring lights, no obvious studio backdrops, editorial quality`
+
+### Negative Prompts (always include)
+`no gold, no bronze, no metallic accents, no purple gradients, no stock photo look, no generic suburbs, no cheesy real estate branding, no glitter, no sparkle effects, no heavy vignette, no watermarks`
+
+---
+
+## Social Media Specifications
+
+| Platform       | Format          | Size        |
+|----------------|-----------------|-------------|
+| Instagram      | Feed Square     | 1080×1080   |
+| Instagram      | Feed Portrait   | 1080×1350   |
+| Instagram/FB   | Reel / Story    | 1080×1920   |
+| Facebook       | Feed Image      | 1200×630    |
+| YouTube        | Thumbnail       | 1280×720    |
+| YouTube        | Short           | 1080×1920   |
+| LinkedIn       | Post Image      | 1200×627    |
+| TikTok         | Video           | 1080×1920   |
+| Threads        | Post Image      | 1080×1080   |
+
+**Export:** PNG for graphics · JPG (90%) for photos · MP4 H.264 for video · Color profile: sRGB
+
+---
+
+## What This Brand Is Not
+
+To be absolutely clear, Legacy Home Team does NOT want:
+- Gold or bronze anything
+- Purple gradient backgrounds
+- Generic "luxury real estate" aesthetics that look like every other agent's brand
+- Stock photo suburban houses with no local identity
+- Salesy, pushy, or hype-driven language
+- Content that could apply to any city — everything must be Hampton Roads-specific
+
+---
+
+*Legacy Home Team · legacyhometeamlpt.com · Virginia Beach, Hampton Roads, VA*</div>
+      </div>
+
+      <div class="note mt-sm" style="font-size:11px;font-style:normal;">
+        <strong style="color:var(--navy);">How to use:</strong> Click "Copy Prompt" above, then paste it as your first message in any AI chat (Claude, ChatGPT, Gemini, etc.) or as a system prompt before asking for images, copy, or graphics. The AI will follow these brand rules for the rest of the conversation.
+      </div>
+    </div>
+
   </div><!-- /body -->
 
   <!-- ── Footer ─────────────────────────────────────────────────────── -->
@@ -1324,5 +1603,20 @@
   </div>
 
 </div><!-- /page -->
+
+<script>
+function copyPrompt() {
+  const text = document.getElementById('promptText').innerText
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn')
+    btn.textContent = '✓ Copied!'
+    btn.classList.add('copied')
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Copy Prompt'
+      btn.classList.remove('copied')
+    }, 2500)
+  })
+}
+</script>
 </body>
 </html>
