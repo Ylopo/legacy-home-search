@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Legacy Home Team — Brand Style Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── Reset & base ───────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0F1D2E;
+    --teal:       #0D2624;
+    --white:      #FFFFFF;
+    --off-white:  #F8F7F4;
+    --light-gray: #C9C9C9;
+    --mid-gray:   #8A8990;
+    --charcoal:   #1A1A1A;
+    --rule:       #E0DDD8;
+
+    --font-serif:  'Cormorant Garamond', Georgia, serif;
+    --font-sans:   'Inter', system-ui, sans-serif;
+
+    --page-w: 1020px;
+  }
+
+  html, body {
+    background: var(--off-white);
+    color: var(--charcoal);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page shell ─────────────────────────────────────────────────── */
+  .page {
+    max-width: var(--page-w);
+    margin: 0 auto;
+    background: var(--white);
+    box-shadow: 0 0 60px rgba(0,0,0,0.08);
+  }
+
+  /* ── Cover header ───────────────────────────────────────────────── */
+  .cover {
+    background: var(--navy);
+    color: var(--white);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 220px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 40px,
+        rgba(255,255,255,0.015) 40px,
+        rgba(255,255,255,0.015) 41px
+      );
+    pointer-events: none;
+  }
+
+  .cover-left {
+    padding: 52px 48px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-logo {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .logo-icon {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .logo-text .legacy {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .logo-text .home-team {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--light-gray);
+  }
+
+  .cover-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+  }
+
+  .cover-right {
+    padding: 52px 48px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+
+  .cover-subtitle {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    line-height: 1.8;
+  }
+
+  /* ── Accent bar ─────────────────────────────────────────────────── */
+  .accent-bar {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    height: 6px;
+  }
+  .accent-bar-navy { background: var(--navy); }
+  .accent-bar-gray { background: var(--light-gray); }
+
+  /* ── Body layout ────────────────────────────────────────────────── */
+  .body {
+    padding: 0 48px 56px;
+  }
+
+  /* ── Section ────────────────────────────────────────────────────── */
+  .section {
+    padding-top: 40px;
+    border-top: 1px solid var(--rule);
+    margin-top: 40px;
+  }
+  .section:first-child {
+    border-top: none;
+    margin-top: 0;
+  }
+
+  .section-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--navy);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Two-col grid ───────────────────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+  /* ── Color swatches ─────────────────────────────────────────────── */
+  .swatch-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  }
+
+  .swatch {
+    height: 80px;
+    width: 100%;
+    position: relative;
+  }
+
+  .swatch-primary { background: var(--navy); }
+  .swatch-secondary { background: var(--teal); }
+  .swatch-gray { background: var(--light-gray); }
+  .swatch-offwhite { background: var(--off-white); border: 1px solid var(--rule); }
+  .swatch-white { background: var(--white); border: 1px solid var(--rule); }
+  .swatch-charcoal { background: var(--charcoal); }
+
+  .swatch-meta {
+    padding: 12px 14px;
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+    border-top: none;
+  }
+
+  .swatch-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--charcoal);
+    margin-bottom: 2px;
+  }
+
+  .swatch-hex {
+    font-size: 10px;
+    color: var(--mid-gray);
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  .swatch-usage {
+    font-size: 9.5px;
+    color: var(--mid-gray);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* ── No-go bar ──────────────────────────────────────────────────── */
+  .nogo-swatches {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 16px;
+  }
+
+  .nogo-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nogo-color {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .nogo-color::after {
+    content: '✕';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 300;
+  }
+
+  .nogo-label {
+    font-size: 9px;
+    color: var(--mid-gray);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Typography specimens ───────────────────────────────────────── */
+  .type-block {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .type-preview {
+    padding: 28px 24px;
+    background: var(--off-white);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .type-meta {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .type-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--charcoal);
+  }
+
+  .type-spec {
+    font-size: 10px;
+    color: var(--mid-gray);
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  .specimen-serif-display {
+    font-family: var(--font-serif);
+    font-size: 34px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--navy);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .specimen-serif-body {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--charcoal);
+    line-height: 1.65;
+  }
+
+  .specimen-sans-head {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .specimen-sans-body {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--charcoal);
+    line-height: 1.6;
+  }
+
+  .specimen-sans-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--mid-gray);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  /* ── Type usage table ───────────────────────────────────────────── */
+  .type-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+
+  .type-table th {
+    text-align: left;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .type-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+    color: var(--charcoal);
+  }
+
+  .type-table td:last-child { color: var(--mid-gray); font-size: 10.5px; }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .tag-serif { background: rgba(15,29,46,0.08); color: var(--navy); }
+  .tag-sans  { background: rgba(13,38,36,0.08); color: var(--teal); }
+
+  /* ── Logo rules ─────────────────────────────────────────────────── */
+  .logo-demo {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .logo-demo-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    padding: 24px;
+  }
+
+  .logo-demo-light  { background: var(--white); }
+  .logo-demo-dark   { background: var(--navy); }
+  .logo-demo-teal   { background: var(--teal); }
+  .logo-demo-gray   { background: var(--off-white); border-top: 1px solid var(--rule); }
+
+  .logo-demo-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-top: 1px solid var(--rule);
+    color: var(--mid-gray);
+  }
+
+  .inline-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .inline-logo svg { width: 44px; height: 44px; }
+
+  .inline-logo-text .l { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1; }
+  .inline-logo-text .ht { font-family: var(--font-sans); font-size: 8px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; margin-top: 2px; }
+
+  .logo-dont {
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .logo-dont-inner {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #dc2626;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 16px;
+    text-align: center;
+    line-height: 1.5;
+    background: #fff5f5;
+  }
+
+  .logo-dont-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-top: 1px solid #fca5a5;
+    color: #dc2626;
+    background: #fff5f5;
+  }
+
+  /* ── Voice & tone ───────────────────────────────────────────────── */
+  .voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .voice-card {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 18px 20px;
+  }
+
+  .voice-card-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .voice-card.do   .voice-card-label { color: #16a34a; }
+  .voice-card.dont .voice-card-label { color: #dc2626; }
+
+  .voice-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .voice-card li {
+    font-size: 11.5px;
+    color: var(--charcoal);
+    line-height: 1.5;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .voice-card.do   li::before { content: '✓'; position: absolute; left: 0; color: #16a34a; font-size: 10px; top: 1px; }
+  .voice-card.dont li::before { content: '✕'; position: absolute; left: 0; color: #dc2626; font-size: 10px; top: 1px; }
+
+  /* ── AI prompt block ────────────────────────────────────────────── */
+  .ai-prompt-block {
+    background: var(--navy);
+    border-radius: 8px;
+    padding: 24px 28px;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+
+  .ai-prompt-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--light-gray);
+    margin-bottom: 10px;
+  }
+
+  .ai-prompt-text {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    color: #e2e8f0;
+  }
+
+  .ai-prompt-text strong {
+    color: var(--light-gray);
+    font-weight: 700;
+  }
+
+  .ai-avoid {
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px 22px;
+  }
+
+  .ai-avoid-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #dc2626;
+    margin-bottom: 10px;
+  }
+
+  .ai-avoid ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .ai-avoid li {
+    font-size: 10.5px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+    border-radius: 4px;
+    padding: 3px 10px;
+    line-height: 1.4;
+  }
+
+  /* ── Social specs ───────────────────────────────────────────────── */
+  .spec-card {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .spec-card-header {
+    background: var(--navy);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .spec-platform {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  .spec-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 6px;
+  }
+
+  .spec-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .spec-row-key { color: var(--mid-gray); }
+  .spec-row-val { font-weight: 600; color: var(--charcoal); font-family: 'Courier New', monospace; font-size: 10px; }
+
+  /* ── Imagery pillars ────────────────────────────────────────────── */
+  .pillar {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 20px;
+  }
+
+  .pillar-number {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--light-gray);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .pillar-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .pillar-body {
+    font-size: 10.5px;
+    color: var(--mid-gray);
+    line-height: 1.6;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+  .guide-footer {
+    background: var(--navy);
+    padding: 20px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .guide-footer-brand {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--light-gray);
+    letter-spacing: 0.02em;
+  }
+
+  .guide-footer-meta {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+  }
+
+  /* ── Utility ─────────────────────────────────────────────────────── */
+  .flex-gap-sm { display: flex; gap: 12px; }
+  .mt-sm { margin-top: 16px; }
+  .mt-md { margin-top: 24px; }
+  .note {
+    font-size: 10px;
+    color: var(--mid-gray);
+    line-height: 1.5;
+    font-style: italic;
+    margin-top: 10px;
+  }
+
+  /* ── Print ───────────────────────────────────────────────────────── */
+  @media print {
+    @page { margin: 0; size: A4 landscape; }
+    html, body { background: white; }
+    .page { box-shadow: none; max-width: 100%; }
+    .section { page-break-inside: avoid; }
+    .ai-prompt-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .guide-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .swatch { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .logo-demo-dark, .logo-demo-teal { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .spec-card-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .accent-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Cover ──────────────────────────────────────────────────────── -->
+  <div class="cover">
+    <div class="cover-left">
+      <div class="cover-logo">
+        <!-- Logo SVG — black on dark bg rendered white -->
+        <svg class="logo-icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="60" cy="60" r="58" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+          <path d="M60 20 L28 50 L28 96 L92 96 L92 50 Z" stroke="white" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <path d="M20 52 L60 18 L100 52" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="47" y="66" width="26" height="30" rx="1.5" stroke="white" stroke-width="2" fill="none"/>
+          <circle cx="70.5" cy="81" r="2" fill="white"/>
+        </svg>
+        <div class="logo-text">
+          <span class="legacy">Legacy</span>
+          <span class="home-team">Home Team</span>
+        </div>
+      </div>
+      <div class="cover-label">Hampton Roads, Virginia</div>
+    </div>
+    <div class="cover-right">
+      <div class="cover-title">Brand<br/>Style Guide</div>
+      <div class="cover-subtitle">
+        Colors &nbsp;·&nbsp; Typography &nbsp;·&nbsp; Voice &nbsp;·&nbsp; Imagery<br/>
+        Social Media &nbsp;·&nbsp; AI Image Generation<br/>
+        Version 1.0 &nbsp;·&nbsp; 2026
+      </div>
+    </div>
+  </div>
+
+  <div class="accent-bar">
+    <div class="accent-bar-navy"></div>
+    <div class="accent-bar-gray"></div>
+  </div>
+
+  <!-- ── Body ───────────────────────────────────────────────────────── -->
+  <div class="body">
+
+    <!-- §1 Colors ─────────────────────────────────────────────────── -->
+    <div class="section" style="margin-top:36px; border-top:none; padding-top:0;">
+      <div class="section-label">01 — Color System</div>
+      <div class="section-title">The Palette</div>
+
+      <div class="grid-4">
+
+        <div>
+          <div class="swatch-wrap">
+            <div class="swatch swatch-primary"></div>
+            <div class="swatch-meta">
+              <div class="swatch-name">Deep Navy</div>
+              <div class="swatch-hex">#0F1D2E</div>
+              <div class="swatch-usage">Primary brand color. Backgrounds, headers, dominant UI elements.</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="swatch-wrap">
+            <div class="swatch swatch-secondary"></div>
+            <div class="swatch-meta">
+              <div class="swatch-name">Deep Teal</div>
+              <div class="swatch-hex">#0D2624</div>
+              <div class="swatch-usage">Secondary brand color. Accents, hover states, supporting elements.</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="swatch-wrap">
+            <div class="swatch swatch-gray"></div>
+            <div class="swatch-meta">
+              <div class="swatch-name">Silver Gray</div>
+              <div class="swatch-hex">#C9C9C9</div>
+              <div class="swatch-usage">Accent color. Replaces all gold/bronze. Lines, highlights, subtle emphasis.</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="swatch-wrap">
+            <div class="swatch swatch-offwhite"></div>
+            <div class="swatch-meta">
+              <div class="swatch-name">Warm White</div>
+              <div class="swatch-hex">#F8F7F4</div>
+              <div class="swatch-usage">Page backgrounds, card fills, breathing room.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-sm">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid-gray);margin-bottom:10px;">Supporting Neutrals</div>
+            <div style="display:flex;gap:10px;">
+              <div class="swatch-wrap" style="flex:1;">
+                <div class="swatch swatch-white" style="height:50px;"></div>
+                <div class="swatch-meta">
+                  <div class="swatch-name">White</div>
+                  <div class="swatch-hex">#FFFFFF</div>
+                </div>
+              </div>
+              <div class="swatch-wrap" style="flex:1;">
+                <div class="swatch swatch-charcoal" style="height:50px;"></div>
+                <div class="swatch-meta">
+                  <div class="swatch-name">Charcoal</div>
+                  <div class="swatch-hex">#1A1A1A</div>
+                </div>
+              </div>
+              <div class="swatch-wrap" style="flex:1;">
+                <div class="swatch" style="height:50px;background:#8A8990;"></div>
+                <div class="swatch-meta">
+                  <div class="swatch-name">Mid Gray</div>
+                  <div class="swatch-hex">#8A8990</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#dc2626;margin-bottom:10px;">Never Use These</div>
+            <div class="nogo-swatches">
+              <div class="nogo-swatch">
+                <div class="nogo-color" style="background:#B8960C;"></div>
+                <div class="nogo-label">Gold</div>
+              </div>
+              <div class="nogo-swatch">
+                <div class="nogo-color" style="background:#CD7F32;"></div>
+                <div class="nogo-label">Bronze</div>
+              </div>
+              <div class="nogo-swatch">
+                <div class="nogo-color" style="background:#C0A020;"></div>
+                <div class="nogo-label">Dark Gold</div>
+              </div>
+              <div class="nogo-swatch">
+                <div class="nogo-color" style="background:#D4AF37;"></div>
+                <div class="nogo-label">Metallic</div>
+              </div>
+              <div class="nogo-swatch">
+                <div class="nogo-color" style="background:#8B6914;"></div>
+                <div class="nogo-label">Antique</div>
+              </div>
+            </div>
+            <div class="note">AI tools default to gold/bronze for real estate. Always override. Use Silver Gray (#C9C9C9) instead.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- §2 Typography ─────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">02 — Typography</div>
+      <div class="section-title">Type System</div>
+
+      <div class="grid-2">
+
+        <div>
+          <div class="type-block">
+            <div class="type-preview">
+              <div class="specimen-serif-display">Legacy Home Team<br/><em style="font-weight:300;">Connecting Families.</em></div>
+            </div>
+            <div class="type-meta">
+              <div>
+                <div class="type-name">Cormorant Garamond</div>
+                <div style="font-size:10px;color:var(--mid-gray);margin-top:2px;">Display serif — headlines, hero text, editorial quotes</div>
+              </div>
+              <div class="type-spec">Italic / Regular / SemiBold<br/>300 · 400 · 600 · 700</div>
+            </div>
+          </div>
+          <div class="mt-sm">
+            <div class="type-block">
+              <div class="type-preview">
+                <div class="specimen-serif-body">"Barry Jenkins has helped thousands of Hampton Roads families buy and sell homes over 20 years. This is your neighborhood — we know it like family."</div>
+              </div>
+              <div class="type-meta">
+                <div class="type-name">Cormorant — Body</div>
+                <div class="type-spec">16px · Regular · Lh 1.65</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="type-block">
+            <div class="type-preview">
+              <div class="specimen-sans-label" style="margin-bottom:8px;">Virginia Beach Real Estate</div>
+              <div class="specimen-sans-head">Your Trusted<br/>Local Team</div>
+            </div>
+            <div class="type-meta">
+              <div>
+                <div class="type-name">Inter</div>
+                <div style="font-size:10px;color:var(--mid-gray);margin-top:2px;">Functional sans — UI, captions, data, labels, body copy</div>
+              </div>
+              <div class="type-spec">300 · 400 · 500 · 600 · 700<br/>Google Fonts</div>
+            </div>
+          </div>
+          <div class="mt-sm">
+            <div class="type-block">
+              <div class="type-preview">
+                <div class="specimen-sans-body">Median home prices in Virginia Beach rose 4.2% year-over-year. Inventory remains tight at 1.8 months. If you're considering selling, this is the market where equity works for you.</div>
+              </div>
+              <div class="type-meta">
+                <div class="type-name">Inter — Body</div>
+                <div class="type-spec">13–14px · Regular · Lh 1.6</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-md">
+        <table class="type-table">
+          <thead>
+            <tr>
+              <th style="width:22%;">Element</th>
+              <th style="width:20%;">Font</th>
+              <th style="width:14%;">Size</th>
+              <th style="width:14%;">Weight</th>
+              <th style="width:14%;">Color</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hero / Cover Title</td>
+              <td><span class="tag tag-serif">Cormorant</span></td>
+              <td>40–60px</td>
+              <td>300 Italic</td>
+              <td>#0F1D2E</td>
+              <td>Italic weight, generous leading, pair with sans label above</td>
+            </tr>
+            <tr>
+              <td>Section Headings</td>
+              <td><span class="tag tag-sans">Inter</span></td>
+              <td>18–24px</td>
+              <td>700</td>
+              <td>#0F1D2E</td>
+              <td>Uppercase optional, tight tracking −0.02em</td>
+            </tr>
+            <tr>
+              <td>Quote / Pull Quote</td>
+              <td><span class="tag tag-serif">Cormorant</span></td>
+              <td>20–26px</td>
+              <td>400 Italic</td>
+              <td>#0F1D2E</td>
+              <td>Left border in #C9C9C9 (silver gray)</td>
+            </tr>
+            <tr>
+              <td>Body Copy</td>
+              <td><span class="tag tag-sans">Inter</span></td>
+              <td>13–15px</td>
+              <td>400</td>
+              <td>#1A1A1A</td>
+              <td>Line height 1.6, max-width 68ch</td>
+            </tr>
+            <tr>
+              <td>Eyebrow / Label</td>
+              <td><span class="tag tag-sans">Inter</span></td>
+              <td>9–11px</td>
+              <td>600</td>
+              <td>#8A8990</td>
+              <td>ALL CAPS, 0.3–0.4em letter-spacing</td>
+            </tr>
+            <tr>
+              <td>Captions / Meta</td>
+              <td><span class="tag tag-sans">Inter</span></td>
+              <td>10–11px</td>
+              <td>400</td>
+              <td>#8A8990</td>
+              <td>Dates, sources, photo credits</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- §3 Logo ────────────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">03 — Logo Usage</div>
+      <div class="section-title">Logo System</div>
+
+      <div class="grid-2">
+        <div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid-gray);margin-bottom:10px;">Approved Placements</div>
+          <div class="logo-demo">
+            <div class="logo-demo-panel logo-demo-light">
+              <div class="inline-logo">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="60" cy="60" r="58" stroke="#0F1D2E" stroke-width="2"/>
+                  <path d="M60 22 L30 50 L30 96 L90 96 L90 50 Z" stroke="#0F1D2E" stroke-width="3" fill="none" stroke-linejoin="round"/>
+                  <path d="M20 52 L60 18 L100 52" stroke="#0F1D2E" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="47" y="66" width="26" height="30" rx="2" stroke="#0F1D2E" stroke-width="2.5" fill="none"/>
+                  <circle cx="71" cy="81" r="2.5" fill="#0F1D2E"/>
+                </svg>
+                <div class="inline-logo-text">
+                  <div class="l" style="color:var(--navy);">Legacy</div>
+                  <div class="ht" style="color:var(--mid-gray);">Home Team</div>
+                </div>
+              </div>
+            </div>
+            <div class="logo-demo-label">On White — Primary</div>
+            <div class="logo-demo-panel logo-demo-dark">
+              <div class="inline-logo">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="60" cy="60" r="58" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                  <path d="M60 22 L30 50 L30 96 L90 96 L90 50 Z" stroke="white" stroke-width="3" fill="none" stroke-linejoin="round"/>
+                  <path d="M20 52 L60 18 L100 52" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="47" y="66" width="26" height="30" rx="2" stroke="white" stroke-width="2.5" fill="none"/>
+                  <circle cx="71" cy="81" r="2.5" fill="white"/>
+                </svg>
+                <div class="inline-logo-text">
+                  <div class="l" style="color:#fff;">Legacy</div>
+                  <div class="ht" style="color:var(--light-gray);">Home Team</div>
+                </div>
+              </div>
+            </div>
+            <div class="logo-demo-label" style="background:var(--navy);color:var(--mid-gray);border-top:1px solid rgba(255,255,255,0.08);">On Navy — Reversed</div>
+            <div class="logo-demo-panel logo-demo-teal">
+              <div class="inline-logo">
+                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="60" cy="60" r="58" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                  <path d="M60 22 L30 50 L30 96 L90 96 L90 50 Z" stroke="white" stroke-width="3" fill="none" stroke-linejoin="round"/>
+                  <path d="M20 52 L60 18 L100 52" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="47" y="66" width="26" height="30" rx="2" stroke="white" stroke-width="2.5" fill="none"/>
+                  <circle cx="71" cy="81" r="2.5" fill="white"/>
+                </svg>
+                <div class="inline-logo-text">
+                  <div class="l" style="color:#fff;">Legacy</div>
+                  <div class="ht" style="color:rgba(255,255,255,0.6);">Home Team</div>
+                </div>
+              </div>
+            </div>
+            <div class="logo-demo-label" style="background:var(--teal);color:var(--mid-gray);border-top:1px solid rgba(255,255,255,0.08);">On Teal — Reversed</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#dc2626;margin-bottom:10px;">Never Do This</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="logo-dont">
+              <div class="logo-dont-inner">Do not place the logo on a busy photo background without a dark overlay or white box</div>
+              <div class="logo-dont-label">No logo on uncontrolled backgrounds</div>
+            </div>
+            <div class="logo-dont">
+              <div class="logo-dont-inner">Do not stretch, skew, or alter the logo's proportions</div>
+              <div class="logo-dont-label">No distortion</div>
+            </div>
+            <div class="logo-dont">
+              <div class="logo-dont-inner">Do not recolor the logo in gold, bronze, or any off-brand color</div>
+              <div class="logo-dont-label">No recoloring</div>
+            </div>
+            <div class="logo-dont">
+              <div class="logo-dont-inner">Do not add drop shadows, glows, or effects to the logo</div>
+              <div class="logo-dont-label">No decoration or effects</div>
+            </div>
+          </div>
+          <div class="note mt-sm">Minimum clear space: equal to the height of the "L" in Legacy on all sides. Minimum size: 120px wide for digital, 1.25" for print.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- §4 Voice ───────────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">04 — Voice &amp; Tone</div>
+      <div class="section-title">How We Sound</div>
+
+      <div class="voice-grid">
+        <div class="voice-card do">
+          <div class="voice-card-label">We Are</div>
+          <ul>
+            <li>Direct — answer the question before explaining it</li>
+            <li>Local — Hampton Roads-specific, not generic real estate speak</li>
+            <li>Knowledgeable — 20+ years of market expertise, cite real numbers</li>
+            <li>Warm — like advice from a trusted neighbor, not a pitch</li>
+            <li>Proud — genuinely love this community and its history</li>
+            <li>Clear — plain English, no jargon unless explained</li>
+          </ul>
+        </div>
+        <div class="voice-card dont">
+          <div class="voice-card-label">We Are Not</div>
+          <ul>
+            <li>Salesy — never pushy, no urgency manufacturing</li>
+            <li>Generic — never "10 tips for homebuyers" without local specifics</li>
+            <li>Formal to the point of cold — we're professionals, not a law firm</li>
+            <li>Hype-driven — no "incredible opportunity" or "dream home" language</li>
+            <li>National — every insight should apply to Hampton Roads specifically</li>
+            <li>AI-sounding — no "as a real estate professional, I recommend…"</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-sm" style="border:1px solid var(--rule);border-radius:6px;padding:16px 20px;background:var(--off-white);">
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--navy);margin-bottom:10px;">Brand Voice in One Sentence</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-style:italic;color:var(--navy);line-height:1.4;">"A lifelong Hampton Roads resident with 20 years of market knowledge, telling you exactly what you need to know — because you deserve better than a sales pitch."</div>
+      </div>
+    </div>
+
+    <!-- §5 Imagery ─────────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">05 — Photography &amp; Imagery</div>
+      <div class="section-title">Visual Direction</div>
+
+      <div class="grid-3">
+        <div class="pillar">
+          <div class="pillar-number">01</div>
+          <div class="pillar-title">Real Places</div>
+          <div class="pillar-body">Actual Hampton Roads locations — Virginia Beach oceanfront, Norfolk skyline, Chesapeake neighborhoods, James River bridges. Never generic stock suburbs or unnamed cities.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-number">02</div>
+          <div class="pillar-title">Natural Light</div>
+          <div class="pillar-body">Clean, natural photography. Golden hour for exteriors. Bright and airy interiors. No heavy HDR, no over-saturated skies. Honest representation of homes and neighborhoods.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-number">03</div>
+          <div class="pillar-title">Real People</div>
+          <div class="pillar-body">Authentic portraits. Barry and the team as themselves — no stiff corporate headshots. Candid moments with clients. Diverse Hampton Roads community represented accurately.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-number">04</div>
+          <div class="pillar-title">Dark Anchors</div>
+          <div class="pillar-body">When overlaying text on photos, use the Deep Navy (#0F1D2E) or Deep Teal (#0D2624) as semi-transparent overlays — never a generic black gradient. Minimum 60% opacity.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-number">05</div>
+          <div class="pillar-title">Quiet Luxury</div>
+          <div class="pillar-body">Restrained elegance over flash. Clean compositions with breathing room. The Silver Gray (#C9C9C9) accent line is the only metallic note. No glitter, no gold borders, no shimmer effects.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-number">06</div>
+          <div class="pillar-title">Consistency</div>
+          <div class="pillar-body">All team-generated graphics use the two-font system and four-color palette. No third-party template fonts or off-palette colors, regardless of the platform or tool being used to create them.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- §6 AI Image Generation ─────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">06 — AI Image Generation</div>
+      <div class="section-title">Prompt Guidelines</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="ai-prompt-block">
+            <div class="ai-prompt-title">Base Style Prompt — Exterior / Property</div>
+            <div class="ai-prompt-text">
+              <strong>Architecture photography,</strong> Hampton Roads Virginia,
+              natural daylight, overcast or golden hour light,
+              <strong>deep navy blue overlay on sky (#0F1D2E),</strong>
+              clean composition, slight wide angle,
+              residential neighborhood feel, authentic,
+              <strong>no gold accents, no metallic borders,</strong>
+              no HDR effects, no logo watermarks,
+              editorial quality, quiet luxury aesthetic,
+              16:9 ratio
+            </div>
+          </div>
+          <div class="ai-prompt-block" style="margin-top:10px;">
+            <div class="ai-prompt-title">Base Style Prompt — Social Graphic / Brand</div>
+            <div class="ai-prompt-text">
+              <strong>Minimal real estate brand graphic,</strong>
+              dark navy background (#0F1D2E),
+              white typography, Cormorant Garamond serif font,
+              <strong>silver gray (#C9C9C9) accent line only,</strong>
+              clean layout with generous white space,
+              Hampton Roads Virginia context,
+              professional, editorial,
+              <strong>avoid: gold, bronze, purple gradients,</strong>
+              no cheesy stock photo aesthetics,
+              no busy backgrounds
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="ai-prompt-block">
+            <div class="ai-prompt-title">Base Style Prompt — Headshots / Team</div>
+            <div class="ai-prompt-text">
+              <strong>Professional portrait photography,</strong>
+              natural window light, shallow depth of field,
+              <strong>background: deep navy (#0F1D2E) or clean off-white,</strong>
+              warm, confident, approachable expression,
+              business casual attire in dark navy or white,
+              <strong>no ring lights, no obvious studio backdrops,</strong>
+              editorial quality, honest representation,
+              Hampton Roads Virginia context
+            </div>
+          </div>
+          <div class="ai-prompt-block" style="margin-top:10px;">
+            <div class="ai-prompt-title">Base Style Prompt — Local History / Archival</div>
+            <div class="ai-prompt-text">
+              <strong>Documentary photography style,</strong>
+              Hampton Roads Virginia historical context,
+              desaturated or muted tones,
+              <strong>deep navy (#0F1D2E) and teal (#0D2624) color grade,</strong>
+              archival texture optional,
+              specific location named (not generic),
+              cinematic wide shot or intimate detail,
+              <strong>no modern stock photo feel,</strong>
+              photojournalist quality
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-avoid mt-sm">
+        <div class="ai-avoid-title">Always Add These Negative Prompts</div>
+        <ul>
+          <li>no gold</li>
+          <li>no bronze</li>
+          <li>no metallic accents</li>
+          <li>no purple gradients</li>
+          <li>no stock photo look</li>
+          <li>no generic suburbs</li>
+          <li>no cheesy real estate branding</li>
+          <li>no AI-generated face artifacts</li>
+          <li>no glitter or sparkle effects</li>
+          <li>no heavy vignette</li>
+          <li>no text overlays unless specified</li>
+          <li>no watermarks</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- §7 Social Specs ─────────────────────────────────────────────── -->
+    <div class="section">
+      <div class="section-label">07 — Social Media Specifications</div>
+      <div class="section-title">Platform Reference</div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <div class="spec-platform">Instagram</div>
+          </div>
+          <div class="spec-body">
+            <div class="spec-row"><span class="spec-row-key">Feed Square</span><span class="spec-row-val">1080×1080</span></div>
+            <div class="spec-row"><span class="spec-row-key">Feed Portrait</span><span class="spec-row-val">1080×1350</span></div>
+            <div class="spec-row"><span class="spec-row-key">Reel / Story</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">Profile Photo</span><span class="spec-row-val">320×320</span></div>
+            <div class="spec-row"><span class="spec-row-key">Safe Zone</span><span class="spec-row-val">Top/Bot 250px</span></div>
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <div class="spec-platform">Facebook</div>
+          </div>
+          <div class="spec-body">
+            <div class="spec-row"><span class="spec-row-key">Feed Image</span><span class="spec-row-val">1200×630</span></div>
+            <div class="spec-row"><span class="spec-row-key">Reel</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">Story</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">Cover Photo</span><span class="spec-row-val">820×312</span></div>
+            <div class="spec-row"><span class="spec-row-key">Profile Photo</span><span class="spec-row-val">170×170</span></div>
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <div class="spec-platform">YouTube</div>
+          </div>
+          <div class="spec-body">
+            <div class="spec-row"><span class="spec-row-key">Thumbnail</span><span class="spec-row-val">1280×720</span></div>
+            <div class="spec-row"><span class="spec-row-key">Short</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">Channel Art</span><span class="spec-row-val">2560×1440</span></div>
+            <div class="spec-row"><span class="spec-row-key">Profile Icon</span><span class="spec-row-val">800×800</span></div>
+            <div class="spec-row"><span class="spec-row-key">Video Format</span><span class="spec-row-val">16:9 · MP4</span></div>
+          </div>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <div class="spec-platform">TikTok / LinkedIn</div>
+          </div>
+          <div class="spec-body">
+            <div class="spec-row"><span class="spec-row-key">TikTok Video</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">TikTok Cover</span><span class="spec-row-val">1080×1920</span></div>
+            <div class="spec-row"><span class="spec-row-key">LinkedIn Post</span><span class="spec-row-val">1200×627</span></div>
+            <div class="spec-row"><span class="spec-row-key">LinkedIn Cover</span><span class="spec-row-val">1584×396</span></div>
+            <div class="spec-row"><span class="spec-row-key">Threads Post</span><span class="spec-row-val">1080×1080</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="note mt-sm" style="font-style:normal;font-size:11px;display:flex;gap:32px;">
+        <span><strong style="color:var(--navy);">Export format:</strong> PNG for graphics · JPG (90%) for photos · MP4 H.264 for video</span>
+        <span><strong style="color:var(--navy);">Color profile:</strong> sRGB for all digital assets</span>
+        <span><strong style="color:var(--navy);">Logo safe zone:</strong> 5% inset from all edges on any graphic</span>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <div class="guide-footer">
+    <div class="guide-footer-brand">Legacy Home Team — Brand Style Guide</div>
+    <div class="guide-footer-meta">Version 1.0 · 2026 · legacyhometeamlpt.com</div>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>
