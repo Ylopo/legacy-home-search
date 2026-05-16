@@ -166,3 +166,105 @@ export async function fetchBlogGA4Data(): Promise<Map<string, PostGA4Stats>> {
     return new Map()
   }
 }
+
+export type IdxClickData = {
+  totalClicks: number
+  trend: { date: string; clicks: number }[]
+  topPages: { page: string; clicks: number; sessions: number; ctr: number }[]
+}
+
+// Returns IDX pass-through click data from idx_property_click custom events.
+export async function fetchIdxClickData(days = 28): Promise<IdxClickData | null> {
+  const propertyId = process.env.GA4_PROPERTY_ID
+  const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON
+  if (!propertyId || !rawJson) return null
+
+  try {
+    const auth = getAuth(rawJson)
+    const analyticsdata = google.analyticsdata({ version: 'v1beta', auth })
+    const range = { startDate: `${days}daysAgo`, endDate: 'today' }
+    const idxFilter = {
+      filter: {
+        fieldName: 'eventName',
+        stringFilter: { matchType: 'EXACT' as const, value: 'idx_property_click' },
+      },
+    }
+
+    const [totalsRes, trendRes, pagesClickRes, pagesSessionRes] = await Promise.all([
+      analyticsdata.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: { dateRanges: [range], metrics: [{ name: 'eventCount' }], dimensionFilter: idxFilter },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
+      analyticsdata.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges: [range],
+          dimensions: [{ name: 'date' }],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: idxFilter,
+          orderBys: [{ dimension: { dimensionName: 'date' } }],
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
+      analyticsdata.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges: [range],
+          dimensions: [{ name: 'pagePath' }],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: idxFilter,
+          orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+          limit: '20',
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
+      analyticsdata.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges: [range],
+          dimensions: [{ name: 'pagePath' }],
+          metrics: [{ name: 'sessions' }],
+          orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+          limit: '100',
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
+    ])
+
+    const totalClicks = parseInt(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (totalsRes.data?.rows as any)?.[0]?.metricValues?.[0]?.value ?? '0', 10
+    )
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const trend = ((trendRes.data?.rows ?? []) as any[]).map((r: any) => {
+      const raw = r.dimensionValues?.[0]?.value ?? ''
+      const date = raw.length === 8
+        ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+        : raw
+      return { date, clicks: parseInt(r.metricValues?.[0]?.value ?? '0', 10) }
+    })
+
+    const sessionsMap = new Map<string, number>()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const row of (pagesSessionRes.data?.rows ?? []) as any[]) {
+      const path = row.dimensionValues?.[0]?.value ?? ''
+      sessionsMap.set(path, parseInt(row.metricValues?.[0]?.value ?? '0', 10))
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const topPages = ((pagesClickRes.data?.rows ?? []) as any[]).map((r: any) => {
+      const page = r.dimensionValues?.[0]?.value ?? ''
+      const clicks = parseInt(r.metricValues?.[0]?.value ?? '0', 10)
+      const sessions = sessionsMap.get(page) ?? 0
+      const ctr = sessions > 0 ? Math.round((clicks / sessions) * 1000) / 10 : 0
+      return { page, clicks, sessions, ctr }
+    })
+
+    return { totalClicks, trend, topPages }
+  } catch (err) {
+    console.error('[GA4] fetchIdxClickData failed:', err)
+    return null
+  }
+}

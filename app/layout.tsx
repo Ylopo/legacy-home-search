@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import YlopoInit from '@/components/YlopoInit'
+import YlopoTrack from '@/components/YlopoTrack'
 import LocomotiveScrollInit from '@/components/LocomotiveScrollInit'
 import './globals.css'
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <LocomotiveScrollInit />
         <YlopoInit />
+        <YlopoTrack />
         <Script id="ylopo-config" strategy="beforeInteractive">
           {`window.YLOPO_WIDGETS = {"domain": "search.buyingva.com"}`}
         </Script>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSocialDashboardPosts } from '@/sanity/queries'
-import { fetchSiteGA4Overview } from '@/lib/ga4'
+import { fetchSiteGA4Overview, fetchIdxClickData } from '@/lib/ga4'
 import { getGSCOverview } from '@/lib/gsc-client'
 import { getYouTubeOverview } from '@/lib/youtube-client'
 import { getFacebookOverview } from '@/lib/facebook-client'
@@ -25,12 +25,13 @@ export async function GET(request: Request) {
 
   const days = Math.min(90, Math.max(7, parseInt(searchParams.get('days') ?? '28', 10)))
 
-  const [posts, websiteRes, searchRes, youtubeRes, facebookRes] = await Promise.all([
+  const [posts, websiteRes, searchRes, youtubeRes, facebookRes, idxRes] = await Promise.all([
     getSocialDashboardPosts(),
     safe('GA4', () => fetchSiteGA4Overview(days)),
     safe('GSC', () => getGSCOverview(days)),
     safe('YouTube', () => getYouTubeOverview()),
     safe('Facebook', () => getFacebookOverview()),
+    safe('IDX', () => fetchIdxClickData(days)),
   ])
 
   // ── Content stats ────────────────────────────────────────────────────────────
@@ -109,6 +110,8 @@ export async function GET(request: Request) {
     facebook:     facebookRes.data,
     facebookError: facebookRes.error,
     estimatedReach,
+    idx:      idxRes.data,
+    idxError: idxRes.error,
     connected: {
       ga4:      !!process.env.GA4_PROPERTY_ID && !!process.env.GA4_SERVICE_ACCOUNT_JSON,
       gsc:      !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,

@@ -42,6 +42,12 @@ type Overview = {
     topPostsByReach: { id: string; message: string; createdAt: string; reach: number; reactions: number; comments: number; shares: number; videoViews?: number; type: string }[]
   } | null
   facebookError: string | null
+  idx: {
+    totalClicks: number
+    trend: { date: string; clicks: number }[]
+    topPages: { page: string; clicks: number; sessions: number; ctr: number }[]
+  } | null
+  idxError: string | null
   estimatedReach: number
   connected: { ga4: boolean; gsc: boolean; youtube: boolean; facebook: boolean }
 }
@@ -224,7 +230,7 @@ export default function AnalyticsPage() {
   if (error) return <Shell><p style={{ padding: 32, color: '#dc2626' }}>{error}</p></Shell>
   if (!data)  return null
 
-  const { content, website, search, youtube, facebook, estimatedReach, connected } = data
+  const { content, website, search, youtube, facebook, idx, idxError, estimatedReach, connected } = data
   const postTrend = pctChange(content.postsThisMonth, content.postsLastMonth)
 
   // ── Derived metrics ────────────────────────────────────────────────────────
@@ -410,6 +416,88 @@ export default function AnalyticsPage() {
                   </div>
                 ))}
               </Card>
+            </div>
+          )}
+        </div>
+
+        {/* ── IDX Pass-Through ── */}
+        <div>
+          <SectionHeader
+            title="IDX Pass-Through Traffic"
+            sub="Clicks from this site into YLOPO property listing detail pages (search.buyingva.com and agent subdomains)"
+          />
+          {!connected.ga4 ? <NotConnected platform="Google Analytics (GA4)" /> : idxError ? (
+            <div style={{ padding: 16, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, fontSize: 13, color: '#991b1b' }}>
+              IDX data error: {idxError}
+            </div>
+          ) : !idx || idx.totalClicks === 0 ? (
+            <Card>
+              <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🏠</div>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>No IDX clicks tracked yet</div>
+                <div style={{ fontSize: 13, color: '#64748b', maxWidth: 420, margin: '0 auto', lineHeight: 1.6 }}>
+                  Events will appear here 24–48 hours after the first listing click on the site. Make sure the site is deployed with the latest tracking update.
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* KPI row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+                <KPICard
+                  label="Total IDX Clicks"
+                  value={fmt(idx.totalClicks)}
+                  sub={`last ${days} days`}
+                  color="#0891b2"
+                  icon="🏠"
+                />
+                {website && (
+                  <KPICard
+                    label="Site-Wide CTR"
+                    value={website.sessions > 0 ? `${((idx.totalClicks / website.sessions) * 100).toFixed(1)}%` : '—'}
+                    sub="idx clicks / sessions"
+                    color="#7c3aed"
+                    icon="📊"
+                  />
+                )}
+                {idx.topPages.length > 0 && (
+                  <KPICard
+                    label="Top Source Page"
+                    value={idx.topPages[0].page.replace(/^\//, '') || '/'}
+                    sub={`${idx.topPages[0].clicks} clicks · ${idx.topPages[0].ctr}% CTR`}
+                    color="#059669"
+                    icon="📄"
+                  />
+                )}
+              </div>
+
+              {/* Trend + Top Pages */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+                {idx.trend.length > 1 && (
+                  <Card>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+                      Daily IDX Clicks
+                    </div>
+                    <SparkLine data={idx.trend.map(t => t.clicks)} color="#0891b2" height={60} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{idx.trend[0]?.date}</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{idx.trend[idx.trend.length - 1]?.date}</span>
+                    </div>
+                  </Card>
+                )}
+                <Card>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+                    Top Pages by IDX Clicks
+                  </div>
+                  {idx.topPages.slice(0, 10).map(p => (
+                    <div key={p.page} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.page || '/'}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#0891b2', flexShrink: 0 }}>{p.clicks} clicks</span>
+                      <span style={{ fontSize: 11, color: '#94a3b8', flexShrink: 0 }}>{p.ctr}% CTR</span>
+                    </div>
+                  ))}
+                </Card>
+              </div>
             </div>
           )}
         </div>
