@@ -82,7 +82,12 @@ async function fbFetch(path: string, params: Record<string, string> = {}) {
   url.searchParams.set('access_token', t)
   const res  = await fetch(url.toString())
   const json = await res.json()
-  if (json.error) throw new Error(`FB API: ${json.error.message}`)
+  if (json.error) {
+    // Clear cached token on auth errors so the next invocation re-resolves
+    const code = json.error?.code
+    if (code === 190 || code === 102 || code === 463) _resolvedToken = null
+    throw new Error(`FB API: ${json.error.message}`)
+  }
   return json
 }
 
