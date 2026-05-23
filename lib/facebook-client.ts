@@ -41,16 +41,46 @@ export type FacebookOverview = {
   topPostsByReach: FBPost[] // top 10 by reach
 }
 
-function token() { return process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() || null }
-function pageId() { return process.env.FACEBOOK_PAGE_ID?.trim() || null }
+function rawToken() { return process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() || null }
+function pageId()   { return process.env.FACEBOOK_PAGE_ID?.trim() || null }
+
+// If the env var holds a User Token instead of a Page Token, exchange it
+// automatically via /me/accounts so the caller doesn't have to know the diff.
+let _resolvedToken: string | null = null
+async function resolvePageToken(): Promise<string> {
+  if (_resolvedToken) return _resolvedToken
+  const t = rawToken()
+  if (!t) throw new Error('FACEBOOK_PAGE_ACCESS_TOKEN not set')
+  const id = pageId()
+  if (!id) { _resolvedToken = t; return t }
+
+  // Try /me/accounts — succeeds for User Tokens, 190s for Page Tokens
+  try {
+    const url = new URL(`${API_BASE}/me/accounts`)
+    url.searchParams.set('fields', 'access_token,id')
+    url.searchParams.set('access_token', t)
+    const res  = await fetch(url.toString())
+    const json = await res.json() as { data?: { id: string; access_token: string }[] }
+    if (json.data) {
+      const page = json.data.find(p => p.id === id)
+      if (page?.access_token) {
+        _resolvedToken = page.access_token
+        return _resolvedToken
+      }
+    }
+  } catch {}
+
+  // Already a Page Token (or /me/accounts failed) — use as-is
+  _resolvedToken = t
+  return _resolvedToken
+}
 
 async function fbFetch(path: string, params: Record<string, string> = {}) {
-  const t = token()
-  if (!t) throw new Error('FACEBOOK_PAGE_ACCESS_TOKEN not set')
+  const t = await resolvePageToken()
   const url = new URL(`${API_BASE}${path}`)
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
   url.searchParams.set('access_token', t)
-  const res = await fetch(url.toString())
+  const res  = await fetch(url.toString())
   const json = await res.json()
   if (json.error) throw new Error(`FB API: ${json.error.message}`)
   return json
@@ -138,7 +168,7 @@ async function getRecentPosts(limit = 25): Promise<FBPost[]> {
 }
 
 export async function getFacebookOverview(): Promise<FacebookOverview | null> {
-  if (!token() || !pageId()) return null
+  if (!rawToken() || !pageId()) return null
 
   const [page, recentPosts] = await Promise.all([
     getPageStats(),
