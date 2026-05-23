@@ -1,10 +1,9 @@
 /**
  * TikTok profile + video stats client
  *
- * Uses tikwm.com (public, no API key required) to fetch stats for public TikTok
- * profiles via POST requests, which are required from server-side IPs.
- * Results are cached in Upstash Redis with a 25-hour TTL so the analytics
- * dashboard never makes a live request at page-load time.
+ * Uses tikwm.com (public, no API key required). Tries POST first (required
+ * from server-side IPs), falls back to GET on 403. Profile and video fetches
+ * are independent — if videos fail, profile stats still cache and display.
  *
  * Env vars:
  *   TIKTOK_USERNAME   — handle without @ (default: "legacy.home.team")
@@ -65,38 +64,67 @@ function toInt(v: unknown): number {
   return isNaN(n) || n < 0 ? 0 : n
 }
 
-// tikwm.com requires POST from server-side IPs; GET is rejected from Vercel
-// datacenter ranges. Browser-like headers + Referer/Origin are required.
-const TIKWM_HEADERS = {
-  'Content-Type': 'application/x-www-form-urlencoded',
-  'User-Agent':   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-  'Accept':       'application/json',
-  'Referer':      'https://www.tikwm.com/',
-  'Origin':       'https://www.tikwm.com',
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'Accept':     'application/json, text/plain, */*',
+  'Referer':    'https://www.tikwm.com/',
+  'Origin':     'https://www.tikwm.com',
 }
 
-async function tikwmPost(path: string, params: Record<string, string>): Promise<Record<string, unknown>> {
-  const res = await fetch(`https://www.tikwm.com/api${path}`, {
-    method:  'POST',
-    headers: TIKWM_HEADERS,
-    body:    new URLSearchParams(params).toString(),
-    signal:  AbortSignal.timeout(15_000),
-  })
-  if (!res.ok) throw new Error(`tikwm ${path} HTTP ${res.status}`)
-  const json = await res.json() as Record<string, unknown>
-  if (json.code !== 0) throw new Error(`tikwm ${path} error: ${json.msg ?? json.code}`)
-  return json
+// Try POST (needed for Vercel datacenter IPs), fall back to GET on 403.
+async function tikwmFetch(path: string, params: Record<string, string>): Promise<Record<string, unknown> | null> {
+  const base = `https://www.tikwm.com/api${path}`
+
+  // Attempt 1: POST with form-encoded body
+  try {
+    const res = await fetch(base, {
+      method:  'POST',
+      headers: { ...BROWSER_HEADERS, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    new URLSearchParams(params).toString(),
+      signal:  AbortSignal.timeout(15_000),
+    })
+    if (res.ok) {
+      const json = await res.json() as Record<string, unknown>
+      if (json.code === 0) return json
+      console.warn(`[tiktok] tikwm POST ${path} code=${json.code} msg=${json.msg}`)
+    } else {
+      console.warn(`[tiktok] tikwm POST ${path} HTTP ${res.status} — trying GET`)
+    }
+  } catch (e) {
+    console.warn(`[tiktok] tikwm POST ${path} threw:`, e)
+  }
+
+  // Attempt 2: GET with query string
+  try {
+    const url = new URL(base)
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
+    const res = await fetch(url.toString(), {
+      headers: BROWSER_HEADERS,
+      signal:  AbortSignal.timeout(15_000),
+    })
+    if (!res.ok) {
+      console.warn(`[tiktok] tikwm GET ${path} HTTP ${res.status}`)
+      return null
+    }
+    const json = await res.json() as Record<string, unknown>
+    if (json.code !== 0) {
+      console.warn(`[tiktok] tikwm GET ${path} code=${json.code}`)
+      return null
+    }
+    return json
+  } catch (e) {
+    console.warn(`[tiktok] tikwm GET ${path} threw:`, e)
+    return null
+  }
 }
 
 async function fetchLive(): Promise<TikTokOverview> {
   const handle = username()
 
-  const [profileJson, videosJson] = await Promise.all([
-    tikwmPost('/user/info',  { unique_id: handle }),
-    tikwmPost('/user/posts', { unique_id: handle, count: '12', cursor: '0' }),
-  ])
+  // Profile fetch is required — throw if it fails
+  const profileJson = await tikwmFetch('/user/info', { unique_id: handle })
+  if (!profileJson) throw new Error('tikwm profile fetch failed (both POST and GET)')
 
-  // tikwm returns stats at data.stats OR flattened into data — handle both
   const pd    = (profileJson.data ?? {}) as Record<string, unknown>
   const user  = (pd.user  ?? {}) as Record<string, unknown>
   const stats = (pd.stats ?? pd) as Record<string, unknown>
@@ -113,19 +141,26 @@ async function fetchLive(): Promise<TikTokOverview> {
     verified:    Boolean(user.verified),
   }
 
-  const rawVideos = ((videosJson.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
-  const recentVideos: TikTokVideo[] = rawVideos.map(v => ({
-    id:           String(v.video_id ?? v.id ?? ''),
-    title:        String(v.title ?? v.desc ?? ''),
-    playCount:    toInt(v.play    ?? v.playCount),
-    likeCount:    toInt(v.digg_count  ?? v.likeCount),
-    commentCount: toInt(v.comment_count ?? v.commentCount),
-    shareCount:   toInt(v.share_count   ?? v.shareCount),
-    publishedAt:  v.create_time
-      ? new Date(toInt(v.create_time) * 1000).toISOString()
-      : new Date().toISOString(),
-    coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
-  }))
+  // Video fetch is best-effort — degrade gracefully if the endpoint is blocked
+  let recentVideos: TikTokVideo[] = []
+  try {
+    const videosJson = await tikwmFetch('/user/posts', { unique_id: handle, count: '12', cursor: '0' })
+    const rawVideos = ((videosJson?.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
+    recentVideos = rawVideos.map(v => ({
+      id:           String(v.video_id ?? v.id ?? ''),
+      title:        String(v.title ?? v.desc ?? ''),
+      playCount:    toInt(v.play        ?? v.playCount),
+      likeCount:    toInt(v.digg_count  ?? v.likeCount),
+      commentCount: toInt(v.comment_count ?? v.commentCount),
+      shareCount:   toInt(v.share_count   ?? v.shareCount),
+      publishedAt:  v.create_time
+        ? new Date(toInt(v.create_time) * 1000).toISOString()
+        : new Date().toISOString(),
+      coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
+    }))
+  } catch (e) {
+    console.warn('[tiktok] video fetch failed — profile stats will still display:', e)
+  }
 
   const recentViews = recentVideos.reduce((s, v) => s + v.playCount, 0)
   const recentLikes = recentVideos.reduce((s, v) => s + v.likeCount, 0)
