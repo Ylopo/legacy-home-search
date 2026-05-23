@@ -354,9 +354,9 @@ export default function AnalyticsPage() {
             )}
             {tiktok && (
               <KPICard
-                label="TikTok Likes"
-                value={fmt(tiktok.profile.totalLikes)}
-                sub={`${fmt(tiktok.profile.followers)} followers`}
+                label={tiktok.profile.totalViews > 0 ? 'TikTok Views' : 'TikTok Likes'}
+                value={tiktok.profile.totalViews > 0 ? fmt(tiktok.profile.totalViews) : fmt(tiktok.profile.totalLikes)}
+                sub={`${fmt(tiktok.profile.followers)} followers · ${fmt(tiktok.profile.totalLikes)} likes`}
                 color="#000000"
                 icon="🎵"
               />

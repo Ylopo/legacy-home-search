@@ -204,6 +204,35 @@ async function fetchVideosDirect(handle: string): Promise<TikTokVideo[]> {
   }
 }
 
+// Try tikwm's URL-based single endpoint — different path, may not be Vercel-blocked
+async function fetchVideosViaUrlApi(handle: string): Promise<TikTokVideo[]> {
+  try {
+    // Some tikwm mirrors expose /api/user/video or /api/user/feed — try them
+    for (const path of ['/user/feed', '/user/video']) {
+      const json = await tikwmFetch(path, { unique_id: `@${handle}`, count: '20', cursor: '0' })
+      const rawVideos = ((json?.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
+      if (rawVideos.length > 0) {
+        console.log(`[tiktok] tikwm ${path} returned ${rawVideos.length} videos`)
+        return rawVideos.map(v => ({
+          id:           String(v.video_id ?? v.id ?? ''),
+          title:        String(v.title ?? v.desc ?? ''),
+          playCount:    toInt(v.play        ?? v.playCount),
+          likeCount:    toInt(v.digg_count  ?? v.likeCount),
+          commentCount: toInt(v.comment_count ?? v.commentCount),
+          shareCount:   toInt(v.share_count   ?? v.shareCount),
+          publishedAt:  v.create_time
+            ? new Date(toInt(v.create_time) * 1000).toISOString()
+            : new Date().toISOString(),
+          coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
+        }))
+      }
+    }
+  } catch (e) {
+    console.warn('[tiktok] tikwm alternate video endpoints failed:', e)
+  }
+  return []
+}
+
 async function fetchLive(): Promise<TikTokOverview> {
   const handle = username()
 
@@ -215,8 +244,9 @@ async function fetchLive(): Promise<TikTokOverview> {
   const user  = (pd.user  ?? {}) as Record<string, unknown>
   const stats = (pd.stats ?? pd) as Record<string, unknown>
 
-  // Log raw stats so we can see every available field in Vercel logs
+  // Log raw profile data so we can see every available field in Vercel logs
   console.log('[tiktok] raw stats:', JSON.stringify(stats))
+  console.log('[tiktok] raw user keys:', Object.keys(user).join(', '))
 
   const profile: TikTokProfile = {
     username:    String(user.uniqueId    ?? handle),
@@ -232,8 +262,13 @@ async function fetchLive(): Promise<TikTokOverview> {
     verified:    Boolean(user.verified),
   }
 
-  // Video fetch: try tikwm first, then fall back to TikTok's own page SIGI_STATE
+  // Video fetch — cascade through multiple strategies:
+  // 1. tikwm /user/posts (primary, often blocked from Vercel datacenter IPs)
+  // 2. tikwm alternate endpoints (/user/feed, /user/video)
+  // 3. TikTok direct SIGI_STATE page scrape
   let recentVideos: TikTokVideo[] = []
+
+  // Strategy 1: tikwm /user/posts
   try {
     const videosJson = await tikwmFetch('/user/posts', { unique_id: handle, count: '20', cursor: '0' })
     const rawVideos = ((videosJson?.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
@@ -250,13 +285,18 @@ async function fetchLive(): Promise<TikTokOverview> {
           : new Date().toISOString(),
         coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
       }))
-      console.log(`[tiktok] tikwm returned ${recentVideos.length} videos`)
+      console.log(`[tiktok] tikwm /user/posts returned ${recentVideos.length} videos`)
     }
   } catch (e) {
-    console.warn('[tiktok] tikwm video fetch failed, trying TikTok direct scrape:', e)
+    console.warn('[tiktok] tikwm /user/posts threw:', e)
   }
 
-  // Fallback: scrape TikTok's profile page for SIGI_STATE embedded JSON
+  // Strategy 2: alternate tikwm paths
+  if (recentVideos.length === 0) {
+    recentVideos = await fetchVideosViaUrlApi(handle)
+  }
+
+  // Strategy 3: scrape TikTok's profile page for SIGI_STATE embedded JSON
   if (recentVideos.length === 0) {
     recentVideos = await fetchVideosDirect(handle)
     if (recentVideos.length > 0) {
@@ -266,6 +306,16 @@ async function fetchLive(): Promise<TikTokOverview> {
 
   const recentViews = recentVideos.reduce((s, v) => s + v.playCount, 0)
   const recentLikes = recentVideos.reduce((s, v) => s + v.likeCount, 0)
+
+  // If video scraping returned nothing, fall back to the TIKTOK_TOTAL_VIEWS env var
+  // so operators can manually set the correct number from TikTok Creator Studio.
+  const manualTotal = toInt(process.env.TIKTOK_TOTAL_VIEWS ?? '0')
+  if (recentViews === 0 && manualTotal > 0) {
+    console.log(`[tiktok] using manual TIKTOK_TOTAL_VIEWS override: ${manualTotal}`)
+    profile.totalViews = manualTotal
+  } else if (recentViews > 0) {
+    profile.totalViews = recentViews
+  }
 
   return { profile, recentVideos, recentViews, recentLikes, cachedAt: new Date().toISOString() }
 }
