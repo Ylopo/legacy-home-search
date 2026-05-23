@@ -67,5 +67,6 @@ export async function POST(request: Request) {
     linkedin: result.linkedin,
     twitter: result.twitter,
     threads: result.threads,
+    instagram: result.instagram,
   })
 }
