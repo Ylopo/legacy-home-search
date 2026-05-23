@@ -268,6 +268,19 @@ export default function AnalyticsPage() {
   const totalPlatformPosts = content.totalPosts
   const searchTrend = search?.trend ?? []
 
+  // Combined views across all connected platforms
+  const totalAllViews =
+    (website?.pageViews ?? 0) +
+    (youtube?.recentViews ?? 0) +
+    (tiktok ? (tiktok.profile.totalViews > 0 ? tiktok.profile.totalViews : tiktok.recentViews) : 0) +
+    (facebook?.page.videoViews28d ?? 0)
+  const totalViewsSources = [
+    website && 'Website',
+    youtube && 'YouTube',
+    tiktok && 'TikTok',
+    facebook?.page.videoViews28d ? 'Facebook Video' : null,
+  ].filter(Boolean).join(' · ')
+
   return (
     <Shell>
       {/* ── Header ── */}
@@ -306,11 +319,11 @@ export default function AnalyticsPage() {
           />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             <KPICard
-              label="Estimated Reach"
-              value={fmt(estimatedReach)}
-              sub="Unique people reached"
+              label="Total Views"
+              value={fmt(totalAllViews)}
+              sub={totalViewsSources || 'All platforms'}
               color="#2563eb"
-              icon="🌐"
+              icon="👁"
             />
             <KPICard
               label="Content Published"
