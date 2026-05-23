@@ -336,9 +336,9 @@ export default function AnalyticsPage() {
             />
             {website && (
               <KPICard
-                label="Website Sessions"
-                value={fmt(website.sessions)}
-                sub={`${fmt(website.pageViews)} pageviews`}
+                label="Website Views"
+                value={fmt(website.pageViews)}
+                sub={`${fmt(website.sessions)} sessions`}
                 color="#d97706"
                 icon="👤"
               />
@@ -354,11 +354,9 @@ export default function AnalyticsPage() {
             )}
             {tiktok && (
               <KPICard
-                label="TikTok"
-                value={fmt(tiktok.profile.followers)}
-                sub={tiktok.profile.totalViews > 0
-                  ? `${fmt(tiktok.profile.totalViews)} total views`
-                  : `${fmt(tiktok.profile.totalLikes)} total likes`}
+                label="TikTok Likes"
+                value={fmt(tiktok.profile.totalLikes)}
+                sub={`${fmt(tiktok.profile.followers)} followers`}
                 color="#000000"
                 icon="🎵"
               />
