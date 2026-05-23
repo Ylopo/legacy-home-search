@@ -1,19 +1,18 @@
 /**
  * TikTok profile + video stats client
  *
- * Uses Firecrawl (AI-powered web scraper) to extract stats from the public
- * TikTok profile page. Results are cached in Upstash Redis with a 25-hour TTL
- * so the analytics dashboard never makes a live Firecrawl request at page load.
+ * Uses tikwm.com (public, no API key required) to fetch stats for public TikTok
+ * profiles via POST requests, which are required from server-side IPs.
+ * Results are cached in Upstash Redis with a 25-hour TTL so the analytics
+ * dashboard never makes a live request at page-load time.
  *
  * Env vars:
- *   FIRECRAWL_API_KEY          — from app.firecrawl.dev
- *   TIKTOK_USERNAME            — handle without @ (default: "legacy.home.team")
+ *   TIKTOK_USERNAME   — handle without @ (default: "legacy.home.team")
  *   UPSTASH_REDIS_REST_URL
  *   UPSTASH_REDIS_REST_TOKEN
  */
 
 import { Redis } from '@upstash/redis'
-import FirecrawlApp from '@mendable/firecrawl-js'
 
 export type TikTokProfile = {
   username: string
@@ -66,103 +65,67 @@ function toInt(v: unknown): number {
   return isNaN(n) || n < 0 ? 0 : n
 }
 
-type FirecrawlVideo = {
-  title?: string
-  views?: number
-  likes?: number
-  comments?: number
-  shares?: number
-  publishedAt?: string
-  videoUrl?: string
+// tikwm.com requires POST from server-side IPs; GET is rejected from Vercel
+// datacenter ranges. Browser-like headers + Referer/Origin are required.
+const TIKWM_HEADERS = {
+  'Content-Type': 'application/x-www-form-urlencoded',
+  'User-Agent':   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'Accept':       'application/json',
+  'Referer':      'https://www.tikwm.com/',
+  'Origin':       'https://www.tikwm.com',
 }
 
-type FirecrawlTikTokData = {
-  username?: string
-  displayName?: string
-  followers?: number
-  following?: number
-  totalLikes?: number
-  videoCount?: number
-  bio?: string
-  verified?: boolean
-  recentVideos?: FirecrawlVideo[]
+async function tikwmPost(path: string, params: Record<string, string>): Promise<Record<string, unknown>> {
+  const res = await fetch(`https://www.tikwm.com/api${path}`, {
+    method:  'POST',
+    headers: TIKWM_HEADERS,
+    body:    new URLSearchParams(params).toString(),
+    signal:  AbortSignal.timeout(15_000),
+  })
+  if (!res.ok) throw new Error(`tikwm ${path} HTTP ${res.status}`)
+  const json = await res.json() as Record<string, unknown>
+  if (json.code !== 0) throw new Error(`tikwm ${path} error: ${json.msg ?? json.code}`)
+  return json
 }
 
 async function fetchLive(): Promise<TikTokOverview> {
-  const apiKey = process.env.FIRECRAWL_API_KEY
-  if (!apiKey) throw new Error('FIRECRAWL_API_KEY not set')
-
   const handle = username()
-  const firecrawl = new FirecrawlApp({ apiKey })
 
-  const result = await firecrawl.scrape(`https://www.tiktok.com/@${handle}`, {
-    formats: [{
-      type: 'json',
-      prompt: `Extract TikTok profile statistics for @${handle}. Look for:
-- Username and display name
-- Follower count (labeled "Followers")
-- Following count (labeled "Following")
-- Total likes count (labeled "Likes")
-- Total video count
-- Bio/description text
-- Whether the account has a verified checkmark
-- All recent videos shown on the page — for each capture: caption/title, view count, like count, comment count, share count, publish date, and video URL`,
-      schema: {
-        type: 'object',
-        properties: {
-          username:    { type: 'string' },
-          displayName: { type: 'string' },
-          followers:   { type: 'number' },
-          following:   { type: 'number' },
-          totalLikes:  { type: 'number' },
-          videoCount:  { type: 'number' },
-          bio:         { type: 'string' },
-          verified:    { type: 'boolean' },
-          recentVideos: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                title:       { type: 'string' },
-                views:       { type: 'number' },
-                likes:       { type: 'number' },
-                comments:    { type: 'number' },
-                shares:      { type: 'number' },
-                publishedAt: { type: 'string' },
-                videoUrl:    { type: 'string' },
-              },
-            },
-          },
-        },
-      },
-    }],
-  })
+  const [profileJson, videosJson] = await Promise.all([
+    tikwmPost('/user/info',  { unique_id: handle }),
+    tikwmPost('/user/posts', { unique_id: handle, count: '12', cursor: '0' }),
+  ])
 
-  const raw = ((result as { json?: unknown }).json ?? {}) as FirecrawlTikTokData
+  // tikwm returns stats at data.stats OR flattened into data — handle both
+  const pd    = (profileJson.data ?? {}) as Record<string, unknown>
+  const user  = (pd.user  ?? {}) as Record<string, unknown>
+  const stats = (pd.stats ?? pd) as Record<string, unknown>
 
   const profile: TikTokProfile = {
-    username:    raw.username    ?? handle,
-    displayName: raw.displayName ?? handle,
-    followers:   toInt(raw.followers),
-    following:   toInt(raw.following),
-    totalLikes:  toInt(raw.totalLikes),
-    videoCount:  toInt(raw.videoCount),
-    bio:         raw.bio,
-    verified:    Boolean(raw.verified),
+    username:    String(user.uniqueId    ?? handle),
+    displayName: String(user.nickname   ?? handle),
+    followers:   toInt(stats.followerCount  ?? pd.fans),
+    following:   toInt(stats.followingCount ?? pd.friends),
+    totalLikes:  toInt(stats.heartCount ?? stats.heart ?? pd.heart),
+    videoCount:  toInt(stats.videoCount ?? stats.video ?? pd.video),
+    avatarUrl:   typeof user.avatarLarger === 'string' ? user.avatarLarger : undefined,
+    bio:         typeof user.signature   === 'string' ? user.signature    : undefined,
+    verified:    Boolean(user.verified),
   }
 
-  const recentVideos: TikTokVideo[] = (raw.recentVideos ?? []).map((v, i) => {
-    const idMatch = v.videoUrl?.match(/\/video\/(\d+)/)
-    return {
-      id:           idMatch?.[1] ?? String(i),
-      title:        v.title        ?? '',
-      playCount:    toInt(v.views),
-      likeCount:    toInt(v.likes),
-      commentCount: toInt(v.comments),
-      shareCount:   toInt(v.shares),
-      publishedAt:  v.publishedAt  ?? new Date().toISOString(),
-    }
-  })
+  const rawVideos = ((videosJson.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
+  const recentVideos: TikTokVideo[] = rawVideos.map(v => ({
+    id:           String(v.video_id ?? v.id ?? ''),
+    title:        String(v.title ?? v.desc ?? ''),
+    playCount:    toInt(v.play    ?? v.playCount),
+    likeCount:    toInt(v.digg_count  ?? v.likeCount),
+    commentCount: toInt(v.comment_count ?? v.commentCount),
+    shareCount:   toInt(v.share_count   ?? v.shareCount),
+    publishedAt:  v.create_time
+      ? new Date(toInt(v.create_time) * 1000).toISOString()
+      : new Date().toISOString(),
+    coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
+  }))
 
   const recentViews = recentVideos.reduce((s, v) => s + v.playCount, 0)
   const recentLikes = recentVideos.reduce((s, v) => s + v.likeCount, 0)
