@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/idx-proof",
       "schedule": "0 9 22 5 *"
+    },
+    {
+      "path": "/api/cron/tiktok-scrape",
+      "schedule": "30 16 * * *"
     }
   ]
 }

@@ -42,6 +42,32 @@ type Overview = {
     topPostsByReach: { id: string; message: string; createdAt: string; reach: number; reactions: number; comments: number; shares: number; videoViews?: number; type: string }[]
   } | null
   facebookError: string | null
+  tiktok: {
+    profile: {
+      username: string
+      displayName: string
+      followers: number
+      following: number
+      totalLikes: number
+      videoCount: number
+      avatarUrl?: string
+      verified: boolean
+    }
+    recentVideos: {
+      id: string
+      title: string
+      playCount: number
+      likeCount: number
+      commentCount: number
+      shareCount: number
+      publishedAt: string
+      coverUrl?: string
+    }[]
+    recentViews: number
+    recentLikes: number
+    cachedAt: string
+  } | null
+  tiktokError: string | null
   idx: {
     totalClicks: number
     trend: { date: string; clicks: number }[]
@@ -230,7 +256,7 @@ export default function AnalyticsPage() {
   if (error) return <Shell><p style={{ padding: 32, color: '#dc2626' }}>{error}</p></Shell>
   if (!data)  return null
 
-  const { content, website, search, youtube, facebook, idx, idxError, estimatedReach, connected } = data
+  const { content, website, search, youtube, facebook, tiktok, tiktokError, idx, idxError, estimatedReach, connected } = data
   const postTrend = pctChange(content.postsThisMonth, content.postsLastMonth)
 
   // ── Derived metrics ────────────────────────────────────────────────────────
@@ -323,6 +349,15 @@ export default function AnalyticsPage() {
                 sub={`${fmt(youtube.channel.subscribers)} subscribers`}
                 color="#dc2626"
                 icon="▶️"
+              />
+            )}
+            {tiktok && (
+              <KPICard
+                label="TikTok Followers"
+                value={fmt(tiktok.profile.followers)}
+                sub={`${fmt(tiktok.profile.totalLikes)} total likes`}
+                color="#000000"
+                icon="🎵"
               />
             )}
           </div>
@@ -612,6 +647,103 @@ export default function AnalyticsPage() {
                   ))}
                 </div>
               </Card>
+            </div>
+          )}
+        </div>
+
+        {/* ── TikTok ── */}
+        <div>
+          <SectionHeader title="TikTok" sub="@legacy.home.team — scraped daily, cached for display" />
+          {tiktokError && !tiktok ? (
+            <div style={{ padding: 16, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, fontSize: 13, color: '#991b1b' }}>
+              TikTok scrape error: {tiktokError}
+              <span style={{ marginLeft: 8, color: '#6b7280' }}>— run <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3 }}>/api/cron/tiktok-scrape</code> manually to warm the cache</span>
+            </div>
+          ) : !tiktok ? (
+            <Card>
+              <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>TikTok cache not yet populated</div>
+                <div style={{ fontSize: 13, color: '#64748b', maxWidth: 420, margin: '0 auto', lineHeight: 1.6 }}>
+                  The daily scrape runs at 12:30 PM ET. To see data immediately, hit{' '}
+                  <code style={{ background: '#f1f5f9', padding: '1px 5px', borderRadius: 3, fontSize: 12 }}>/api/cron/tiktok-scrape?secret=…</code>{' '}
+                  manually once to warm the cache.
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* KPI row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                {[
+                  { label: 'Followers',       value: fmt(tiktok.profile.followers) },
+                  { label: 'Total Likes',     value: fmt(tiktok.profile.totalLikes) },
+                  { label: 'Videos',          value: fmt(tiktok.profile.videoCount) },
+                  { label: 'Recent Views',    value: fmt(tiktok.recentViews), sub: `last ${tiktok.recentVideos.length} videos` },
+                ].map(({ label, value, sub }) => (
+                  <Card key={label} style={{ padding: '16px 20px', borderLeft: '3px solid #000000' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{value}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{label}</div>
+                    {sub && <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>{sub}</div>}
+                  </Card>
+                ))}
+              </div>
+
+              {/* Recent videos grid */}
+              {tiktok.recentVideos.length > 0 && (
+                <Card>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Recent Videos by Views
+                    </div>
+                    <a
+                      href={`https://www.tiktok.com/@${tiktok.profile.username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 12, color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}
+                    >
+                      @{tiktok.profile.username} ↗
+                    </a>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {[...tiktok.recentVideos]
+                      .sort((a, b) => b.playCount - a.playCount)
+                      .slice(0, 8)
+                      .map(v => (
+                        <a
+                          key={v.id}
+                          href={`https://www.tiktok.com/@${tiktok.profile.username}/video/${v.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'flex', gap: 10, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, textDecoration: 'none' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+                        >
+                          {v.coverUrl && (
+                            <img
+                              src={v.coverUrl}
+                              alt=""
+                              style={{ width: 40, height: 54, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                              {v.title || '(no caption)'}
+                            </div>
+                            <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#64748b', flexWrap: 'wrap' }}>
+                              <span>▶ {fmt(v.playCount)}</span>
+                              <span>❤️ {fmt(v.likeCount)}</span>
+                              <span>💬 {v.commentCount}</span>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                  </div>
+                  <div style={{ marginTop: 12, fontSize: 11, color: '#94a3b8', textAlign: 'right' }}>
+                    Scraped {new Date(tiktok.cachedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </div>
+                </Card>
+              )}
             </div>
           )}
         </div>
