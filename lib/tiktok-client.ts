@@ -119,6 +119,91 @@ async function tikwmFetch(path: string, params: Record<string, string>): Promise
   }
 }
 
+// Scrape TikTok's own profile page and extract the SIGI_STATE embedded JSON
+// which contains the video list with play counts. Used as fallback when the
+// tikwm /user/posts endpoint is blocked.
+async function fetchVideosDirect(handle: string): Promise<TikTokVideo[]> {
+  try {
+    const res = await fetch(`https://www.tiktok.com/@${handle}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Referer': 'https://www.google.com/',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+      },
+      signal: AbortSignal.timeout(20_000),
+    })
+
+    if (!res.ok) {
+      console.warn(`[tiktok] direct scrape HTTP ${res.status}`)
+      return []
+    }
+
+    const html = await res.text()
+
+    // TikTok embeds page state in a <script id="SIGI_STATE"> tag
+    const sigiMatch = html.match(/<script id="SIGI_STATE"[^>]*>([\s\S]+?)<\/script>/)
+    if (sigiMatch) {
+      const state = JSON.parse(sigiMatch[1]) as Record<string, unknown>
+      // ItemModule is a map of videoId → video data
+      const itemModule = (state.ItemModule ?? {}) as Record<string, Record<string, unknown>>
+      const items = Object.values(itemModule)
+      if (items.length > 0) {
+        return items.map(item => {
+          const s = (item.stats ?? {}) as Record<string, unknown>
+          return {
+            id:           String(item.id ?? ''),
+            title:        String(item.desc ?? ''),
+            playCount:    toInt(s.playCount),
+            likeCount:    toInt(s.diggCount),
+            commentCount: toInt(s.commentCount),
+            shareCount:   toInt(s.shareCount),
+            publishedAt:  item.createTime
+              ? new Date(toInt(item.createTime) * 1000).toISOString()
+              : new Date().toISOString(),
+            coverUrl: (item.video as Record<string, unknown>)?.cover as string | undefined,
+          }
+        }).filter(v => v.id)
+      }
+    }
+
+    // Older fallback: __NEXT_DATA__
+    const nextMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]+?)<\/script>/)
+    if (nextMatch) {
+      const nextData = JSON.parse(nextMatch[1]) as Record<string, unknown>
+      const props = (nextData.props as Record<string, unknown> | undefined)
+      const pageProps = (props?.pageProps as Record<string, unknown> | undefined)
+      const items = ((pageProps?.itemList ?? pageProps?.items ?? []) as Record<string, unknown>[])
+      return items.map((item, i) => {
+        const s = (item.stats ?? item.statistics ?? {}) as Record<string, unknown>
+        return {
+          id:           String(item.id ?? i),
+          title:        String(item.desc ?? ''),
+          playCount:    toInt(s.playCount),
+          likeCount:    toInt(s.diggCount),
+          commentCount: toInt(s.commentCount),
+          shareCount:   toInt(s.shareCount),
+          publishedAt:  item.createTime
+            ? new Date(toInt(item.createTime) * 1000).toISOString()
+            : new Date().toISOString(),
+          coverUrl: (item.video as Record<string, unknown>)?.cover as string | undefined,
+        }
+      }).filter(v => v.id)
+    }
+
+    console.warn('[tiktok] direct scrape: no SIGI_STATE or __NEXT_DATA__ found in page')
+    return []
+  } catch (e) {
+    console.warn('[tiktok] direct scrape threw:', e)
+    return []
+  }
+}
+
 async function fetchLive(): Promise<TikTokOverview> {
   const handle = username()
 
@@ -147,25 +232,36 @@ async function fetchLive(): Promise<TikTokOverview> {
     verified:    Boolean(user.verified),
   }
 
-  // Video fetch is best-effort — degrade gracefully if the endpoint is blocked
+  // Video fetch: try tikwm first, then fall back to TikTok's own page SIGI_STATE
   let recentVideos: TikTokVideo[] = []
   try {
-    const videosJson = await tikwmFetch('/user/posts', { unique_id: handle, count: '12', cursor: '0' })
+    const videosJson = await tikwmFetch('/user/posts', { unique_id: handle, count: '20', cursor: '0' })
     const rawVideos = ((videosJson?.data as Record<string, unknown>)?.videos ?? []) as Record<string, unknown>[]
-    recentVideos = rawVideos.map(v => ({
-      id:           String(v.video_id ?? v.id ?? ''),
-      title:        String(v.title ?? v.desc ?? ''),
-      playCount:    toInt(v.play        ?? v.playCount),
-      likeCount:    toInt(v.digg_count  ?? v.likeCount),
-      commentCount: toInt(v.comment_count ?? v.commentCount),
-      shareCount:   toInt(v.share_count   ?? v.shareCount),
-      publishedAt:  v.create_time
-        ? new Date(toInt(v.create_time) * 1000).toISOString()
-        : new Date().toISOString(),
-      coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
-    }))
+    if (rawVideos.length > 0) {
+      recentVideos = rawVideos.map(v => ({
+        id:           String(v.video_id ?? v.id ?? ''),
+        title:        String(v.title ?? v.desc ?? ''),
+        playCount:    toInt(v.play        ?? v.playCount),
+        likeCount:    toInt(v.digg_count  ?? v.likeCount),
+        commentCount: toInt(v.comment_count ?? v.commentCount),
+        shareCount:   toInt(v.share_count   ?? v.shareCount),
+        publishedAt:  v.create_time
+          ? new Date(toInt(v.create_time) * 1000).toISOString()
+          : new Date().toISOString(),
+        coverUrl: typeof v.cover === 'string' ? v.cover : undefined,
+      }))
+      console.log(`[tiktok] tikwm returned ${recentVideos.length} videos`)
+    }
   } catch (e) {
-    console.warn('[tiktok] video fetch failed — profile stats will still display:', e)
+    console.warn('[tiktok] tikwm video fetch failed, trying TikTok direct scrape:', e)
+  }
+
+  // Fallback: scrape TikTok's profile page for SIGI_STATE embedded JSON
+  if (recentVideos.length === 0) {
+    recentVideos = await fetchVideosDirect(handle)
+    if (recentVideos.length > 0) {
+      console.log(`[tiktok] direct scrape returned ${recentVideos.length} videos`)
+    }
   }
 
   const recentViews = recentVideos.reduce((s, v) => s + v.playCount, 0)
