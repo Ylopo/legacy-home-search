@@ -69,15 +69,28 @@ async function fetchLive(): Promise<TikTokOverview> {
   const handle = username()
   const base   = 'https://www.tikwm.com/api'
 
+  // tikwm.com requires POST from server-side IPs; GET works in browsers but
+  // gets rejected from Vercel datacenter ranges.
+  const headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+    'Accept': 'application/json',
+    'Referer': 'https://www.tikwm.com/',
+    'Origin': 'https://www.tikwm.com',
+  }
+
   const [profileRes, videosRes] = await Promise.all([
-    fetch(`${base}/user/info?unique_id=${encodeURIComponent(handle)}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
-      // Vercel edge: 10-second timeout
-      signal: AbortSignal.timeout(10_000),
+    fetch(`${base}/user/info`, {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({ unique_id: handle }).toString(),
+      signal: AbortSignal.timeout(15_000),
     }),
-    fetch(`${base}/user/posts?unique_id=${encodeURIComponent(handle)}&count=12&cursor=0`, {
-      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/json' },
-      signal: AbortSignal.timeout(10_000),
+    fetch(`${base}/user/posts`, {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({ unique_id: handle, count: '12', cursor: '0' }).toString(),
+      signal: AbortSignal.timeout(15_000),
     }),
   ])
 
