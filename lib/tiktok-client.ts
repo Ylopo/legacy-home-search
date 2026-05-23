@@ -19,6 +19,7 @@ export type TikTokProfile = {
   followers: number
   following: number
   totalLikes: number
+  totalViews: number
   videoCount: number
   avatarUrl?: string
   bio?: string
@@ -129,12 +130,17 @@ async function fetchLive(): Promise<TikTokOverview> {
   const user  = (pd.user  ?? {}) as Record<string, unknown>
   const stats = (pd.stats ?? pd) as Record<string, unknown>
 
+  // Log raw stats so we can see every available field in Vercel logs
+  console.log('[tiktok] raw stats:', JSON.stringify(stats))
+
   const profile: TikTokProfile = {
     username:    String(user.uniqueId    ?? handle),
     displayName: String(user.nickname   ?? handle),
     followers:   toInt(stats.followerCount  ?? pd.fans),
     following:   toInt(stats.followingCount ?? pd.friends),
     totalLikes:  toInt(stats.heartCount ?? stats.heart ?? pd.heart),
+    // TikTok includes total profile views as playCount in some API versions
+    totalViews:  toInt(stats.playCount ?? stats.play ?? stats.videoPlayCount ?? 0),
     videoCount:  toInt(stats.videoCount ?? stats.video ?? pd.video),
     avatarUrl:   typeof user.avatarLarger === 'string' ? user.avatarLarger : undefined,
     bio:         typeof user.signature   === 'string' ? user.signature    : undefined,

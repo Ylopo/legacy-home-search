@@ -49,6 +49,7 @@ type Overview = {
       followers: number
       following: number
       totalLikes: number
+      totalViews: number
       videoCount: number
       avatarUrl?: string
       verified: boolean
@@ -353,9 +354,11 @@ export default function AnalyticsPage() {
             )}
             {tiktok && (
               <KPICard
-                label="TikTok Followers"
+                label="TikTok"
                 value={fmt(tiktok.profile.followers)}
-                sub={`${fmt(tiktok.profile.totalLikes)} total likes`}
+                sub={tiktok.profile.totalViews > 0
+                  ? `${fmt(tiktok.profile.totalViews)} total views`
+                  : `${fmt(tiktok.profile.totalLikes)} total likes`}
                 color="#000000"
                 icon="🎵"
               />
@@ -676,15 +679,14 @@ export default function AnalyticsPage() {
               {/* KPI row */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
                 {[
-                  { label: 'Followers',       value: fmt(tiktok.profile.followers) },
-                  { label: 'Total Likes',     value: fmt(tiktok.profile.totalLikes) },
-                  { label: 'Videos',          value: fmt(tiktok.profile.videoCount) },
-                  { label: 'Recent Views',    value: fmt(tiktok.recentViews), sub: `last ${tiktok.recentVideos.length} videos` },
-                ].map(({ label, value, sub }) => (
+                  { label: 'Followers',    value: fmt(tiktok.profile.followers) },
+                  { label: 'Total Views',  value: tiktok.profile.totalViews > 0 ? fmt(tiktok.profile.totalViews) : '—' },
+                  { label: 'Total Likes',  value: fmt(tiktok.profile.totalLikes) },
+                  { label: 'Videos',       value: fmt(tiktok.profile.videoCount) },
+                ].map(({ label, value }) => (
                   <Card key={label} style={{ padding: '16px 20px', borderLeft: '3px solid #000000' }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{value}</div>
                     <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{label}</div>
-                    {sub && <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>{sub}</div>}
                   </Card>
                 ))}
               </div>

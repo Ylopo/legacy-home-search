@@ -24,10 +24,12 @@ export async function GET(request: Request) {
     )
     return NextResponse.json({
       ok: true,
-      followers: data.profile.followers,
-      videoCount: data.profile.videoCount,
+      followers:   data.profile.followers,
+      totalViews:  data.profile.totalViews,
+      totalLikes:  data.profile.totalLikes,
+      videoCount:  data.profile.videoCount,
       recentViews: data.recentViews,
-      cachedAt: data.cachedAt,
+      cachedAt:    data.cachedAt,
     })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
