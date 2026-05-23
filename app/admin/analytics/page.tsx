@@ -268,6 +268,17 @@ export default function AnalyticsPage() {
   const totalPlatformPosts = content.totalPosts
   const searchTrend = search?.trend ?? []
 
+  // Total cross-platform distributions (one post published to 7 platforms = 7)
+  const totalDistributions =
+    (content.coverage.facebook ?? 0) +
+    (content.coverage.facebookReel ?? 0) +
+    (content.coverage.youtube ?? 0) +
+    (content.coverage.tiktok ?? 0) +
+    (content.coverage.linkedin ?? 0) +
+    (content.coverage.twitter ?? 0) +
+    (content.coverage.threads ?? 0) +
+    (content.coverage.instagram ?? 0)
+
   // Combined views across all connected platforms
   const totalAllViews =
     (website?.pageViews ?? 0) +
@@ -374,6 +385,13 @@ export default function AnalyticsPage() {
                 icon="🎵"
               />
             )}
+            <KPICard
+              label="Platform Distributions"
+              value={fmt(totalDistributions)}
+              sub="FB · Reels · YT · TT · LI · X · Threads · IG"
+              color="#6366f1"
+              icon="📡"
+            />
           </div>
         </div>
 
@@ -416,6 +434,7 @@ export default function AnalyticsPage() {
               <PlatformBadge icon="💼" label="LinkedIn" count={content.coverage.linkedin} color="#0077B5" total={totalPlatformPosts} />
               <PlatformBadge icon="𝕏" label="X / Twitter" count={content.coverage.twitter} color="#000000" total={totalPlatformPosts} />
               <PlatformBadge icon="🧵" label="Threads" count={content.coverage.threads} color="#333333" total={totalPlatformPosts} />
+              <PlatformBadge icon="📸" label="Instagram" count={content.coverage.instagram ?? 0} color="#e1306c" total={totalPlatformPosts} />
             </Card>
           </div>
         </div>

@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     linkedin:     posts.filter(p => p.hasLinkedIn).length,
     twitter:      posts.filter(p => p.hasTwitter).length,
     threads:      posts.filter(p => p.hasThreads).length,
+    instagram:    posts.filter(p => p.hasInstagram).length,
   }
 
   // ── Estimated combined reach (sum of available sources) ─────────────────────
