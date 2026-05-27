@@ -11,6 +11,42 @@ This is the single source of truth for the full content operation — from autom
 
 ---
 
+## Editorial Cadence — Publish a Month Ahead
+
+**Rule:** Community events, festivals, and "things to do" content for any given month must be researched and published during the **last week of the prior month**. Readers need lead time to plan — a post about June events published on June 15 is half-wasted.
+
+| Date range | Editorial focus |
+|---|---|
+| Days 1–21 | Normal mix: market updates, evergreen guides, news, community spotlights |
+| **Days 22–31 (event window)** | Shift toward **next month's** events, festivals, attractions, things to do |
+| Day 25 | Dedicated `events-research` cron fires automatically — writes 1 roundup + up to 3 spotlight posts for next month directly to the VA queue |
+
+**How the system enforces this automatically:**
+1. **Tavily query injection** — during days 22–31, 3 event-focused queries are added to the daily research run ([lib/research.ts:101-119](lib/research.ts#L101-L119))
+2. **Idea scoring boost** — `community-spotlight` and `news` get +15 on days 25–31 and +8 on days 22–24, so events bubble to the top of `/admin/idea-review` ([lib/scoring.ts:106-113](lib/scoring.ts#L106-L113))
+3. **Blog picker boost** — the legacy article scoring used by `/admin/blog-picker` applies a matching +2 / +1 boost so events appear at the top there too ([lib/research.ts](lib/research.ts))
+4. **Dedicated monthly cron** — `/api/cron/events-research` runs on the 25th of each month at 9 AM PT, writing 1 monthly roundup + up to 3 spotlight posts for next month straight to the VA queue ([lib/events-research.ts](lib/events-research.ts))
+
+**Operator expectation during the last week of every month:**
+- Open `/admin/va-queue` — next-month event posts should already be there from the 25th cron
+- Open `/admin/idea-review` and `/admin/blog-picker/[today]` — event ideas should be at the top
+- Pick a healthy mix: at minimum 1 monthly roundup + 1–2 specific event spotlights for the upcoming month before month-end
+- If the cron didn't fire or you want extra coverage, trigger it manually:
+
+```bash
+# Generate next-month events (e.g. June posts during May)
+curl -X POST "https://legacyhometeamlpt.com/api/cron/events-research?secret=ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"offsetMonths":1}'
+
+# Or 2-months-ahead (July posts during May, for extra lead time)
+curl -X POST "https://legacyhometeamlpt.com/api/cron/events-research?secret=ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"offsetMonths":2}'
+```
+
+---
+
 ## Full End-to-End Flow
 
 ```

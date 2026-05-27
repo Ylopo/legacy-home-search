@@ -223,6 +223,18 @@ ${articleList}`,
   const scored: Array<{ index: number; relevanceScore: number; category: ArticleCategory; whyItMatters: string }> =
     JSON.parse(jsonMatch[0])
 
+  // End-of-month event boost — keeps the blog-picker in sync with /admin/idea-review.
+  // On days 25–31, community-spotlight/news get +2 (cap 10); days 22–24, +1.
+  const day = new Date().getDate()
+  const eventBoost = day >= 25 ? 2 : day >= 22 ? 1 : 0
+  if (eventBoost > 0) {
+    for (const s of scored) {
+      if (s.category === 'community-spotlight' || s.category === 'news') {
+        s.relevanceScore = Math.min(10, s.relevanceScore + eventBoost)
+      }
+    }
+  }
+
   return scored
     .filter((s) => s.relevanceScore >= 4)
     .sort((a, b) => b.relevanceScore - a.relevanceScore)

@@ -328,34 +328,25 @@ export async function runEventsResearch(offsetMonths = 1): Promise<EventsResearc
   const majorEvents = events.filter((e) => e.type === 'major').slice(0, 3)
   const allEvents = events
 
-  // 3. Write posts
-  const posts: BlogPostDraft[] = []
-  const titles: string[] = []
+  // 3. Write posts — spotlights + roundup in parallel (each is an independent Claude call).
+  // Sequential writes were hitting Vercel's 120s maxDuration ceiling.
+  const writeTasks: Promise<BlogPostDraft | null>[] = [
+    ...majorEvents.map((event) =>
+      writeSpotlightPost(event, month, year).catch((err) => {
+        console.error('[events-research] Failed to write spotlight for', event.name, err)
+        return null
+      }),
+    ),
+    writeRoundupPost(allEvents, month, year).catch((err) => {
+      console.error('[events-research] Failed to write roundup', err)
+      return null
+    }),
+  ]
+  const written = (await Promise.all(writeTasks)).filter((p): p is BlogPostDraft => p !== null)
+  const titles = written.map((p) => p.title)
 
-  // Spotlight posts for major events
-  for (const event of majorEvents) {
-    try {
-      const post = await writeSpotlightPost(event, month, year)
-      posts.push(post)
-      titles.push(post.title)
-    } catch (err) {
-      console.error('[events-research] Failed to write spotlight for', event.name, err)
-    }
-  }
+  // 4. Save all posts to Sanity in parallel (media_pending → VA queue)
+  await Promise.all(written.map((post) => publishBlogPost(post)))
 
-  // Monthly roundup (always)
-  try {
-    const roundup = await writeRoundupPost(allEvents, month, year)
-    posts.push(roundup)
-    titles.push(roundup.title)
-  } catch (err) {
-    console.error('[events-research] Failed to write roundup', err)
-  }
-
-  // 4. Save all posts to Sanity (media_pending → VA queue)
-  for (const post of posts) {
-    await publishBlogPost(post)
-  }
-
-  return { postsCreated: posts.length, monthLabel: label, postTitles: titles }
+  return { postsCreated: written.length, monthLabel: label, postTitles: titles }
 }
