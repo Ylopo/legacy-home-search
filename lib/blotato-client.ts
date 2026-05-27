@@ -397,10 +397,10 @@ export async function publishToInstagramReel(
         content: {
           text: safeText,
           mediaUrls: [videoUrl],
-          platform: 'instagram_reels',
+          platform: 'instagram',
         },
         target: {
-          targetType: 'instagram_reels',
+          targetType: 'instagram',
         },
       },
     }),

@@ -258,7 +258,9 @@ export async function publishSocialOnly(
       publishToLinkedIn(liCopy, imageUrl),
       publishToX(twitterCopy, imageUrl),
       publishToThreads(threadsCopy, imageUrl),
-      publishToInstagram(igCopy, imageUrl),
+      post.videoUrl
+        ? publishToInstagramReel(igCopy, post.videoUrl)
+        : publishToInstagram(igCopy, imageUrl),
     ])
 
     const fbResult: PlatformResult = fbRes.status === 'fulfilled'
@@ -425,6 +427,7 @@ export async function publishPostToAll(
       igResult = igOutcome.status === 'fulfilled'
         ? { postSubmissionId: igOutcome.value.postSubmissionId }
         : { error: igOutcome.reason instanceof Error ? igOutcome.reason.message : 'Instagram publish failed' }
+      if (igResult && 'error' in igResult) console.error('[publish-service] Instagram error:', igResult.error)
     }
 
     await markPublished(
