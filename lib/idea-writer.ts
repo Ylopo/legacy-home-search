@@ -147,7 +147,7 @@ SEO RULES (required):
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 6000,
+    max_tokens: 8000,
     messages: [{
       role: 'user',
       content: `You are Barry Jenkins, writing for the Legacy Home Search blog in Virginia Beach. Barry has been a Hampton Roads real estate agent for 20+ years, his family lives here, he's sold thousands of homes. He writes to genuinely inform local buyers, sellers, homeowners, and investors — not to sell, but to help them make smarter decisions.
@@ -184,16 +184,25 @@ Return ONLY valid JSON, no markdown fences.`,
     }],
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
+  const rawText = response.content[0].type === 'text' ? response.content[0].text.trim() : '{}'
+
+  // Claude sometimes wraps JSON in markdown fences despite being told not to — strip them
+  let text = rawText
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+  }
+  // Extract the outermost JSON object in case there is any surrounding commentary
+  const jsonObjectMatch = text.match(/\{[\s\S]*\}/)
+  if (jsonObjectMatch) text = jsonObjectMatch[0]
 
   let raw: Record<string, string>
   try {
     raw = JSON.parse(text)
   } catch {
-    // Try extracting a partial JSON object — catches truncation edge cases
-    const match = text.match(/\{[\s\S]*"title"\s*:\s*"([^"]+)"/)
-    if (!match) throw new Error(`Failed to parse post JSON (stop_reason: ${response.stop_reason}). Try approving again.`)
-    throw new Error(`Post generation was cut off mid-response (stop_reason: ${response.stop_reason}). This idea may be too complex — try again.`)
+    if (response.stop_reason === 'max_tokens') {
+      throw new Error('Post was cut off because it was too long. Try again — the retry usually succeeds.')
+    }
+    throw new Error(`Failed to parse AI response (stop_reason: ${response.stop_reason}). Please try again.`)
   }
 
   const blocks = bodyTextToBlocks(raw.body ?? '')
