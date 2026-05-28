@@ -80,6 +80,49 @@ function Tip({ children }: { children: React.ReactNode }) {
   )
 }
 
+function ChatGPTTip({ prompt }: { prompt: string }) {
+  const [copied, setCopied] = useState(false)
+  function copy() {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
+  return (
+    <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '12px 14px', marginTop: 18, marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 15 }}>🔥</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#c2410c' }}>Hot tip — struggling to connect?</span>
+        </div>
+        <button
+          onClick={copy}
+          style={{
+            padding: '4px 12px', borderRadius: 6, border: '1px solid #fdba74',
+            background: copied ? '#16a34a' : '#fff', color: copied ? '#fff' : '#c2410c',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+            transition: 'background 0.2s, color 0.2s',
+          }}
+        >
+          {copied ? '✓ Copied!' : 'Copy prompt'}
+        </button>
+      </div>
+      <p style={{ fontSize: 12, color: '#7c2d12', margin: '0 0 8px', lineHeight: 1.5 }}>
+        Copy this prompt and paste it into <a href="https://chat.openai.com" target="_blank" rel="noopener noreferrer" style={{ color: '#c2410c', fontWeight: 700 }}>ChatGPT</a> — it will walk you through every step interactively.
+      </p>
+      <div style={{
+        background: '#fff', border: '1px solid #fed7aa', borderRadius: 7,
+        padding: '10px 12px', fontSize: 12, color: '#431407',
+        fontStyle: 'italic', lineHeight: 1.6, maxHeight: 80, overflow: 'hidden',
+        maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+      }}>
+        {prompt}
+      </div>
+    </div>
+  )
+}
+
 function Example({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
@@ -242,6 +285,7 @@ export default function ConnectPage() {
                 ]} />
                 <Example label="What to enter — example" value="legacyhometeam" />
                 <Tip>Not sure of your username? Your TikTok profile URL looks like: tiktok.com/@<strong>legacyhometeam</strong> — the part after the @ is your username.</Tip>
+                <ChatGPTTip prompt={`I need help finding my TikTok username so I can connect my TikTok account to a marketing dashboard. I'm not very tech-savvy, so please walk me through it step by step like I've never done this before.\n\nHere's what I need to do:\n1. Open TikTok on my phone\n2. Find my username (the @name on my profile)\n3. I need to copy just the username without the @ symbol\n\nCan you walk me through exactly where to find it on the app, with very simple instructions? If there are any common mistakes people make, please warn me about those too.`} />
               </>
           }
           {results.tiktok && <div style={{ fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>✓ @{results.tiktok.username} — {(results.tiktok.followers ?? 0).toLocaleString()} followers<EnvVarBox vars={[results.tiktok.envVar!]} /></div>}
@@ -268,6 +312,7 @@ export default function ConnectPage() {
                 <Example label="What the address bar looks like" value="youtube.com/channel/UCaBcDeFgHiJkLmNoPqRsTuV" />
                 <Example label="What to copy and paste" value="UCaBcDeFgHiJkLmNoPqRsTuV" />
                 <Tip>Can't find it? You can also paste the full YouTube channel URL — the wizard will extract the ID for you automatically.</Tip>
+                <ChatGPTTip prompt={`I need help finding my YouTube Channel ID so I can connect my YouTube account to a marketing analytics dashboard. I'm not very tech-savvy, so please explain this in very simple steps.\n\nHere's what I know:\n- My Channel ID starts with the letters "UC" followed by a long string of letters and numbers\n- It can be found in my YouTube channel's web address (URL)\n- It looks something like: youtube.com/channel/UCxxxxxxxxxxxxxxxxxx\n\nCan you walk me through exactly how to find my Channel ID on YouTube, step by step? Please tell me where to click, what to look for, and what to copy. Also let me know if there are any common places people get confused.`} />
               </>
           }
           {results.youtube && <div style={{ fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>✓ {results.youtube.channelName} — {(results.youtube.subscribers ?? 0).toLocaleString()} subscribers<EnvVarBox vars={[results.youtube.envVar!]} /></div>}
@@ -303,6 +348,7 @@ export default function ConnectPage() {
                   'Copy that number and paste it in the second box below',
                 ]} />
                 <Tip>The wizard automatically converts the temporary token into a permanent one that never expires — you won't need to do this again.</Tip>
+                <ChatGPTTip prompt={`I need help connecting my Facebook Page to a marketing analytics dashboard. There are two things I need to do, and I'm not very tech-savvy, so please walk me through each one step by step.\n\nTask 1 — Get a temporary access token from Facebook:\n- I need to go to developers.facebook.com/tools/explorer\n- Select my Meta app\n- Click "Generate Access Token"\n- Enable these three permissions: pages_show_list, pages_read_engagement, read_insights\n- Copy the token\n\nTask 2 — Find my Facebook Page ID:\n- It's a long number found in my Facebook Page's About section\n\nPlease walk me through both tasks with very simple, clear instructions. Tell me exactly what to click and where to look. Warn me about anything that commonly confuses people.`} />
               </>
           }
           {results.facebook && <div style={{ fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>✓ Connected as: {results.facebook.pageName}<EnvVarBox vars={results.facebook.envVars!} /></div>}
@@ -338,6 +384,7 @@ export default function ConnectPage() {
                         'Come back here and click the button below',
                       ]} />
                       <Tip>Not sure if your Instagram is Professional? Open Instagram → Profile → Settings → Account → you'll see "Switch to Professional Account" if it's still personal.</Tip>
+                      <ChatGPTTip prompt={`I need help linking my Instagram account to my Facebook Page so I can connect it to a marketing dashboard. I'm getting an error that says "No Instagram Business Account linked to this Facebook Page." I'm not very tech-savvy, so please explain this simply.\n\nHere's what needs to happen:\n1. My Instagram account needs to be a Professional account (Business or Creator — not Personal)\n2. My Instagram account needs to be linked to my Facebook Page\n\nCan you walk me through how to:\n- Check if my Instagram is a Professional account, and how to switch it if it isn't\n- Link my Instagram account to my Facebook Page (either through Facebook Page Settings, Meta Business Suite, or the Instagram app)\n\nPlease give me step-by-step instructions for each part, as if I've never done this before.`} />
                     </>
                 }
               </>
@@ -396,6 +443,7 @@ export default function ConnectPage() {
               ]} />
               <Example label="What the address looks like" value="linkedin.com/company/98765432" />
               <Example label="What to copy (Organization ID)" value="98765432" />
+              <ChatGPTTip prompt={`I need help connecting my LinkedIn company page to a marketing analytics dashboard. I need to do four things and I'm not very tech-savvy, so please walk me through each step very simply.\n\nHere's what I need to do:\n1. Go to developers.linkedin.com and create a LinkedIn developer app\n2. Add the "Marketing Developer Platform" product to my app (so I can access analytics)\n3. Generate an OAuth access token with the "r_organization_social" permission\n4. Find my LinkedIn Organization ID (the number in my company page URL)\n\nPlease walk me through all four steps as if I've never done anything like this before. Tell me exactly what to click, what to fill in, and what to copy. Also let me know that the token expires every 60 days and I'll need to repeat step 3 at that point.`} />
             </>
           )}
           {results.linkedin && <div style={{ fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>✓ {results.linkedin.orgName} — {(results.linkedin.followers ?? 0).toLocaleString()} followers<EnvVarBox vars={results.linkedin.envVars!} /><div style={{ marginTop: 8, fontSize: 11, color: '#dc2626', fontWeight: 600 }}>⚠️ Set a reminder to refresh this token in 50 days.</div></div>}
@@ -430,6 +478,7 @@ export default function ConnectPage() {
                   <div style={{ fontFamily: 'monospace', color: '#1e40af' }}>GA4_SERVICE_ACCOUNT_JSON={'{"type":"service_account",...}'}</div>
                   <div style={{ fontFamily: 'monospace', color: '#1e40af' }}>NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX</div>
                 </div>
+                <ChatGPTTip prompt={`I need help connecting Google Analytics 4 to a marketing dashboard. I need to create a Service Account and give it access to my GA4 property. I'm not very tech-savvy so please walk me through everything step by step.\n\nHere's what I need to do:\n1. Find my GA4 Property ID (a number found in GA4 → Admin → Property Settings)\n2. Go to Google Cloud Console and enable the "Google Analytics Data API"\n3. Create a Service Account called "analytics-reader"\n4. Download the JSON credentials file for that service account\n5. Add the service account email as a Viewer on my GA4 property\n6. Minify the JSON file contents to one line so I can paste it into an environment variable\n\nPlease walk me through every single step with clear, simple instructions. I'll be working in both Google Analytics (analytics.google.com) and Google Cloud Console (console.cloud.google.com).`} />
               </>
           }
         </PlatformCard>
@@ -456,6 +505,7 @@ export default function ConnectPage() {
                   <div style={{ fontFamily: 'monospace', color: '#1e40af' }}>GSC_REFRESH_TOKEN=1//0xxxx</div>
                   <div style={{ fontFamily: 'monospace', color: '#1e40af' }}>GSC_SITE_URL=sc-domain:legacyhometeamlpt.com</div>
                 </div>
+                <ChatGPTTip prompt={`I need help connecting Google Search Console to a marketing dashboard using OAuth credentials. I'm not very tech-savvy so please walk me through every step simply and clearly.\n\nHere's what I need to do:\n1. Go to Google Cloud Console and enable the "Google Search Console API"\n2. Create OAuth 2.0 credentials (type: Web Application) and add this redirect URI: https://developers.google.com/oauthplayground\n3. Copy the Client ID and Client Secret\n4. Go to the OAuth 2.0 Playground (developers.google.com/oauthplayground), use my own credentials, select the Search Console readonly scope, and get a Refresh Token\n5. Note my site URL in the format: sc-domain:mywebsite.com\n\nPlease walk me through every single step — what to click, what to fill in, what to copy. Treat me like someone who has never done anything like this before.`} />
               </>
           }
         </PlatformCard>
