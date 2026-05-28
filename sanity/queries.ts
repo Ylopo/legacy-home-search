@@ -211,6 +211,39 @@ export async function getBlogPosts(limit = 20): Promise<SanityBlogPost[]> {
   )
 }
 
+export async function getBlogPostsPaginated(opts: {
+  page?: number
+  perPage?: number
+  search?: string
+  category?: string
+}): Promise<{ posts: SanityBlogPost[]; total: number }> {
+  const { page = 1, perPage = 25, search = '', category = '' } = opts
+  const offset = (page - 1) * perPage
+  const end    = offset + perPage - 1
+  const q      = search ? `*${search.trim()}*` : ''
+
+  const filter = `
+    _type == "blogPost" &&
+    ${PUBLIC_FILTER} &&
+    ($q == "" || title match $q || excerpt match $q) &&
+    ($category == "" || category == $category)
+  `
+
+  const [posts, total] = await Promise.all([
+    client.fetch(
+      `*[${filter}] | order(publishedAt desc)[$offset..$end]{
+        _id, title, "slug": slug.current, publishedAt,
+        category, excerpt, coverImage, aiGenerated
+      }`,
+      { q, category, offset, end },
+      { next: { revalidate: 60 } }
+    ),
+    client.fetch(`count(*[${filter}])`, { q, category }, { next: { revalidate: 60 } }),
+  ])
+
+  return { posts, total: total as number }
+}
+
 export async function getBlogPost(slug: string): Promise<SanityBlogPost | null> {
   return client.fetch(
     `*[_type == "blogPost" && slug.current == $slug && ${PUBLIC_FILTER}][0]{
