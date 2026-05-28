@@ -5,18 +5,21 @@ import { useRef, useState } from 'react'
 import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const PIPELINE = [
-  { label: 'Idea Review',    path: '/admin/idea-review' },
-  { label: 'Media Queue',    path: '/admin/va-queue' },
-  { label: 'Analytics',      path: '/admin/analytics' },
+  { label: 'Idea Review',       path: '/admin/idea-review' },
+  { label: 'Media Queue',       path: '/admin/va-queue' },
+  { label: 'Analytics',         path: '/admin/analytics' },
+  { label: 'Connect Platforms', path: '/admin/connect' },
 ] as const
 
 const CONTENT_MACHINE_BASE = '/admin/social-dashboard'
 
 const REPORTING_ITEMS = [
-  { label: 'Facebook analytics', path: '/admin/social-dashboard/facebook',       exact: false },
-  { label: 'YouTube analytics',  path: '/admin/social-dashboard/youtube',        exact: false },
-  { label: 'TikTok analytics',   path: '/admin/social-dashboard/tiktok',         exact: false },
-  { label: 'Google Search',      path: '/admin/social-dashboard/google-search',  exact: false },
+  { label: 'Facebook analytics',  path: '/admin/social-dashboard/facebook',       exact: false },
+  { label: 'Instagram analytics', path: '/admin/social-dashboard/instagram',      exact: false },
+  { label: 'YouTube analytics',   path: '/admin/social-dashboard/youtube',        exact: false },
+  { label: 'TikTok analytics',    path: '/admin/social-dashboard/tiktok',         exact: false },
+  { label: 'LinkedIn analytics',  path: '/admin/social-dashboard/linkedin',       exact: false },
+  { label: 'Google Search',       path: '/admin/social-dashboard/google-search',  exact: false },
 ] as const
 
 function isActive(pathname: string, path: string, exact = false): boolean {

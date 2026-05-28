@@ -254,6 +254,13 @@ Every env var the pipeline requires, what it controls, and whether it can be reu
 | `YOUTUBE_CHANNEL_ID` | YouTube | ❌ New | Client's YouTube channel ID |
 | `FACEBOOK_PAGE_ACCESS_TOKEN` | Facebook | ❌ New | Never-expiring page token for client |
 | `FACEBOOK_PAGE_ID` | Facebook | ❌ New | Client's Facebook page ID |
+| `FACEBOOK_APP_ID` | Facebook | ✅ Same | Meta app ID (needed for token exchange in wizard) |
+| `FACEBOOK_APP_SECRET` | Facebook | ✅ Same | Meta app secret (needed for token exchange in wizard) |
+| `INSTAGRAM_ACCESS_TOKEN` | Instagram | ❌ New | Same value as FACEBOOK_PAGE_ACCESS_TOKEN |
+| `INSTAGRAM_BUSINESS_ACCOUNT_ID` | Instagram | ❌ New | Auto-discovered via /admin/connect wizard |
+| `LINKEDIN_ACCESS_TOKEN` | LinkedIn | ❌ New | OAuth token — expires every 60 days |
+| `LINKEDIN_ORGANIZATION_ID` | LinkedIn | ❌ New | Numeric org ID from company page URL |
+| `LINKEDIN_TOKEN_ISSUED_AT` | LinkedIn | ❌ New | ISO date set when token is generated — enables expiry warning |
 | `ADMIN_SECRET` | App | ❌ New | Random string — generate fresh per client |
 | `CRON_SECRET` | App | ❌ New | Random string — generate fresh per client |
 | `NEXT_PUBLIC_APP_URL` | App | ❌ New | Client's production URL |
@@ -280,7 +287,15 @@ Do these in order — later steps depend on earlier ones.
 
 6. **YouTube Data API** — Enable "YouTube Data API v3" in Google Cloud Console for the same service account project. Note the client's YouTube channel ID (from their channel URL or dashboard).
 
-7. **Facebook Graph API** — Generate a never-expiring Page Access Token for the client's Facebook page. Use the Graph API Explorer: `GET /me/accounts` to find the token, then exchange it for a long-lived token. Note the page access token and page ID.
+7. **Analytics connections — use the Platform Connection Wizard** — After deploying the project, visit `/admin/connect?secret=ADMIN_SECRET`. Connect platforms in this order:
+   - **TikTok**: paste the client's @username — wizard tests it and saves
+   - **YouTube**: paste the channel URL — wizard fetches channel name and ID
+   - **Facebook**: paste a short-lived Graph Explorer token + Page ID — wizard exchanges it for a never-expiring token automatically
+   - **Instagram**: click "Auto-connect from Facebook" — wizard discovers the Business Account ID from the FB token (no new credentials needed)
+   - **LinkedIn**: paste an OAuth access token + org ID — wizard validates and saves; token expires every 60 days
+   - **GA4** and **GSC**: follow the guided instructions shown on the wizard page
+   
+   After each successful test, the wizard shows the exact env vars to copy into Vercel. Each platform also shows current connection status — green dot = confirmed working.
 
 8. **HeyGen** — Confirm the avatar ID and voice ID for the client. For Shana: avatar `d08dfce8949b4db884351ea1afb81966`.
 

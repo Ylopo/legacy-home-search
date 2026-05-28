@@ -5,5 +5,6 @@ import review from './review'
 import blogPost from './blogPost'
 import teamMember from './teamMember'
 import marketReport from './marketReport'
+import platformCredentials from './platformCredentials'
 
-export const schemaTypes = [siteSettings, homepage, communityPage, review, blogPost, teamMember, marketReport]
+export const schemaTypes = [siteSettings, homepage, communityPage, review, blogPost, teamMember, marketReport, platformCredentials]

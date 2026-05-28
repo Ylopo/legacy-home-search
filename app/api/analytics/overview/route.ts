@@ -5,6 +5,8 @@ import { getTikTokOverview } from '@/lib/tiktok-client'
 import { getGSCOverview } from '@/lib/gsc-client'
 import { getYouTubeOverview } from '@/lib/youtube-client'
 import { getFacebookOverview } from '@/lib/facebook-client'
+import { getInstagramOverview } from '@/lib/instagram-client'
+import { getLinkedInOverview } from '@/lib/linkedin-client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 45
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
 
   const days = Math.min(90, Math.max(7, parseInt(searchParams.get('days') ?? '28', 10)))
 
-  const [posts, websiteRes, searchRes, youtubeRes, facebookRes, idxRes, tiktokRes] = await Promise.all([
+  const [posts, websiteRes, searchRes, youtubeRes, facebookRes, idxRes, tiktokRes, instagramRes, linkedinRes] = await Promise.all([
     getSocialDashboardPosts(),
     safe('GA4', () => fetchSiteGA4Overview(days)),
     safe('GSC', () => getGSCOverview(days)),
@@ -34,6 +36,8 @@ export async function GET(request: Request) {
     safe('Facebook', () => getFacebookOverview()),
     safe('IDX', () => fetchIdxClickData(days)),
     safe('TikTok', () => getTikTokOverview().then(d => { if (!d) throw new Error('no data'); return d })),
+    safe('Instagram', () => getInstagramOverview().then(d => { if (!d) throw new Error('no data'); return d })),
+    safe('LinkedIn', () => getLinkedInOverview().then(d => { if (!d) throw new Error('no data'); return d })),
   ])
 
   // ── Content stats ────────────────────────────────────────────────────────────
@@ -90,7 +94,9 @@ export async function GET(request: Request) {
   const ga4Users    = websiteRes.data?.activeUsers ?? 0
   const fbReach     = facebookRes.data?.page?.reach28d ?? 0
   const ytViews     = youtubeRes.data?.recentViews ?? 0
-  const estimatedReach = ga4Users + fbReach + ytViews
+  const igFollowers = instagramRes.data?.profile?.followers ?? 0
+  const liFollowers = linkedinRes.data?.profile?.followers ?? 0
+  const estimatedReach = ga4Users + fbReach + ytViews + igFollowers + liFollowers
 
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
@@ -115,13 +121,19 @@ export async function GET(request: Request) {
     estimatedReach,
     idx:      idxRes.data,
     idxError: idxRes.error,
-    tiktok:      tiktokRes.data,
-    tiktokError: tiktokRes.error,
+    tiktok:         tiktokRes.data,
+    tiktokError:    tiktokRes.error,
+    instagram:      instagramRes.data,
+    instagramError: instagramRes.error,
+    linkedin:       linkedinRes.data,
+    linkedinError:  linkedinRes.error,
     connected: {
-      ga4:      !!process.env.GA4_PROPERTY_ID && !!process.env.GA4_SERVICE_ACCOUNT_JSON,
-      gsc:      !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
-      youtube:  !!process.env.YOUTUBE_API_KEY && !!process.env.YOUTUBE_CHANNEL_ID,
-      facebook: !!process.env.FACEBOOK_PAGE_ACCESS_TOKEN && !!process.env.FACEBOOK_PAGE_ID,
+      ga4:       !!process.env.GA4_PROPERTY_ID && !!process.env.GA4_SERVICE_ACCOUNT_JSON,
+      gsc:       !!process.env.GSC_REFRESH_TOKEN && !!process.env.GSC_SITE_URL,
+      youtube:   !!process.env.YOUTUBE_API_KEY && !!process.env.YOUTUBE_CHANNEL_ID,
+      facebook:  !!process.env.FACEBOOK_PAGE_ACCESS_TOKEN && !!process.env.FACEBOOK_PAGE_ID,
+      instagram: !!process.env.INSTAGRAM_ACCESS_TOKEN && !!process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID,
+      linkedin:  !!process.env.LINKEDIN_ACCESS_TOKEN && !!process.env.LINKEDIN_ORGANIZATION_ID,
     },
   })
 }
