@@ -101,7 +101,11 @@ These come from [developers.facebook.com](https://developers.facebook.com) → y
 
 **What you need:** Facebook already connected (above). Instagram uses the same token — no new credentials.
 
-**Requirement:** The client's Instagram account must be a **Professional account** (Creator or Business) and must be linked to their Facebook Page. Do this in Facebook Business Manager if not already done.
+**Two requirements before the auto-connect will work:**
+1. The Instagram account must be a **Professional account** (Creator or Business) — not a personal account
+2. The Instagram account must be **linked to the Facebook Page** in Meta's system
+
+Both of these are Meta configuration steps in the client's accounts, not code changes. See the fix steps below if the auto-connect fails.
 
 **Steps:**
 1. In `/admin/connect`, click **Auto-connect from Facebook** under Instagram
@@ -115,10 +119,34 @@ INSTAGRAM_ACCESS_TOKEN=EAAxxxxxxxxxxxxxxxxxx...  (same value as FACEBOOK_PAGE_AC
 INSTAGRAM_BUSINESS_ACCOUNT_ID=17841400000000000
 ```
 
-**If it fails:** The Instagram account isn't linked to the Facebook Page. Fix:
-- In Facebook Business Manager → Accounts → Instagram Accounts → link the account
-- Or in the Facebook Page settings → Instagram → Connect account
-- Then retry the wizard
+---
+
+### "No Instagram Business Account linked to this Facebook Page" — how to fix
+
+This error means Meta doesn't see an Instagram account connected to the Facebook Page. Fix it in **one** of these ways (try them in order):
+
+**Option A — From the Facebook Page (quickest)**
+1. Go to the client's Facebook Page
+2. Click **Edit Page** or the **Settings** icon (top right on the page)
+3. Look for **Linked Accounts** or **Instagram** in the left sidebar
+4. Click **Connect account** → log in with the client's Instagram credentials
+5. Make sure it's set as a **Business** or **Creator** account when prompted
+
+**Option B — From Meta Business Suite**
+1. Go to [business.facebook.com](https://business.facebook.com)
+2. Settings (gear icon, bottom left) → **Accounts** → **Instagram Accounts**
+3. Click **Add** → log in with the client's Instagram credentials
+4. Assign it to the correct Facebook Page
+
+**Option C — From the Instagram app** (if the client handles their own login)
+1. Open Instagram → Profile → hamburger menu (top right) → **Settings**
+2. **Account** → **Linked accounts** → Facebook
+3. Log in and link to the correct Facebook Page
+4. Then go to **Account** → **Switch to Professional Account** if not already done
+
+After completing any of these steps, go back to `/admin/connect` and click **Auto-connect from Facebook** again — it should find the account this time.
+
+---
 
 **Analytics available:** Follower count, post count, per-post reach/impressions/likes/comments/saves, top posts by reach.
 
