@@ -79,6 +79,24 @@ gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');`}
             </Script>
           </>
         )}
+        {/* RAEK tracking */}
+        <Script id="raek-init" strategy="afterInteractive">
+          {`(function(window, document, id){
+  var script = document.createElement('script');
+  script.id = 'raekTag';
+  script.type = 'text/javascript';
+  script.src = 'https://cdn.raek.net/js/raek.min.js?id='+id;
+  script.async = true;
+  document.getElementsByTagName('head')[0].appendChild(script);
+})(window, document, "0936002cf8a21fe6f585349319c3c59ae090503bfffbbaa7deeb4559df4da57bc20ab62d26d3c461164491aece8da0ddeec300ad74be49322788958f94eb514f");`}
+        </Script>
+        {/* OIR tracking */}
+        <Script id="oir-queue" strategy="beforeInteractive">
+          {`!function(e){e._oirtrk=e._oirtrk||[];}(window);`}
+        </Script>
+        <Script id="oir-sdk" strategy="afterInteractive" data-oirtyp="6311ae17" data-oirid="PP3977C5P" src="https://cdn.aggle.net/oir/oir.min.js" />
+        {/* MM tracking */}
+        <Script src="https://mm-uxrv.com/js/mm_5b5c8f43-64b8-42ad-9679-0024549db07b-65354820.js" strategy="afterInteractive" />
       </body>
     </html>
   )
