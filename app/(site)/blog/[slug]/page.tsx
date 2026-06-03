@@ -74,6 +74,25 @@ export async function generateMetadata(
   }
 }
 
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url)
+    // youtube.com/shorts/VIDEO_ID
+    const shortsMatch = u.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]+)/)
+    if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`
+    // youtube.com/watch?v=VIDEO_ID
+    const videoId = u.searchParams.get('v')
+    if (videoId) return `https://www.youtube.com/embed/${videoId}`
+    // youtu.be/VIDEO_ID
+    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed${u.pathname}`
+  } catch {}
+  return null
+}
+
+function isYouTubeShort(url: string): boolean {
+  return url.includes('/shorts/')
+}
+
 function detectCommunities(title: string, slug: string): CommunityKey[] {
   const text = `${title} ${slug}`.toLowerCase()
   const textNoHR = text.replace(/hampton[\s-]+roads?/gi, '')
@@ -204,6 +223,44 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
           {post.excerpt && <p className="blog-post-excerpt">{post.excerpt}</p>}
         </div>
+
+        {/* ── YOUTUBE EMBED ────────────────────────────────────────────── */}
+        {post.youtubePostUrl && (() => {
+          const embedUrl = getYouTubeEmbedUrl(post.youtubePostUrl)
+          const isShort = isYouTubeShort(post.youtubePostUrl)
+          if (!embedUrl) return null
+          return (
+            <div style={{ margin: '32px 0', display: 'flex', flexDirection: 'column', alignItems: isShort ? 'center' : 'stretch' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8', marginBottom: 12 }}>
+                Watch the Video
+              </p>
+              <div style={{
+                width: isShort ? 'min(360px, 100%)' : '100%',
+                aspectRatio: isShort ? '9 / 16' : '16 / 9',
+                borderRadius: 12,
+                overflow: 'hidden',
+                background: '#000',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+              }}>
+                <iframe
+                  src={embedUrl}
+                  title={post.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                />
+              </div>
+              <a
+                href={post.youtubePostUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ marginTop: 10, fontSize: 13, color: '#2563eb', textDecoration: 'none', alignSelf: isShort ? 'center' : 'flex-start' }}
+              >
+                Watch on YouTube ↗
+              </a>
+            </div>
+          )
+        })()}
 
         {/* ── BODY ────────────────────────────────────────────────────── */}
         {post.body && (

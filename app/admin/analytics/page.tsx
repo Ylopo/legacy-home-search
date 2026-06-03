@@ -195,8 +195,8 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
-function PlatformBadge({ icon, label, count, color, total }: {
-  icon: string; label: string; count: number; color: string; total: number
+function PlatformBadge({ icon, label, count, color, total, href }: {
+  icon: string; label: string; count: number; color: string; total: number; href?: string
 }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
   return (
@@ -204,7 +204,11 @@ function PlatformBadge({ icon, label, count, color, total }: {
       <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{label}</span>
+          {href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', textDecoration: 'none', borderBottom: '1px dashed #cbd5e1' }}>{label} ↗</a>
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{label}</span>
+          )}
           <span style={{ fontSize: 13, fontWeight: 700, color }}>{count} posts</span>
         </div>
         <div style={{ height: 4, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
@@ -427,10 +431,10 @@ export default function AnalyticsPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                 Platform Distribution
               </div>
-              <PlatformBadge icon="👥" label="Facebook" count={content.coverage.facebook} color="#1877F2" total={totalPlatformPosts} />
-              <PlatformBadge icon="🎬" label="Facebook Reel" count={content.coverage.facebookReel} color="#1877F2" total={totalPlatformPosts} />
-              <PlatformBadge icon="▶️" label="YouTube" count={content.coverage.youtube} color="#dc2626" total={totalPlatformPosts} />
-              <PlatformBadge icon="🎵" label="TikTok" count={content.coverage.tiktok} color="#000000" total={totalPlatformPosts} />
+              <PlatformBadge icon="👥" label="Facebook" count={content.coverage.facebook} color="#1877F2" total={totalPlatformPosts} href="https://www.facebook.com/1101893253009079" />
+              <PlatformBadge icon="🎬" label="Facebook Reel" count={content.coverage.facebookReel} color="#1877F2" total={totalPlatformPosts} href="https://www.facebook.com/1101893253009079/reels" />
+              <PlatformBadge icon="▶️" label="YouTube" count={content.coverage.youtube} color="#dc2626" total={totalPlatformPosts} href="https://www.youtube.com/channel/UC7bTBLe0UvdgH_PBNoDqYew" />
+              <PlatformBadge icon="🎵" label="TikTok" count={content.coverage.tiktok} color="#000000" total={totalPlatformPosts} href="https://www.tiktok.com/@legacy.home.team" />
               <PlatformBadge icon="💼" label="LinkedIn" count={content.coverage.linkedin} color="#0077B5" total={totalPlatformPosts} />
               <PlatformBadge icon="𝕏" label="X / Twitter" count={content.coverage.twitter} color="#000000" total={totalPlatformPosts} />
               <PlatformBadge icon="🧵" label="Threads" count={content.coverage.threads} color="#333333" total={totalPlatformPosts} />
