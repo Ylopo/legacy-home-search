@@ -231,10 +231,12 @@ function NotConnected({ platform }: { platform: string }) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const [data, setData]       = useState<Overview | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
-  const [days, setDays]       = useState(28)
+  const [data, setData]           = useState<Overview | null>(null)
+  const [loading, setLoading]     = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError]         = useState('')
+  const [days, setDays]           = useState(28)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const secret = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('secret') ?? ''
@@ -242,12 +244,13 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (!secret) { setError('Unauthorized'); setLoading(false); return }
-    setLoading(true)
+    const isManualRefresh = refreshKey > 0
+    if (isManualRefresh) { setRefreshing(true) } else { setLoading(true) }
     fetch(`/api/analytics/overview?secret=${encodeURIComponent(secret)}&days=${days}`)
       .then(r => r.ok ? r.json() : Promise.reject('Unauthorized'))
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => { setError('Failed to load analytics'); setLoading(false) })
-  }, [secret, days])
+      .then(d => { setData(d); setLoading(false); setRefreshing(false) })
+      .catch(() => { setError('Failed to load analytics'); setLoading(false); setRefreshing(false) })
+  }, [secret, days, refreshKey])
 
   if (loading) return (
     <Shell>
@@ -304,7 +307,8 @@ export default function AnalyticsPage() {
           <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Legacy Home Team · Content Machine</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Performance Report</h1>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-            Generated {new Date(data.generatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            Generated {new Date(data.generatedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            {refreshing && <span style={{ marginLeft: 8, color: '#2563eb' }}>↻ Refreshing…</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -318,8 +322,13 @@ export default function AnalyticsPage() {
             }}>Last {d} days</button>
           ))}
           <button
+            onClick={() => setRefreshKey(k => k + 1)}
+            disabled={refreshing}
+            style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid #334155', background: 'transparent', color: refreshing ? '#475569' : '#94a3b8', fontSize: 12, fontWeight: 600, cursor: refreshing ? 'default' : 'pointer', marginLeft: 4 }}
+          >{refreshing ? '↻ Refreshing…' : '↻ Refresh'}</button>
+          <button
             onClick={() => window.print()}
-            style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid #334155', background: 'transparent', color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginLeft: 4 }}
+            style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid #334155', background: 'transparent', color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
           >Print / Save PDF</button>
         </div>
       </div>
