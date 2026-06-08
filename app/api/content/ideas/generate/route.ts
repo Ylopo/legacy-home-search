@@ -11,15 +11,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const coveredTopics = await getCoveredTopics()
-  const ideas = await fetchAndScoreIdeas(coveredTopics)
+  try {
+    const coveredTopics = await getCoveredTopics()
+    const ideas = await fetchAndScoreIdeas(coveredTopics)
 
-  for (const idea of ideas) {
-    await saveIdea(idea)
+    for (const idea of ideas) {
+      await saveIdea(idea)
+    }
+
+    return NextResponse.json({
+      count: ideas.length,
+      ideas: ideas.map((i) => ({ id: i.id, title: i.title, score: i.score.total })),
+    })
+  } catch (err) {
+    console.error('[POST /api/content/ideas/generate]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
-
-  return NextResponse.json({
-    count: ideas.length,
-    ideas: ideas.map((i) => ({ id: i.id, title: i.title, score: i.score.total })),
-  })
 }

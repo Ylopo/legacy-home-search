@@ -380,7 +380,7 @@ export default function IdeaReviewPage() {
       const res = await fetch(`/api/content/ideas/generate?secret=${encodeURIComponent(secret)}`, {
         method: 'POST',
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
       if (!res.ok) throw new Error(data.error ?? 'Generation failed')
       setGenerateResult(data.count)
       const r2 = await fetch(`/api/content/ideas?secret=${encodeURIComponent(secret)}`)
