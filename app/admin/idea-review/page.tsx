@@ -357,11 +357,18 @@ export default function IdeaReviewPage() {
   const [generateError, setGenerateError] = useState('')
 
   useEffect(() => {
-    if (!secret) { setError('Unauthorized'); setLoading(false); return }
+    if (!secret) { setError('No secret in URL — add ?secret=YOUR_ADMIN_SECRET'); setLoading(false); return }
     fetch(`/api/content/ideas?secret=${encodeURIComponent(secret)}`)
-      .then((r) => r.ok ? r.json() : Promise.reject('Unauthorized'))
+      .then(async (r) => {
+        if (r.status === 401) throw new Error('Unauthorized — wrong secret in URL')
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({ error: `HTTP ${r.status}` }))
+          throw new Error(body.error ?? `HTTP ${r.status}`)
+        }
+        return r.json()
+      })
       .then((data) => setIdeas(data))
-      .catch(() => setError('Failed to load ideas'))
+      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load ideas'))
       .finally(() => setLoading(false))
   }, [secret])
 

@@ -9,8 +9,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const all = searchParams.get('all') === 'true'
-  const ideas = all ? await getAllIdeas() : await getPendingIdeas()
-
-  return NextResponse.json(ideas)
+  try {
+    const all = searchParams.get('all') === 'true'
+    const ideas = all ? await getAllIdeas() : await getPendingIdeas()
+    return NextResponse.json(ideas)
+  } catch (err) {
+    console.error('[GET /api/content/ideas]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }
