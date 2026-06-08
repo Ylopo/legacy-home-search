@@ -5,15 +5,18 @@ export type ArticleCategory =
   | 'buying-tips'
   | 'selling-tips'
   | 'community-spotlight'
+  | 'community-development'
   | 'investment'
   | 'news'
+  | 'local-interest'
+  | 'home-ownership'
+  | 'events'
   | 'cost-breakdown'
   | 'flood-and-risk'
   | 'financing'
   | 'lifestyle'
   | 'waterfront-living'
   | 'local-history'
-  | 'local-interest'
 
 export interface RawArticle {
   id: string

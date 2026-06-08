@@ -40,12 +40,16 @@ export default {
       type: 'string',
       options: {
         list: [
+          { title: 'Community Spotlight', value: 'community-spotlight' },
+          { title: 'Community Development', value: 'community-development' },
+          { title: 'News', value: 'news' },
           { title: 'Market Update', value: 'market-update' },
           { title: 'Buying Tips', value: 'buying-tips' },
           { title: 'Selling Tips', value: 'selling-tips' },
-          { title: 'Community Spotlight', value: 'community-spotlight' },
+          { title: 'Local Interest', value: 'local-interest' },
           { title: 'Investment', value: 'investment' },
-          { title: 'News', value: 'news' },
+          { title: 'Home Ownership', value: 'home-ownership' },
+          { title: 'Events', value: 'events' },
         ],
       },
     },

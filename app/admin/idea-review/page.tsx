@@ -11,6 +11,19 @@ import { AdminNav } from '@/components/AdminNav'
 const TOP_PICK_THRESHOLD = 75
 const SCORE_THRESHOLD    = 55
 
+const CATEGORIES = [
+  { key: 'community-spotlight',   label: 'Community Spotlight' },
+  { key: 'community-development', label: 'Community Development' },
+  { key: 'news',                  label: 'News' },
+  { key: 'market-update',         label: 'Market Update' },
+  { key: 'buying-tips',           label: 'Buying Tips' },
+  { key: 'selling-tips',          label: 'Selling Tips' },
+  { key: 'local-interest',        label: 'Local Interest' },
+  { key: 'investment',            label: 'Investment' },
+  { key: 'home-ownership',        label: 'Home Ownership' },
+  { key: 'events',                label: 'Events' },
+] as const
+
 const AUDIENCE_LABELS: Record<string, string> = {
   buyer:     'Buyer',
   seller:    'Seller',
@@ -355,19 +368,28 @@ export default function IdeaReviewPage() {
   const [generating, setGenerating] = useState(false)
   const [generateResult, setGenerateResult] = useState<number | null>(null)
   const [generateError, setGenerateError] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [publishedCounts, setPublishedCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (!secret) { setError('No secret in URL — add ?secret=YOUR_ADMIN_SECRET'); setLoading(false); return }
-    fetch(`/api/content/ideas?secret=${encodeURIComponent(secret)}`)
-      .then(async (r) => {
+    Promise.all([
+      fetch(`/api/content/ideas?secret=${encodeURIComponent(secret)}`).then(async (r) => {
         if (r.status === 401) throw new Error('Unauthorized — wrong secret in URL')
         if (!r.ok) {
           const body = await r.json().catch(() => ({ error: `HTTP ${r.status}` }))
           throw new Error(body.error ?? `HTTP ${r.status}`)
         }
         return r.json()
+      }),
+      fetch(`/api/content/ideas/category-stats?secret=${encodeURIComponent(secret)}`)
+        .then((r) => r.ok ? r.json() : Promise.resolve({}))
+        .catch(() => ({})),
+    ])
+      .then(([ideasData, statsData]) => {
+        setIdeas(ideasData)
+        setPublishedCounts(statsData)
       })
-      .then((data) => setIdeas(data))
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load ideas'))
       .finally(() => setLoading(false))
   }, [secret])
@@ -399,10 +421,17 @@ export default function IdeaReviewPage() {
     // approved cards stay visible (showing success state)
   }
 
-  const visibleIdeas = ideas.filter((i) => !dismissed.has(i.id))
+  const visibleIdeas = ideas
+    .filter((i) => !dismissed.has(i.id))
+    .filter((i) => !selectedCategory || i.category === selectedCategory)
   const topPicks     = visibleIdeas.filter((i) => i.score.total >= TOP_PICK_THRESHOLD)
   const strongIdeas  = visibleIdeas.filter((i) => i.score.total >= SCORE_THRESHOLD && i.score.total < TOP_PICK_THRESHOLD)
   const allClear     = !loading && !error && visibleIdeas.length === 0
+
+  const pendingByCategory = ideas.reduce<Record<string, number>>((acc, i) => {
+    if (!dismissed.has(i.id)) acc[i.category] = (acc[i.category] ?? 0) + 1
+    return acc
+  }, {})
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', fontFamily: 'Inter, sans-serif' }}>
@@ -448,56 +477,121 @@ export default function IdeaReviewPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ display: 'flex', gap: 0, maxWidth: 1120, margin: '0 auto', padding: '0 24px', alignItems: 'flex-start' }}>
 
-        {loading && (
-          <p style={{ color: '#64748b', textAlign: 'center', padding: 40 }}>Loading ideas…</p>
-        )}
-
-        {error && (
-          <p style={{ color: '#dc2626', textAlign: 'center', padding: 40 }}>{error}</p>
-        )}
-
-        {allClear && (
-          <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>All caught up</div>
-            <div style={{ fontSize: 14, color: '#64748b' }}>
-              No pending ideas right now. New ones arrive daily at 6 AM and weekly on Tuesdays.
-            </div>
+        {/* ── Category Sidebar ── */}
+        <div style={{
+          width: 210, flexShrink: 0, paddingTop: 28, paddingRight: 20, paddingBottom: 40,
+          position: 'sticky', top: 0, maxHeight: '100vh', overflowY: 'auto',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94a3b8', marginBottom: 8 }}>
+            Categories
           </div>
-        )}
 
-        {/* Top Picks */}
-        {topPicks.length > 0 && (
-          <section style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <h2 style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#166534', margin: 0 }}>
-                ★ Top Picks
-              </h2>
-              <span style={{ fontSize: 12, color: '#86efac', fontWeight: 600 }}>Score ≥{TOP_PICK_THRESHOLD}</span>
+          {/* All */}
+          <button
+            onClick={() => setSelectedCategory(null)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              width: '100%', padding: '7px 10px', marginBottom: 2, borderRadius: 6, border: 'none',
+              background: selectedCategory === null ? '#eff6ff' : 'transparent',
+              cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: selectedCategory === null ? 700 : 500, color: selectedCategory === null ? '#1d4ed8' : '#374151' }}>
+              All
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+              {ideas.filter(i => !dismissed.has(i.id)).length}
+            </span>
+          </button>
+
+          {CATEGORIES.map(({ key, label }) => {
+            const pending   = pendingByCategory[key] ?? 0
+            const published = publishedCounts[key] ?? 0
+            const isSelected = selectedCategory === key
+            return (
+              <button
+                key={key}
+                onClick={() => setSelectedCategory(isSelected ? null : key)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', padding: '7px 10px', marginBottom: 2, borderRadius: 6, border: 'none',
+                  background: isSelected ? '#eff6ff' : 'transparent',
+                  cursor: 'pointer', textAlign: 'left',
+                  borderLeft: isSelected ? '3px solid #2563eb' : '3px solid transparent',
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 400, color: isSelected ? '#1d4ed8' : '#374151', flex: 1, lineHeight: 1.3 }}>
+                  {label}
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, flexShrink: 0, marginLeft: 6 }}>
+                  {pending > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, background: '#dbeafe', color: '#1d4ed8', borderRadius: 99, padding: '1px 6px' }}>
+                      {pending}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 10, color: '#94a3b8' }}>{published} pub</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ── Main content ── */}
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 28, paddingBottom: 40 }}>
+
+          {loading && (
+            <p style={{ color: '#64748b', textAlign: 'center', padding: 40 }}>Loading ideas…</p>
+          )}
+
+          {error && (
+            <p style={{ color: '#dc2626', textAlign: 'center', padding: 40 }}>{error}</p>
+          )}
+
+          {allClear && (
+            <div style={{ textAlign: 'center', padding: '80px 24px' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>All caught up</div>
+              <div style={{ fontSize: 14, color: '#64748b' }}>
+                {selectedCategory
+                  ? 'No pending ideas in this category.'
+                  : 'No pending ideas right now. New ones arrive daily at 6 AM and weekly on Tuesdays.'}
+              </div>
             </div>
-            {topPicks.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} secret={secret} onAction={handleAction} />
-            ))}
-          </section>
-        )}
+          )}
 
-        {/* Strong Ideas */}
-        {strongIdeas.length > 0 && (
-          <section style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <h2 style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2563eb', margin: 0 }}>
-                Strong Ideas
-              </h2>
-              <span style={{ fontSize: 12, color: '#93c5fd', fontWeight: 600 }}>Score {SCORE_THRESHOLD}–{TOP_PICK_THRESHOLD - 1}</span>
-            </div>
-            {strongIdeas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} secret={secret} onAction={handleAction} />
-            ))}
-          </section>
-        )}
+          {/* Top Picks */}
+          {topPicks.length > 0 && (
+            <section style={{ marginBottom: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <h2 style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#166534', margin: 0 }}>
+                  ★ Top Picks
+                </h2>
+                <span style={{ fontSize: 12, color: '#86efac', fontWeight: 600 }}>Score ≥{TOP_PICK_THRESHOLD}</span>
+              </div>
+              {topPicks.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} secret={secret} onAction={handleAction} />
+              ))}
+            </section>
+          )}
 
+          {/* Strong Ideas */}
+          {strongIdeas.length > 0 && (
+            <section style={{ marginBottom: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <h2 style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2563eb', margin: 0 }}>
+                  Strong Ideas
+                </h2>
+                <span style={{ fontSize: 12, color: '#93c5fd', fontWeight: 600 }}>Score {SCORE_THRESHOLD}–{TOP_PICK_THRESHOLD - 1}</span>
+              </div>
+              {strongIdeas.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} secret={secret} onAction={handleAction} />
+              ))}
+            </section>
+          )}
+
+        </div>
       </div>
 
       <style>{`
