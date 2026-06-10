@@ -15,7 +15,7 @@ import type { ContentPattern, RenickDashboardData } from './renick-pipeline'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const GITHUB_REPO = 'kiwi-vegas/legacy-home-search'
+const GITHUB_REPO = 'Ylopo/legacy-home-search'
 const LEARNINGS_FILE = 'LEARNINGS.md'
 
 // ─────────────────────────────────────────────

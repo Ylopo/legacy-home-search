@@ -534,7 +534,7 @@ export async function commitFilesToGitHub(files: GitHubFile[], commitMessage: st
   const token = process.env.GITHUB_TOKEN
   if (!token) throw new Error('GITHUB_TOKEN not set')
 
-  const owner = 'kiwi-vegas'
+  const owner = 'Ylopo'
   const repo = 'legacy-home-search'
   const branch = 'main'
   const api = (path: string) => `https://api.github.com/repos/${owner}/${repo}${path}`

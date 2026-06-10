@@ -99,7 +99,7 @@ When setting this up for a different agent/market, update every hardcoded refere
 
 **GitHub commit target** (bottom of file, `commitFilesToGitHub`):
 ```ts
-const owner = 'kiwi-vegas'          // → new client's GitHub username or org
+const owner = 'Ylopo'               // → new client's GitHub username or org
 const repo  = 'legacy-home-search'  // → new client's repo name
 const branch = 'main'               // → usually stays 'main'
 ```
@@ -330,7 +330,7 @@ Review a few generated pages before the full run. If content quality is low, imp
 
 | Value | Current | File |
 |---|---|---|
-| GitHub owner | `kiwi-vegas` | `lib/aeo-generator.ts` |
+| GitHub owner | `Ylopo` | `lib/aeo-generator.ts` |
 | GitHub repo | `legacy-home-search` | `lib/aeo-generator.ts` |
 | Domain | `legacyhometeamlpt.com` | `lib/aeo-generator.ts`, `lib/email.ts` |
 | Phone | `(757) 816-4037` | `lib/aeo-generator.ts` |
