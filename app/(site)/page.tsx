@@ -6,7 +6,9 @@ import HamptonRoadsMap from '@/components/HamptonRoadsMap'
 import TestimonialsSection from '@/components/TestimonialsSection'
 import LogoBar from '@/components/LogoBar'
 import ContactForm from '@/components/ContactForm'
+import LatestBlogPostsScroller from '@/components/LatestBlogPostsScroller'
 import { client } from '@/sanity/client'
+import { getBlogPostsByCommunity } from '@/sanity/queries'
 
 export const metadata: Metadata = {
   title: 'Legacy Home Search | Virginia Beach & Hampton Roads Real Estate',
@@ -31,6 +33,9 @@ export default async function HomePage() {
         'A respected industry leader, Barry regularly trains and coaches agents across the country. His ability to blend cutting-edge marketing with real-world experience gives his clients a distinct advantage in today\'s market.',
         'Whether you\'re buying, selling, or relocating, Barry and the Legacy team will guide you every step of the way — with the expertise and care you deserve.',
       ]
+
+  // Latest blog posts for the horizontal scroller above the contact section
+  const latestPosts = await getBlogPostsByCommunity('', 8)
 
   // Fetch Vimeo thumbnail server-side so HeroSection has a poster image immediately on load
   let heroPosterUrl = ''
@@ -127,6 +132,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── LATEST FROM THE BLOG ─────────────────────────────────────── */}
+      <LatestBlogPostsScroller posts={latestPosts} />
 
       {/* ── CONTACT ──────────────────────────────────────────────────── */}
       <section id="contact">
