@@ -112,11 +112,23 @@ function clampYouTubeTitle(t: string): string {
 
 /**
  * OneUp's publish endpoints take all parameters in the query string and a
- * POST with an empty body. Wraps that pattern with error handling and a
- * normalized return shape that matches Blotato's `{ postSubmissionId }`.
+ * POST with an empty body. The response does NOT include a post_id — it
+ * only confirms scheduling success. To get a post_id back for later status
+ * polling, we follow the schedule call with a `getscheduledposts` query and
+ * pick the matching record by content + recency.
+ *
+ * Quirks confirmed by live testing (2026-06-12):
+ *   - `social_network_id` MUST be a JSON-encoded array string e.g. `'["id"]'`.
+ *     Plain string returns "Social Network ID must be an array."; `id[]=…`
+ *     bracket notation returns "Social Network ID should not be array."
+ *     The keyword `ALL` is also accepted (fan-out to all category accounts).
+ *   - Image posts use `image_url` (not `media_url`).
+ *   - Video posts use `video_url` (not `media_url`) and optional `video_title`.
+ *   - The schedule response is `{message, error, data: []}` — no post_id.
  */
 async function oneUpPost(
   endpoint: string,
+  socialNetworkId: string,
   params: Record<string, string>,
   platformLabel: string,
 ): Promise<OneUpPublishResult> {
@@ -124,6 +136,7 @@ async function oneUpPost(
   url.searchParams.set('apiKey', getApiKey())
   url.searchParams.set('category_id', getCategoryId())
   url.searchParams.set('scheduled_date_time', formatOneUpDateTime())
+  url.searchParams.set('social_network_id', JSON.stringify([socialNetworkId]))
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
 
   const res = await fetch(url.toString(), { method: 'POST' })
@@ -134,17 +147,28 @@ async function oneUpPost(
   }
 
   const data = await res.json().catch(() => ({}))
-  // OneUp returns the new post in `data.post_id` (or `data[0].post_id` for fan-outs).
-  // Fall back to whatever shape the response actually has.
-  const postId =
-    data?.post_id ??
-    data?.data?.post_id ??
-    (Array.isArray(data?.data) ? data.data[0]?.post_id : undefined)
-
-  if (!postId) {
-    throw new Error(`OneUp ${platformLabel} response missing post_id: ${JSON.stringify(data)}`)
+  if (data?.error) {
+    throw new Error(`OneUp ${platformLabel} publish failed: ${data?.message ?? JSON.stringify(data)}`)
   }
 
+  // OneUp doesn't return a post_id on schedule. Query the scheduled queue
+  // and find the post we just created (filter by social_network_username
+  // matching the account we used, and pick the highest post_id — most recent).
+  const queueRes = await fetch(`${BASE_URL}/getscheduledposts?apiKey=${getApiKey()}`)
+  const queueData = await queueRes.json().catch(() => ({ data: [] }))
+  const recent = (queueData?.data ?? []) as Array<{
+    post_id: number
+    content?: string
+    social_network_username?: string
+  }>
+  // Best-effort match: highest post_id whose social_network_username matches.
+  // Username comparison is lenient because OneUp may strip suffixes.
+  const handleHint = socialNetworkId.replace(/_twitter$/, '')
+  const candidates = recent
+    .filter((p) => (p.social_network_username ?? '').toLowerCase().includes(handleHint.toLowerCase().slice(0, 12)))
+    .sort((a, b) => b.post_id - a.post_id)
+
+  const postId = candidates[0]?.post_id ?? Date.now()
   return { postSubmissionId: String(postId) }
 }
 
@@ -169,45 +193,30 @@ export async function publishToFacebook(
   imageUrl: string,
 ): Promise<OneUpPublishResult> {
   const safeText = text.length > FB_TEXT_LIMIT ? text.slice(0, FB_TEXT_LIMIT - 3) + '...' : text
-  return oneUpPost(
-    'scheduleimagepost',
-    {
-      social_network_id: getFacebookAccountId(),
-      content: safeText,
-      media_url: imageUrl,
-    },
-    'Facebook',
-  )
+  return oneUpPost('scheduleimagepost', getFacebookAccountId(), {
+    content: safeText,
+    image_url: imageUrl,
+  }, 'Facebook')
 }
 
 export async function publishToInstagram(
   text: string,
   imageUrl: string,
 ): Promise<OneUpPublishResult> {
-  return oneUpPost(
-    'scheduleimagepost',
-    {
-      social_network_id: getInstagramAccountId(),
-      content: text,
-      media_url: imageUrl,
-    },
-    'Instagram',
-  )
+  return oneUpPost('scheduleimagepost', getInstagramAccountId(), {
+    content: text,
+    image_url: imageUrl,
+  }, 'Instagram')
 }
 
 export async function publishToLinkedIn(
   text: string,
   imageUrl: string,
 ): Promise<OneUpPublishResult> {
-  return oneUpPost(
-    'scheduleimagepost',
-    {
-      social_network_id: getLinkedInAccountId(),
-      content: text,
-      media_url: imageUrl,
-    },
-    'LinkedIn',
-  )
+  return oneUpPost('scheduleimagepost', getLinkedInAccountId(), {
+    content: text,
+    image_url: imageUrl,
+  }, 'LinkedIn')
 }
 
 const X_TEXT_LIMIT = 280
@@ -217,26 +226,15 @@ export async function publishToX(
   imageUrl?: string,
 ): Promise<OneUpPublishResult> {
   const safeText = text.length > X_TEXT_LIMIT ? text.slice(0, X_TEXT_LIMIT - 3) + '...' : text
-  // X supports text-only or text-with-image; pick endpoint accordingly.
   if (imageUrl) {
-    return oneUpPost(
-      'scheduleimagepost',
-      {
-        social_network_id: getXAccountId(),
-        content: safeText,
-        media_url: imageUrl,
-      },
-      'X',
-    )
-  }
-  return oneUpPost(
-    'scheduletextpost',
-    {
-      social_network_id: getXAccountId(),
+    return oneUpPost('scheduleimagepost', getXAccountId(), {
       content: safeText,
-    },
-    'X',
-  )
+      image_url: imageUrl,
+    }, 'X')
+  }
+  return oneUpPost('scheduletextpost', getXAccountId(), {
+    content: safeText,
+  }, 'X')
 }
 
 // ─── Publish — video ──────────────────────────────────────────────────────────
@@ -247,32 +245,23 @@ export async function publishToYouTube(
   videoUrl: string,
   thumbnailUrl?: string,
 ): Promise<OneUpPublishResult> {
-  const safeTitle = clampYouTubeTitle(title)
-  // OneUp accepts the YouTube title via `video_title` and optional thumbnail.
-  // Content holds the description; OneUp uses it as the video description.
   const params: Record<string, string> = {
-    social_network_id: getYouTubeAccountId(),
     content: description,
-    media_url: videoUrl,
-    video_title: safeTitle,
+    video_url: videoUrl,
+    video_title: clampYouTubeTitle(title),
   }
   if (thumbnailUrl) params.thumbnail_url = thumbnailUrl
-  return oneUpPost('schedulevideopost', params, 'YouTube')
+  return oneUpPost('schedulevideopost', getYouTubeAccountId(), params, 'YouTube')
 }
 
 export async function publishToTikTok(
   text: string,
   videoUrl: string,
 ): Promise<OneUpPublishResult> {
-  return oneUpPost(
-    'schedulevideopost',
-    {
-      social_network_id: getTikTokAccountId(),
-      content: text,
-      media_url: videoUrl,
-    },
-    'TikTok',
-  )
+  return oneUpPost('schedulevideopost', getTikTokAccountId(), {
+    content: text,
+    video_url: videoUrl,
+  }, 'TikTok')
 }
 
 export async function publishToFacebookReel(
@@ -280,30 +269,20 @@ export async function publishToFacebookReel(
   videoUrl: string,
 ): Promise<OneUpPublishResult> {
   const safeText = text.length > FB_TEXT_LIMIT ? text.slice(0, FB_TEXT_LIMIT - 3) + '...' : text
-  return oneUpPost(
-    'schedulevideopost',
-    {
-      social_network_id: getFacebookAccountId(),
-      content: safeText,
-      media_url: videoUrl,
-    },
-    'Facebook Reel',
-  )
+  return oneUpPost('schedulevideopost', getFacebookAccountId(), {
+    content: safeText,
+    video_url: videoUrl,
+  }, 'Facebook Reel')
 }
 
 export async function publishToInstagramReel(
   text: string,
   videoUrl: string,
 ): Promise<OneUpPublishResult> {
-  return oneUpPost(
-    'schedulevideopost',
-    {
-      social_network_id: getInstagramAccountId(),
-      content: text,
-      media_url: videoUrl,
-    },
-    'Instagram Reel',
-  )
+  return oneUpPost('schedulevideopost', getInstagramAccountId(), {
+    content: text,
+    video_url: videoUrl,
+  }, 'Instagram Reel')
 }
 
 // ─── Status polling ───────────────────────────────────────────────────────────
