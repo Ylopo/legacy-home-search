@@ -34,7 +34,6 @@ export async function POST(request: Request) {
     facebook: result.facebook,
     linkedin: result.linkedin,
     twitter: result.twitter,
-    threads: result.threads,
     instagram: result.instagram,
   })) {
     if (res && 'error' in res) platformErrors[platform] = res.error
@@ -48,7 +47,6 @@ export async function POST(request: Request) {
       facebook:  result.facebook  && 'postSubmissionId' in result.facebook  ? 'ok' : (result.facebook  && 'error' in result.facebook  ? result.facebook.error  : 'skipped'),
       linkedin:  result.linkedin  && 'postSubmissionId' in result.linkedin  ? 'ok' : (result.linkedin  && 'error' in result.linkedin  ? result.linkedin.error  : 'skipped'),
       twitter:   result.twitter   && 'postSubmissionId' in result.twitter   ? 'ok' : (result.twitter   && 'error' in result.twitter   ? result.twitter.error   : 'skipped'),
-      threads:   result.threads   && 'postSubmissionId' in result.threads   ? 'ok' : (result.threads   && 'error' in result.threads   ? result.threads.error   : 'skipped'),
       instagram: result.instagram && 'postSubmissionId' in result.instagram ? 'ok' : (result.instagram && 'error' in result.instagram ? result.instagram.error : 'skipped'),
     },
     ...(Object.keys(platformErrors).length > 0 && { platformErrors }),

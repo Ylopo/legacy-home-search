@@ -63,6 +63,10 @@ export async function cancelScheduled(postId: string): Promise<void> {
   await client.patch(postId).set({ workflowStatus: 'media_ready' as WorkflowStatus }).unset(['scheduledPublishAt']).commit()
 }
 
+// NOTE: `blotatoPostSubmissionId` field name is kept for Sanity schema
+// compatibility, but now stores OneUp post IDs (the publish provider was
+// migrated from Blotato to OneUp). Threads is no longer supported because
+// OneUp doesn't expose it.
 export async function markPublished(
   postId: string,
   blotatoPostSubmissionId: string,
@@ -71,7 +75,6 @@ export async function markPublished(
   facebookReelSubmissionId?: string,
   linkedinPostSubmissionId?: string,
   twitterPostSubmissionId?: string,
-  threadsPostSubmissionId?: string,
   instagramPostSubmissionId?: string,
   publishedAtOverride?: string,
 ): Promise<void> {
@@ -87,7 +90,6 @@ export async function markPublished(
   if (facebookReelSubmissionId) patch.facebookReelSubmissionId = facebookReelSubmissionId
   if (linkedinPostSubmissionId) patch.linkedinPostSubmissionId = linkedinPostSubmissionId
   if (twitterPostSubmissionId) patch.twitterPostSubmissionId = twitterPostSubmissionId
-  if (threadsPostSubmissionId) patch.threadsPostSubmissionId = threadsPostSubmissionId
   if (instagramPostSubmissionId) patch.instagramPostSubmissionId = instagramPostSubmissionId
   await client.patch(postId).set(patch).commit()
 }

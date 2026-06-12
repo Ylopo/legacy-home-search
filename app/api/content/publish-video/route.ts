@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getVAQueuePost } from '@/sanity/queries'
 import { getSanityWriteClient } from '@/lib/sanity-write'
-import { publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX, publishToThreads } from '@/lib/blotato-client'
-import { generatePlatformCaptions, buildTikTokCaption, buildLinkedInCaption, buildXCaption, buildThreadsCaption } from '@/lib/publish-service'
+import { publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX } from '@/lib/oneup-client'
+import { generatePlatformCaptions, buildTikTokCaption, buildLinkedInCaption, buildXCaption } from '@/lib/publish-service'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -38,23 +38,21 @@ export async function POST(request: Request) {
   const articleUrl = `${appUrl}/blog/${post.slug}`
 
   const captions = post.socialCopy
-    ? { facebook: post.socialCopy, linkedin: post.socialCopy, twitter: post.socialCopy, tiktok: post.socialCopy, youtube: post.socialCopy, threads: post.socialCopy }
+    ? { facebook: post.socialCopy, linkedin: post.socialCopy, twitter: post.socialCopy, tiktok: post.socialCopy, youtube: post.socialCopy }
     : await generatePlatformCaptions(post)
 
   const fbCopy       = `${captions.facebook}\n\n${articleUrl}`
   const liCopy       = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
   const twitterCopy  = buildXCaption(captions.twitter, post.category, articleUrl)
-  const threadsCopy  = buildThreadsCaption(captions.threads, articleUrl)
   const ytDesc       = `${captions.youtube}\n\n${articleUrl}`
   const tiktokCaption = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
 
-  const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome, thOutcome] = await Promise.allSettled([
+  const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome] = await Promise.allSettled([
     publishToFacebookReel(fbCopy, videoUrl),
     publishToYouTube(post.title, ytDesc, videoUrl, videoThumbnailUrl),
     publishToTikTok(tiktokCaption, videoUrl),
     publishToLinkedIn(liCopy, videoUrl),
     publishToX(twitterCopy, videoUrl),
-    publishToThreads(threadsCopy, videoUrl),
   ])
 
   const facebookReel = reelOutcome.status === 'fulfilled'
@@ -77,10 +75,6 @@ export async function POST(request: Request) {
     ? { postSubmissionId: twOutcome.value.postSubmissionId }
     : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X failed' }
 
-  const threads = thOutcome.status === 'fulfilled'
-    ? { postSubmissionId: thOutcome.value.postSubmissionId }
-    : { error: thOutcome.reason instanceof Error ? thOutcome.reason.message : 'Threads failed' }
-
   // Update Sanity submission IDs for the new videos
   const idPatch: Record<string, string> = {}
   if ('postSubmissionId' in facebookReel && facebookReel.postSubmissionId) idPatch.facebookReelSubmissionId   = facebookReel.postSubmissionId
@@ -88,8 +82,7 @@ export async function POST(request: Request) {
   if ('postSubmissionId' in tiktok      && tiktok.postSubmissionId)         idPatch.tiktokPostSubmissionId     = tiktok.postSubmissionId
   if ('postSubmissionId' in linkedin    && linkedin.postSubmissionId)       idPatch.linkedinPostSubmissionId   = linkedin.postSubmissionId
   if ('postSubmissionId' in twitter     && twitter.postSubmissionId)        idPatch.twitterPostSubmissionId    = twitter.postSubmissionId
-  if ('postSubmissionId' in threads     && threads.postSubmissionId)        idPatch.threadsPostSubmissionId    = threads.postSubmissionId
   if (Object.keys(idPatch).length) await client.patch(postId).set(idPatch).commit()
 
-  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok, linkedin, twitter, threads })
+  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok, linkedin, twitter })
 }
