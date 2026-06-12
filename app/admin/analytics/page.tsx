@@ -283,7 +283,6 @@ export default function AnalyticsPage() {
     (content.coverage.tiktok ?? 0) +
     (content.coverage.linkedin ?? 0) +
     (content.coverage.twitter ?? 0) +
-    (content.coverage.threads ?? 0) +
     (content.coverage.instagram ?? 0)
 
   // Combined views across all connected platforms
@@ -446,7 +445,6 @@ export default function AnalyticsPage() {
               <PlatformBadge icon="🎵" label="TikTok" count={content.coverage.tiktok} color="#000000" total={totalPlatformPosts} href="https://www.tiktok.com/@legacy.home.team" />
               <PlatformBadge icon="💼" label="LinkedIn" count={content.coverage.linkedin} color="#0077B5" total={totalPlatformPosts} />
               <PlatformBadge icon="𝕏" label="X / Twitter" count={content.coverage.twitter} color="#000000" total={totalPlatformPosts} />
-              <PlatformBadge icon="🧵" label="Threads" count={content.coverage.threads} color="#333333" total={totalPlatformPosts} />
               <PlatformBadge icon="📸" label="Instagram" count={content.coverage.instagram ?? 0} color="#e1306c" total={totalPlatformPosts} />
             </Card>
           </div>

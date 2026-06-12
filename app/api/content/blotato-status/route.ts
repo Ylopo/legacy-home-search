@@ -1,5 +1,8 @@
+// NOTE: route path kept as `/blotato-status` to avoid churning every caller.
+// Internally it now polls OneUp via lib/oneup-client.ts. Will rename the
+// route in a follow-up cleanup PR.
 import { NextResponse } from 'next/server'
-import { getPostStatus } from '@/lib/blotato-client'
+import { getPostStatus } from '@/lib/oneup-client'
 import { updateBlotatoStatus, updateVideoPublishStatus } from '@/lib/content-workflow'
 
 export const dynamic = 'force-dynamic'
@@ -12,7 +15,7 @@ export async function GET(request: Request) {
 
   const postSubmissionId = searchParams.get('postSubmissionId')
   const postId = searchParams.get('postId')
-  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'threads'
+  const platform = (searchParams.get('platform') ?? 'facebook') as 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter'
 
   if (!postSubmissionId || !postId) {
     return NextResponse.json({ error: 'postSubmissionId and postId are required' }, { status: 400 })
