@@ -62,6 +62,13 @@ export async function generateHeyGenVideo(script: string): Promise<string> {
         width: 720,
         height: 1280,
       },
+      // Forces HeyGen's V5 / Avatar IV model. Without this the API defaults
+      // to the older V3 engine and the VA has to upgrade each video by hand
+      // in the HeyGen dashboard. The flag sits at the ROOT of the request,
+      // sibling to video_inputs — NOT inside character.avatar_settings.
+      // (HeyGen v2 endpoint is supported through 2026-10-31; migrate to
+      // /v3/videos before then — Avatar IV is the default on v3.)
+      use_avatar_iv_model: true,
     }),
   })
 
