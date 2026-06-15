@@ -356,14 +356,14 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
                 <div style={s.chartWrap}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                     <div style={{ ...s.kpiLabel, marginBottom: 0 }}>CUMULATIVE WEBSITE SESSIONS</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#b07d2e' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#2563eb' }}>
                       {totalSessionsLife > 0 ? fmtNum(totalSessionsLife) : '—'}
                     </div>
                   </div>
                   {cumSessions.length > 1 ? (
                     <CumulativeChart
                       series={cumSessions}
-                      color="#b07d2e"
+                      color="#2563eb"
                       fillFrom="rgba(176,125,46,0.18)"
                       fillTo="rgba(176,125,46,0)"
                       yLabelSuffix=" sessions"
@@ -392,7 +392,7 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             <MomentumChart weeks={momentum} />
             <div style={s.chartLegend}>
               <LegendDot color="#1E3A5F" label="Posts published" />
-              <LegendDot color="#b07d2e" label="Peak week" />
+              <LegendDot color="#2563eb" label="Peak week" />
               <span style={s.legendDashed}>--- Target {PUBLISHING_TARGET_PER_WEEK} / week</span>
             </div>
           </div>
@@ -565,7 +565,7 @@ function MomentumChart({ weeks }: { weeks: ReturnType<typeof buildMomentum> }) {
             const isPeak = w.isPeak && w.count > 0
             // Empty weeks still get a 2px sliver so columns stay visible.
             const barPx = w.count > 0 ? (w.count / max) * BAR_AREA : 2
-            const color = isPeak ? '#b07d2e' : w.count > 0 ? '#1E3A5F' : '#e0ddd8'
+            const color = isPeak ? '#2563eb' : w.count > 0 ? '#1E3A5F' : '#e0ddd8'
             return (
               <div
                 key={i}
@@ -580,7 +580,7 @@ function MomentumChart({ weeks }: { weeks: ReturnType<typeof buildMomentum> }) {
                 }}
               >
                 {isPeak && (
-                  <div style={{ position: 'absolute', top: -20, color: '#b07d2e', fontSize: 12, fontWeight: 700 }}>
+                  <div style={{ position: 'absolute', top: -20, color: '#2563eb', fontSize: 12, fontWeight: 700 }}>
                     {w.count}
                   </div>
                 )}
@@ -762,7 +762,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 const NAVY = '#1E3A5F'
 const NAVY_HOVER = '#16304F'
 const ACCENT_LIGHT = '#EEF1F5'
-const GOLD = '#b07d2e'
+const BLUE = '#2563eb'
 const TEXT = '#1a1a1a'
 const TEXT_SECONDARY = '#555550'
 const TEXT_MUTED = '#888884'
@@ -815,12 +815,10 @@ const s: Record<string, CSSProperties> = {
     color: TEXT,
   },
   titleEm: {
-    fontFamily: 'Cormorant Garamond, Georgia, serif',
     fontStyle: 'italic',
-    fontWeight: 500,
-    fontSize: '1.1em',
-    color: GOLD,
-    letterSpacing: '0.005em',
+    fontWeight: 700,
+    color: BLUE,
+    letterSpacing: '-0.01em',
   },
   headerMeta: {
     display: 'flex',
