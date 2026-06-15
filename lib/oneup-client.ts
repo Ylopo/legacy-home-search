@@ -245,10 +245,15 @@ export async function publishToYouTube(
   videoUrl: string,
   thumbnailUrl?: string,
 ): Promise<OneUpPublishResult> {
+  // OneUp's title param is `title` (NOT `video_title` — that gets silently
+  // dropped, then YouTube rejects with "invalid or empty video title").
+  // For YouTube and Reddit, OneUp uses the `title` query param as the post
+  // title; for other platforms it's ignored. Verified against OneUp's docs
+  // and a failed-post log on 2026-06-15.
   const params: Record<string, string> = {
     content: description,
     video_url: videoUrl,
-    video_title: clampYouTubeTitle(title),
+    title: clampYouTubeTitle(title),
   }
   if (thumbnailUrl) params.thumbnail_url = thumbnailUrl
   return oneUpPost('schedulevideopost', getYouTubeAccountId(), params, 'YouTube')
