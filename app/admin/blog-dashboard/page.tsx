@@ -222,17 +222,17 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
           {/* Top Performer */}
           <div style={s.kpiCard}>
             <div style={s.kpiLabel}>TOP PERFORMER</div>
-            <div style={{ ...s.kpiNumber, fontSize: 22, lineHeight: 1.3, fontStyle: 'italic' }}>
+            <div style={{ ...s.kpiNumber, fontSize: 18, lineHeight: 1.4, fontWeight: 600 }}>
               {topPerformer ? truncate(topPerformer.title, 60) : '—'}
             </div>
-            <div style={{ ...s.kpiSub, color: '#c9a875', marginTop: 14 }}>views arriving soon</div>
+            <div style={{ ...s.kpiSub, color: '#1E3A5F', marginTop: 14, fontWeight: 600 }}>views arriving soon</div>
           </div>
           {/* Publishing Streak */}
           <div style={s.kpiCard}>
             <div style={s.kpiLabel}>PUBLISHING STREAK</div>
             <div style={{ ...s.kpiNumber, display: 'flex', alignItems: 'baseline', gap: 12 }}>
               {streak}
-              <span style={{ fontSize: 22, fontStyle: 'italic', color: '#a8a29e' }}>day{streak === 1 ? '' : 's'}</span>
+              <span style={{ fontSize: 18, color: '#888884', fontWeight: 500 }}>day{streak === 1 ? '' : 's'}</span>
             </div>
             <div style={s.kpiSub}>consecutive days with a published post</div>
           </div>
@@ -250,8 +250,8 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
           <div style={s.chartWrap}>
             <MomentumChart weeks={momentum} />
             <div style={s.chartLegend}>
-              <LegendDot color="#26514e" label="Posts published" />
-              <LegendDot color="#c9a875" label="Peak week" />
+              <LegendDot color="#1E3A5F" label="Posts published" />
+              <LegendDot color="#b07d2e" label="Peak week" />
               <span style={s.legendDashed}>--- Target {PUBLISHING_TARGET_PER_WEEK} / week</span>
             </div>
           </div>
@@ -397,46 +397,80 @@ function KpiDelta({ change, positive, label }: { change: number; positive: boole
 }
 
 function MomentumChart({ weeks }: { weeks: ReturnType<typeof buildMomentum> }) {
+  const BAR_AREA = 220
   const max = Math.max(PUBLISHING_TARGET_PER_WEEK + 2, ...weeks.map((w) => w.count))
-  const targetY = (PUBLISHING_TARGET_PER_WEEK / max) * 100
+  // Position of the target line, in px from the bottom of the bar area.
+  const targetPx = (PUBLISHING_TARGET_PER_WEEK / max) * BAR_AREA
   return (
-    <div style={{ position: 'relative', height: 280, padding: '20px 0 30px' }}>
-      {/* Target line */}
-      <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: `calc(30px + ${targetY}% - ${(targetY / 100) * 230}px)`,
-        borderTop: '1px dashed rgba(168,162,158,0.4)', pointerEvents: 'none',
-      }}>
-        <span style={{ position: 'absolute', right: 0, top: -8, fontSize: 10, color: '#a8a29e', letterSpacing: '0.1em' }}>
+    <div style={{ paddingTop: 28 }}>
+      {/* Bar area + target line */}
+      <div style={{ position: 'relative', height: BAR_AREA }}>
+        {/* Target line — sits above bars, runs full width of the chart */}
+        <div style={{
+          position: 'absolute', left: 0, right: 60, bottom: targetPx,
+          borderTop: '1px dashed #888884', pointerEvents: 'none',
+        }} />
+        <span style={{
+          position: 'absolute', right: 0, bottom: targetPx - 8,
+          fontSize: 10, color: '#888884', letterSpacing: '0.1em', fontWeight: 600,
+        }}>
           TARGET · {PUBLISHING_TARGET_PER_WEEK} / WK
         </span>
+        {/* Baseline (x-axis) */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, borderTop: '1px solid #e0ddd8' }} />
+        {/* Bars */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%', gap: 6 }}>
+          {weeks.map((w, i) => {
+            const isPeak = w.isPeak && w.count > 0
+            // Empty weeks still get a 2px sliver so columns stay visible.
+            const barPx = w.count > 0 ? (w.count / max) * BAR_AREA : 2
+            const color = isPeak ? '#b07d2e' : w.count > 0 ? '#1E3A5F' : '#e0ddd8'
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  position: 'relative',
+                  height: '100%',
+                }}
+              >
+                {isPeak && (
+                  <div style={{ position: 'absolute', top: -20, color: '#b07d2e', fontSize: 12, fontWeight: 700 }}>
+                    {w.count}
+                  </div>
+                )}
+                <div
+                  style={{
+                    width: '78%',
+                    maxWidth: 56,
+                    height: barPx,
+                    background: color,
+                    borderRadius: '4px 4px 0 0',
+                  }}
+                />
+              </div>
+            )
+          })}
+        </div>
       </div>
-      {/* Bars */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', height: 230, gap: 8 }}>
-        {weeks.map((w, i) => {
-          const h = max > 0 ? (w.count / max) * 100 : 0
-          const color = w.isPeak && w.count > 0 ? '#c9a875' : '#26514e'
-          return (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', height: '100%' }}>
-              {w.isPeak && w.count > 0 && (
-                <div style={{ position: 'absolute', top: -16, fontStyle: 'italic', color: '#c9a875', fontSize: 12 }}>{w.count}</div>
-              )}
-              <div style={{ flex: 1 }} />
-              <div style={{
-                width: '70%', maxWidth: 60,
-                height: `${h}%`,
-                background: color,
-                opacity: w.count === 0 ? 0.25 : 1,
-                transition: 'background 0.2s',
-              }} />
-            </div>
-          )
-        })}
-      </div>
-      {/* X-axis labels — every other week */}
-      <div style={{ display: 'flex', height: 30, gap: 8, marginTop: 4 }}>
+      {/* X-axis labels — one per bar, in the same flex grid so they align exactly */}
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
         {weeks.map((w, i) => (
-          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: '#a8a29e' }}>
-            {i % 2 === 0 ? w.label : ''}
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              textAlign: 'center',
+              fontSize: 10,
+              color: w.isCurrent ? '#1a1a1a' : '#888884',
+              fontWeight: w.isCurrent ? 600 : 500,
+            }}
+          >
+            {w.label}
           </div>
         ))}
       </div>
@@ -469,29 +503,29 @@ function NetworkCard(props: {
       </div>
       {available ? (
         <>
-          <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 42, lineHeight: 1, color: '#e5e0d5' }}>
+          <div style={{ fontSize: 32, lineHeight: 1, color: '#1a1a1a', fontWeight: 700, letterSpacing: '-0.02em' }}>
             {current > 0 ? fmtNum(current) : '—'}
           </div>
-          <div style={{ ...s.kpiLabel, marginTop: 6 }}>{metricLabel}</div>
+          <div style={{ ...s.kpiLabel, marginTop: 6, marginBottom: 0 }}>{metricLabel}</div>
           {changePct !== null && current > 0 && (
             <div style={{ marginTop: 10, fontSize: 12 }}>
-              <span style={{ color: changePct >= 0 ? '#4ade80' : '#f87171', fontWeight: 600 }}>
+              <span style={{ color: changePct >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
                 {changePct >= 0 ? '↑' : '↓'} {Math.abs(changePct)}%
               </span>
-              <span style={{ color: '#a8a29e' }}> vs prior 30 days</span>
+              <span style={{ color: '#888884' }}> vs prior 30 days</span>
             </div>
           )}
           {trend.length > 1 && <Sparkline values={trend} />}
         </>
       ) : (
-        <div style={{ fontSize: 14, color: '#a8a29e', padding: '20px 0' }}>Awaiting first metrics</div>
+        <div style={{ fontSize: 14, color: '#888884', padding: '20px 0' }}>Awaiting first metrics</div>
       )}
-      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(168,162,158,0.12)' }}>
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid #e0ddd8' }}>
         <div style={{ ...s.kpiLabel, marginBottom: 6 }}>TOP POST</div>
-        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 15, color: '#e5e0d5', lineHeight: 1.35 }}>
+        <div style={{ fontSize: 14, color: '#1a1a1a', lineHeight: 1.4, fontWeight: 500 }}>
           {topPostTitle ? truncate(topPostTitle, 90) : '—'}
         </div>
-        {topPostMeta && <div style={{ ...s.kpiLabel, marginTop: 6, letterSpacing: '0.06em', textTransform: 'none' }}>{topPostMeta}</div>}
+        {topPostMeta && <div style={{ fontSize: 11, color: '#888884', marginTop: 6 }}>{topPostMeta}</div>}
       </div>
     </div>
   )
@@ -505,14 +539,14 @@ function Sparkline({ values }: { values: number[] }) {
   const points = values.map((v, i) => `${i * step},${h - (v / max) * h}`).join(' ')
   return (
     <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ marginTop: 16 }}>
-      <polyline fill="none" stroke="#a8a29e" strokeWidth="1" points={points} opacity="0.7" />
+      <polyline fill="none" stroke="#1E3A5F" strokeWidth="1.5" points={points} opacity="0.8" />
     </svg>
   )
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a8a29e' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888884', fontWeight: 500 }}>
       <span style={{ width: 10, height: 10, background: color, borderRadius: 2 }} />
       {label}
     </span>
@@ -521,12 +555,27 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+// Brand palette mirrors app/globals.css for the marketing site.
+const NAVY = '#1E3A5F'
+const NAVY_HOVER = '#16304F'
+const ACCENT_LIGHT = '#EEF1F5'
+const GOLD = '#b07d2e'
+const TEXT = '#1a1a1a'
+const TEXT_SECONDARY = '#555550'
+const TEXT_MUTED = '#888884'
+const BORDER = '#e0ddd8'
+const BORDER_LIGHT = '#ece9e4'
+const OFF_WHITE = '#f8f7f4'
+const WHITE = '#ffffff'
+const SUCCESS = '#16a34a'
+const DANGER = '#dc2626'
+
 const s: Record<string, CSSProperties> = {
   page: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #0a0e10 0%, #050708 100%)',
+    background: OFF_WHITE,
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-    color: '#e5e0d5',
+    color: TEXT,
   },
   container: {
     maxWidth: 1400,
@@ -534,38 +583,38 @@ const s: Record<string, CSSProperties> = {
     padding: '56px 32px 24px',
   },
   errorBox: {
-    background: '#141417',
-    border: '1px solid #2a2a30',
+    background: WHITE,
+    border: `1px solid ${BORDER}`,
     borderRadius: 8,
     padding: 24,
-    color: '#e5e0d5',
+    color: TEXT,
   },
 
   // Header
   headerWrap: {
     paddingBottom: 36,
     marginBottom: 36,
-    borderBottom: '1px solid rgba(168,162,158,0.12)',
+    borderBottom: `1px solid ${BORDER_LIGHT}`,
   },
   brandLabel: {
     fontSize: 11,
     letterSpacing: '0.22em',
-    color: '#c9a875',
+    color: NAVY,
     marginBottom: 18,
-    fontWeight: 500,
+    fontWeight: 600,
   } as CSSProperties,
   headerTitle: {
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: 56,
-    fontWeight: 400,
-    lineHeight: 1.05,
-    letterSpacing: '-0.01em',
-    margin: '0 0 24px',
-    color: '#f5efe2',
+    fontSize: 40,
+    fontWeight: 700,
+    lineHeight: 1.1,
+    letterSpacing: '-0.02em',
+    margin: '0 0 18px',
+    color: TEXT,
   },
   titleEm: {
-    color: '#a8a29e',
-    fontWeight: 400,
+    color: TEXT_MUTED,
+    fontStyle: 'normal',
+    fontWeight: 500,
   },
   headerMeta: {
     display: 'flex',
@@ -573,53 +622,58 @@ const s: Record<string, CSSProperties> = {
     gap: 14,
     alignItems: 'center',
     fontSize: 13,
-    color: '#a8a29e',
+    color: TEXT_MUTED,
   },
   livePill: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
     padding: '4px 12px',
-    border: '1px solid rgba(74,222,128,0.4)',
+    background: 'rgba(22,163,74,0.08)',
+    border: `1px solid rgba(22,163,74,0.25)`,
     borderRadius: 99,
     fontSize: 11,
     letterSpacing: '0.1em',
-    color: '#4ade80',
+    color: SUCCESS,
+    fontWeight: 600,
   },
-  liveDot: { width: 6, height: 6, borderRadius: '50%', background: '#4ade80' },
-  metaSep: { color: 'rgba(168,162,158,0.4)' },
+  liveDot: { width: 6, height: 6, borderRadius: '50%', background: SUCCESS },
+  metaSep: { color: BORDER },
 
   // KPI grid
   kpiGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
     gap: 1,
-    background: 'rgba(168,162,158,0.12)',
-    border: '1px solid rgba(168,162,158,0.12)',
+    background: BORDER,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
+    overflow: 'hidden',
     marginBottom: 56,
   },
   kpiCard: {
-    background: '#0c1012',
+    background: WHITE,
     padding: '32px 28px',
   },
   kpiLabel: {
     fontSize: 11,
-    letterSpacing: '0.16em',
-    color: '#a8a29e',
+    letterSpacing: '0.14em',
+    color: TEXT_MUTED,
     marginBottom: 14,
     textTransform: 'uppercase' as const,
+    fontWeight: 600,
   },
   kpiNumber: {
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: 72,
+    fontSize: 48,
     lineHeight: 1,
-    color: '#f5efe2',
-    fontWeight: 400,
+    color: TEXT,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
   },
   kpiSub: {
     marginTop: 12,
     fontSize: 12,
-    color: '#a8a29e',
+    color: TEXT_MUTED,
   },
 
   // Section
@@ -630,33 +684,35 @@ const s: Record<string, CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginBottom: 32,
+    marginBottom: 24,
     flexWrap: 'wrap' as const,
     gap: 12,
   },
   sectionEyebrow: {
     fontSize: 11,
-    letterSpacing: '0.22em',
-    color: '#a8a29e',
+    letterSpacing: '0.18em',
+    color: NAVY,
     marginBottom: 8,
+    fontWeight: 600,
   },
   sectionTitle: {
-    fontFamily: 'Cormorant Garamond, serif',
-    fontSize: 40,
-    fontWeight: 400,
-    lineHeight: 1.05,
+    fontSize: 28,
+    fontWeight: 700,
+    lineHeight: 1.15,
     margin: 0,
-    color: '#f5efe2',
+    color: TEXT,
+    letterSpacing: '-0.01em',
   },
   sectionMeta: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: TEXT_MUTED,
   },
 
   // Chart
   chartWrap: {
-    background: '#0c1012',
-    border: '1px solid rgba(168,162,158,0.12)',
+    background: WHITE,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
     padding: '28px 28px 20px',
   },
   chartLegend: {
@@ -665,11 +721,11 @@ const s: Record<string, CSSProperties> = {
     gap: 24,
     marginTop: 18,
     paddingTop: 18,
-    borderTop: '1px solid rgba(168,162,158,0.1)',
+    borderTop: `1px solid ${BORDER_LIGHT}`,
   },
   legendDashed: {
     fontSize: 11,
-    color: '#a8a29e',
+    color: TEXT_MUTED,
   },
 
   // Network grid
@@ -679,8 +735,9 @@ const s: Record<string, CSSProperties> = {
     gap: 16,
   },
   networkCard: {
-    background: '#0c1012',
-    border: '1px solid rgba(168,162,158,0.12)',
+    background: WHITE,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
     padding: '22px 24px 24px',
   },
   platformIcon: {
@@ -690,75 +747,85 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 13,
-    color: '#f5efe2',
+    color: TEXT,
   },
   liveBadge: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 5,
     fontSize: 10,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.1em',
     padding: '3px 9px',
-    border: '1px solid rgba(74,222,128,0.4)',
+    background: 'rgba(22,163,74,0.08)',
+    border: `1px solid rgba(22,163,74,0.25)`,
     borderRadius: 99,
-    color: '#4ade80',
+    color: SUCCESS,
+    fontWeight: 600,
   },
   offlineBadge: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 5,
     fontSize: 10,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.1em',
     padding: '3px 9px',
-    border: '1px solid rgba(168,162,158,0.3)',
+    background: ACCENT_LIGHT,
+    border: `1px solid ${BORDER}`,
     borderRadius: 99,
-    color: '#a8a29e',
+    color: TEXT_MUTED,
+    fontWeight: 600,
   },
-  offlineDot: { width: 6, height: 6, borderRadius: '50%', background: '#a8a29e' },
+  offlineDot: { width: 6, height: 6, borderRadius: '50%', background: TEXT_MUTED },
 
   // Table
   tableWrap: {
-    background: '#0c1012',
-    border: '1px solid rgba(168,162,158,0.12)',
+    background: WHITE,
+    border: `1px solid ${BORDER}`,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   tableHeader: {
     display: 'flex',
     padding: '14px 24px',
-    borderBottom: '1px solid rgba(168,162,158,0.12)',
+    borderBottom: `1px solid ${BORDER}`,
+    background: OFF_WHITE,
     fontSize: 11,
-    letterSpacing: '0.16em',
-    color: '#a8a29e',
+    letterSpacing: '0.14em',
+    color: TEXT_MUTED,
+    fontWeight: 600,
   },
   tableRow: {
     display: 'flex',
     padding: '20px 24px',
-    borderBottom: '1px solid rgba(168,162,158,0.06)',
+    borderBottom: `1px solid ${BORDER_LIGHT}`,
     alignItems: 'center',
     fontSize: 13,
   },
   tableRowBest: {
-    borderLeft: '2px solid #c9a875',
-    paddingLeft: 22,
-    background: 'rgba(201,168,117,0.02)',
+    borderLeft: `3px solid ${NAVY}`,
+    paddingLeft: 21,
+    background: ACCENT_LIGHT,
   },
   tableCell: { display: 'block' },
-  tableMutedSmall: { fontSize: 11, color: '#666', marginTop: 2 },
+  tableMutedSmall: { fontSize: 11, color: TEXT_MUTED, marginTop: 2 },
   categoryPill: {
     display: 'inline-block',
     padding: '3px 12px',
     border: '1px solid',
     borderRadius: 99,
     fontSize: 10,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.1em',
+    fontWeight: 600,
   },
   bestInShow: {
     display: 'inline-block',
     marginTop: 8,
     padding: '3px 10px',
-    border: '1px solid #c9a875',
+    background: NAVY,
     borderRadius: 99,
     fontSize: 10,
-    letterSpacing: '0.16em',
-    color: '#c9a875',
+    letterSpacing: '0.14em',
+    color: WHITE,
+    fontWeight: 600,
   },
 }
