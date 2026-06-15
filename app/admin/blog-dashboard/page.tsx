@@ -227,6 +227,14 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
   const peakWeek = momentum.reduce((m, w) => (w.count > m.count ? w : m), momentum[0])
   const streak = publishingStreak(posts)
 
+  // Hours saved — 2 hours per post (research, draft, edit, schedule, publish).
+  // "This week" = last 7 calendar days.
+  const HOURS_PER_POST = 2
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400 * 1000)
+  const postsThisWeek = posts.filter((p) => p.publishedAt && new Date(p.publishedAt) >= sevenDaysAgo).length
+  const hoursSavedThisWeek = postsThisWeek * HOURS_PER_POST
+  const hoursSavedAllTime = postsAllTime * HOURS_PER_POST
+
   // Combined reach across all available platforms (skip unavailable / 0 entries)
   const platformsList: PlatformAnalytics[] = platforms
     ? [platforms.facebook, platforms.youtube, platforms.tiktok, platforms.instagram]
@@ -285,14 +293,16 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             </div>
             <div style={{ ...s.kpiSub, color: '#1E3A5F', marginTop: 14, fontWeight: 600 }}>views arriving soon</div>
           </div>
-          {/* Publishing Streak */}
+          {/* Hours Saved */}
           <div style={s.kpiCard}>
-            <div style={s.kpiLabel}>PUBLISHING STREAK</div>
+            <div style={s.kpiLabel}>HOURS SAVED · THIS WEEK</div>
             <div style={{ ...s.kpiNumber, display: 'flex', alignItems: 'baseline', gap: 12 }}>
-              {streak}
-              <span style={{ fontSize: 18, color: '#888884', fontWeight: 500 }}>day{streak === 1 ? '' : 's'}</span>
+              {hoursSavedThisWeek}
+              <span style={{ fontSize: 18, color: '#888884', fontWeight: 500 }}>hour{hoursSavedThisWeek === 1 ? '' : 's'}</span>
             </div>
-            <div style={s.kpiSub}>consecutive days with a published post</div>
+            <div style={s.kpiSub}>
+              <strong style={{ color: '#1a1a1a' }}>{fmtNum(hoursSavedAllTime)} hours</strong> saved all-time
+            </div>
           </div>
         </div>
 
@@ -496,7 +506,7 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
                         />
                       )}
                       <div>
-                        <div style={{ color: '#e5e0d5', lineHeight: 1.35 }}>{p.title}</div>
+                        <div style={{ color: '#1a1a1a', lineHeight: 1.35, fontWeight: 500 }}>{p.title}</div>
                         {idx === 0 && (
                           <span style={s.bestInShow}>BEST IN SHOW</span>
                         )}
@@ -506,12 +516,12 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
                       <span style={{ ...s.categoryPill, borderColor: color, color }}>{label.toUpperCase()}</span>
                     </div>
                     <div style={{ ...s.tableCell, flex: 1 }}>
-                      <div style={{ color: '#a8a29e' }}>{p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</div>
+                      <div style={{ color: '#1a1a1a', fontWeight: 500 }}>{p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</div>
                       <div style={s.tableMutedSmall}>{age === null ? '' : age === 0 ? '0d ago' : `${age}d ago`}</div>
                     </div>
-                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#a8a29e' }}>—</div>
-                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#a8a29e' }}>—</div>
-                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#a8a29e' }}>—</div>
+                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#888884' }}>—</div>
+                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#888884' }}>—</div>
+                    <div style={{ ...s.tableCell, flex: 1, textAlign: 'right' as const, color: '#888884' }}>—</div>
                   </div>
                 )
               })}
@@ -815,12 +825,12 @@ const s: Record<string, CSSProperties> = {
     color: TEXT,
   },
   titleEm: {
-    fontFamily: '"Playfair Display", Georgia, serif',
+    fontFamily: '"Newsreader", Georgia, serif',
     fontStyle: 'italic',
-    fontWeight: 900,
+    fontWeight: 700,
     fontSize: '1.15em',
     color: BLUE,
-    letterSpacing: '-0.015em',
+    letterSpacing: '-0.005em',
   },
   headerMeta: {
     display: 'flex',
