@@ -98,6 +98,55 @@ function buildMomentum(posts: BlogPost[]): Array<{ label: string; count: number;
   }))
 }
 
+// Build a cumulative time series of posts published, week by week, from
+// the project start through today. Always monotonically increasing.
+function buildCumulativePosts(
+  posts: BlogPost[],
+  startDate: Date,
+): Array<{ date: Date; cumulative: number }> {
+  const sorted = [...posts]
+    .filter((p) => p.publishedAt)
+    .sort((a, b) => new Date(a.publishedAt!).getTime() - new Date(b.publishedAt!).getTime())
+  const today = new Date()
+  const series: Array<{ date: Date; cumulative: number }> = []
+  // Weekly buckets from start → now
+  const cursor = new Date(startDate)
+  let runningTotal = 0
+  while (cursor.getTime() <= today.getTime()) {
+    const weekEnd = new Date(cursor.getTime() + 7 * 86400 * 1000)
+    runningTotal += sorted.filter((p) => {
+      const t = new Date(p.publishedAt!).getTime()
+      return t >= cursor.getTime() && t < weekEnd.getTime()
+    }).length
+    series.push({ date: new Date(cursor), cumulative: runningTotal })
+    cursor.setDate(cursor.getDate() + 7)
+  }
+  return series
+}
+
+// Build a cumulative time series of website sessions from GA4's daily trend.
+// GA4 sometimes returns the dates in YYYYMMDD; we normalise either form.
+function buildCumulativeSessions(
+  trend: { date: string; sessions: number }[] | undefined,
+): Array<{ date: Date; cumulative: number }> {
+  if (!trend?.length) return []
+  const parsed = trend
+    .map((d) => {
+      const raw = d.date
+      const iso = raw.length === 8
+        ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+        : raw
+      return { date: new Date(iso), sessions: d.sessions }
+    })
+    .filter((d) => !isNaN(d.date.getTime()))
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+  let running = 0
+  return parsed.map((d) => {
+    running += d.sessions
+    return { date: d.date, cumulative: running }
+  })
+}
+
 // Consecutive days with at least one published post, ending today (or
 // yesterday if today has nothing yet).
 function publishingStreak(posts: BlogPost[]): number {
@@ -138,6 +187,8 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
   }
 
   // ── Fetch in parallel ──────────────────────────────────────────────────────
+  // First load posts + the 30-day GA4 + OneUp, then issue a second GA4 call
+  // that covers the entire project lifetime for the cumulative-growth chart.
   const [posts, ga4, platforms] = await Promise.all([
     client.fetch<BlogPost[]>(
       `*[_type == "blogPost" && (workflowStatus == "published" || status == "published")]
@@ -151,6 +202,13 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
     fetchSiteGA4Overview(30).catch(() => null),
     getAllPlatformAnalytics('last_30_days').catch(() => null),
   ])
+
+  // Project start = the oldest post's publish date (or today, as fallback).
+  // Cap the GA4 lookback at 365 days to stay inside GA4 retention defaults.
+  const oldestPost = [...posts].reverse().find((p) => p.publishedAt)
+  const projectStart = oldestPost?.publishedAt ? new Date(oldestPost.publishedAt) : new Date()
+  const daysSinceStart = Math.max(7, Math.min(365, Math.ceil((Date.now() - projectStart.getTime()) / 86400000)))
+  const ga4LifeTime = await fetchSiteGA4Overview(daysSinceStart).catch(() => null)
 
   // ── Derived data ────────────────────────────────────────────────────────────
   const now = new Date()
@@ -237,6 +295,89 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
             <div style={s.kpiSub}>consecutive days with a published post</div>
           </div>
         </div>
+
+        {/* ── 2b. Always Climbing — cumulative growth ────────────────────── */}
+        {(() => {
+          const cumPosts = buildCumulativePosts(posts, projectStart)
+          const cumSessions = buildCumulativeSessions(ga4LifeTime?.trend)
+          const totalSessionsLife = cumSessions.length ? cumSessions[cumSessions.length - 1].cumulative : (ga4LifeTime?.sessions ?? 0)
+          const weeksOfContent = Math.max(1, Math.ceil(daysSinceStart / 7))
+          const avgPostsPerWeek = (postsAllTime / weeksOfContent).toFixed(1)
+          const startLabel = projectStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+          return (
+            <div style={s.section}>
+              <div style={s.sectionHead}>
+                <div>
+                  <div style={s.sectionEyebrow}>CUMULATIVE GROWTH</div>
+                  <h2 style={s.sectionTitle}>Always Climbing</h2>
+                  <div style={{ fontSize: 13, color: '#555550', marginTop: 8, maxWidth: 600 }}>
+                    Consistent posting compounds over time. Every published post stays indexed
+                    and keeps driving traffic — the total only goes up. Started {startLabel}.
+                  </div>
+                </div>
+                <div style={s.sectionMeta}>Since {startLabel}</div>
+              </div>
+
+              {/* 3 mini-KPIs */}
+              <div style={{ ...s.kpiGrid, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 16 }}>
+                <div style={s.kpiCard}>
+                  <div style={s.kpiLabel}>TOTAL POSTS · ALL-TIME</div>
+                  <div style={s.kpiNumber}>{fmtNum(postsAllTime)}</div>
+                  <div style={s.kpiSub}>and counting</div>
+                </div>
+                <div style={s.kpiCard}>
+                  <div style={s.kpiLabel}>WEBSITE SESSIONS · ALL-TIME</div>
+                  <div style={s.kpiNumber}>{totalSessionsLife > 0 ? fmtNum(totalSessionsLife) : '—'}</div>
+                  <div style={s.kpiSub}>{totalSessionsLife > 0 ? 'driven by the content engine' : 'GA4 trend will populate here'}</div>
+                </div>
+                <div style={s.kpiCard}>
+                  <div style={s.kpiLabel}>CONSISTENCY · POSTS / WEEK</div>
+                  <div style={s.kpiNumber}>{avgPostsPerWeek}</div>
+                  <div style={s.kpiSub}>average over {weeksOfContent} week{weeksOfContent === 1 ? '' : 's'}</div>
+                </div>
+              </div>
+
+              {/* Two side-by-side cumulative charts */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16 }}>
+                <div style={s.chartWrap}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <div style={{ ...s.kpiLabel, marginBottom: 0 }}>CUMULATIVE POSTS PUBLISHED</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1E3A5F' }}>{fmtNum(postsAllTime)}</div>
+                  </div>
+                  <CumulativeChart
+                    series={cumPosts}
+                    color="#1E3A5F"
+                    fillFrom="rgba(30,58,95,0.18)"
+                    fillTo="rgba(30,58,95,0)"
+                    yLabelSuffix=" posts"
+                  />
+                </div>
+                <div style={s.chartWrap}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <div style={{ ...s.kpiLabel, marginBottom: 0 }}>CUMULATIVE WEBSITE SESSIONS</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#b07d2e' }}>
+                      {totalSessionsLife > 0 ? fmtNum(totalSessionsLife) : '—'}
+                    </div>
+                  </div>
+                  {cumSessions.length > 1 ? (
+                    <CumulativeChart
+                      series={cumSessions}
+                      color="#b07d2e"
+                      fillFrom="rgba(176,125,46,0.18)"
+                      fillTo="rgba(176,125,46,0)"
+                      yLabelSuffix=" sessions"
+                    />
+                  ) : (
+                    <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888884', fontSize: 13 }}>
+                      Awaiting more GA4 trend data
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── 3. Momentum chart ──────────────────────────────────────────── */}
         <div style={s.section}>
@@ -526,6 +667,68 @@ function NetworkCard(props: {
           {topPostTitle ? truncate(topPostTitle, 90) : '—'}
         </div>
         {topPostMeta && <div style={{ fontSize: 11, color: '#888884', marginTop: 6 }}>{topPostMeta}</div>}
+      </div>
+    </div>
+  )
+}
+
+function CumulativeChart({
+  series,
+  color,
+  fillFrom,
+  fillTo,
+  yLabelSuffix,
+}: {
+  series: Array<{ date: Date; cumulative: number }>
+  color: string
+  fillFrom: string
+  fillTo: string
+  yLabelSuffix: string
+}) {
+  if (series.length < 2) {
+    return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888884', fontSize: 13 }}>Awaiting trend data</div>
+  }
+  const w = 600, h = 200, padX = 8, padY = 18
+  const innerW = w - padX * 2
+  const innerH = h - padY * 2
+  const max = Math.max(...series.map((s) => s.cumulative), 1)
+  const step = innerW / (series.length - 1)
+  const points = series.map((s, i) => {
+    const x = padX + i * step
+    const y = padY + innerH - (s.cumulative / max) * innerH
+    return { x, y }
+  })
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(1)},${padY + innerH} L${points[0].x.toFixed(1)},${padY + innerH} Z`
+  const gradientId = `grad-${color.replace(/[^a-zA-Z0-9]/g, '')}`
+  const latest = series[series.length - 1]
+  const startLabel = series[0].date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  const endLabel = latest.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+  return (
+    <div>
+      <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={fillFrom} />
+            <stop offset="100%" stopColor={fillTo} />
+          </linearGradient>
+        </defs>
+        {/* Baseline */}
+        <line x1={padX} y1={padY + innerH} x2={padX + innerW} y2={padY + innerH} stroke="#e0ddd8" strokeWidth="1" />
+        {/* Area fill */}
+        <path d={areaPath} fill={`url(#${gradientId})`} />
+        {/* Line */}
+        <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+        {/* End-point dot */}
+        <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="4" fill={color} />
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888884', marginTop: 6 }}>
+        <span>{startLabel}</span>
+        <span>
+          <strong style={{ color: '#1a1a1a' }}>{latest.cumulative.toLocaleString()}</strong>
+          {yLabelSuffix} as of {endLabel}
+        </span>
       </div>
     </div>
   )
