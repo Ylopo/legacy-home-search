@@ -815,10 +815,12 @@ const s: Record<string, CSSProperties> = {
     color: TEXT,
   },
   titleEm: {
+    fontFamily: '"Playfair Display", Georgia, serif',
     fontStyle: 'italic',
-    fontWeight: 700,
+    fontWeight: 900,
+    fontSize: '1.15em',
     color: BLUE,
-    letterSpacing: '-0.01em',
+    letterSpacing: '-0.015em',
   },
   headerMeta: {
     display: 'flex',
