@@ -181,7 +181,7 @@ Write the insights paragraph now:`,
       weights: performanceWeights,
       youtubeViews: ytOverview?.recentViews ?? 0,
       facebookReach: fbOverview?.page?.reach28d ?? 0,
-      analyticsUrl: `${appUrl}/admin/analytics?secret=${encodeURIComponent(adminSecret)}`,
+      analyticsUrl: `${appUrl}/admin/blog-dashboard?secret=${encodeURIComponent(adminSecret)}`,
     })
     emailSent = true
   } catch (e: any) {

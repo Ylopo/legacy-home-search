@@ -232,8 +232,7 @@ function buildEmail(
           <code style="background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:12px;">window.dataLayer</code>
           — you should see the event with all parameters.<br><br>
           <strong style="color:#1a1a1a;">Admin dashboard:</strong>
-          Visit <a href="https://legacyhometeamlpt.com/admin/analytics" style="color:#2563eb;">legacyhometeamlpt.com/admin/analytics</a>
-          → scroll to "IDX Pass-Through Traffic" section.
+          Visit <a href="https://legacyhometeamlpt.com/admin/blog-dashboard" style="color:#2563eb;">legacyhometeamlpt.com/admin/blog-dashboard</a>.
         </div>
       </td></tr>
 
