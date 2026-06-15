@@ -815,9 +815,12 @@ const s: Record<string, CSSProperties> = {
     color: TEXT,
   },
   titleEm: {
-    color: TEXT_MUTED,
-    fontStyle: 'normal',
+    fontFamily: 'Cormorant Garamond, Georgia, serif',
+    fontStyle: 'italic',
     fontWeight: 500,
+    fontSize: '1.1em',
+    color: GOLD,
+    letterSpacing: '0.005em',
   },
   headerMeta: {
     display: 'flex',
