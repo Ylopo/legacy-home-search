@@ -187,7 +187,12 @@ function getSanityImageUrl(coverImage: any): string | null {
   })
 
   const builder = imageUrlBuilder(readClient)
-  return builder.image(coverImage).width(1200).url()
+  // Force JPEG @ quality 80 to keep files under platform limits.
+  // X (Twitter) rejects images >5MB; Sanity's default (preserving source PNG)
+  // can blow past that on detailed thumbnails. 1200×*, JPG 80 typically
+  // lands well under 1MB and looks visually identical to higher-quality
+  // PNGs at social-feed display sizes.
+  return builder.image(coverImage).width(1200).quality(80).format('jpg').url()
 }
 
 // ─── Publish result types ─────────────────────────────────────────────────────
