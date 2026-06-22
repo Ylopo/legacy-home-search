@@ -39,8 +39,6 @@ type PublishState =
       facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
-      linkedin: PlatformStatus
-      twitter: PlatformStatus
       instagram: PlatformStatus
     }
   | {
@@ -49,8 +47,6 @@ type PublishState =
       facebookReel: PlatformStatus
       youtube: PlatformStatus
       tiktok: PlatformStatus
-      linkedin: PlatformStatus
-      twitter: PlatformStatus
       instagram: PlatformStatus
     }
   | { phase: 'error'; message: string }
@@ -95,7 +91,7 @@ export default function VAPostPage() {
   const [videoPublishState, setVideoPublishState] = useState<
     | { phase: 'idle' }
     | { phase: 'publishing' }
-    | { phase: 'done'; facebookReel: { postSubmissionId?: string; error?: string }; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string }; linkedin: { postSubmissionId?: string; error?: string }; twitter: { postSubmissionId?: string; error?: string } }
+    | { phase: 'done'; facebookReel: { postSubmissionId?: string; error?: string }; youtube: { postSubmissionId?: string; error?: string }; tiktok: { postSubmissionId?: string; error?: string } }
     | { phase: 'error'; message: string }
   >({ phase: 'idle' })
   const heygenPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -325,8 +321,6 @@ export default function VAPostPage() {
         facebookReel: data.facebookReel ?? {},
         youtube:      data.youtube      ?? {},
         tiktok:       data.tiktok       ?? {},
-        linkedin:     data.linkedin     ?? {},
-        twitter:      data.twitter      ?? {},
       })
     } catch (err) {
       setVideoPublishState({ phase: 'error', message: err instanceof Error ? err.message : 'Publish failed' })
@@ -407,7 +401,7 @@ export default function VAPostPage() {
 
   // ── Poll a single platform ───────────────────────────────────────────────────
   function startPoll(
-    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'linkedin' | 'twitter' | 'instagram',
+    platform: 'facebook' | 'facebookReel' | 'youtube' | 'tiktok' | 'instagram',
     submissionId: string,
     onUpdate: (status: PlatformStatus) => void,
   ) {
@@ -504,23 +498,13 @@ export default function VAPostPage() {
         : data.tiktok?.error
         ? { phase: 'error', message: data.tiktok.error }
         : { phase: 'idle' }
-      const initLi: PlatformStatus = data.linkedin?.postSubmissionId
-        ? { phase: 'polling', submissionId: data.linkedin.postSubmissionId }
-        : data.linkedin?.error
-        ? { phase: 'error', message: data.linkedin.error }
-        : { phase: 'idle' }
-      const initTw: PlatformStatus = data.twitter?.postSubmissionId
-        ? { phase: 'polling', submissionId: data.twitter.postSubmissionId }
-        : data.twitter?.error
-        ? { phase: 'error', message: data.twitter.error }
-        : { phase: 'idle' }
       const initIg: PlatformStatus = data.instagram?.postSubmissionId
         ? { phase: 'polling', submissionId: data.instagram.postSubmissionId }
         : data.instagram?.error
         ? { phase: 'error', message: data.instagram.error }
         : { phase: 'idle' }
 
-      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, linkedin: initLi, twitter: initTw, instagram: initIg })
+      setPublishState({ phase: 'polling', facebook: initFb, facebookReel: initReel, youtube: initYt, tiktok: initTt, instagram: initIg })
       setPost(prev => prev ? { ...prev, workflowStatus: 'published' as WorkflowStatus } : prev)
       // Mark video as saved so the secondary "Publish Video" button doesn't appear
       setVideo(prev => prev.type === 'ready' ? { type: 'saved', url: prev.url } : prev)
@@ -530,19 +514,17 @@ export default function VAPostPage() {
         facebookReel: initReel.phase === 'idle',
         youtube: initYt.phase === 'idle',
         tiktok: initTt.phase === 'idle',
-        linkedin: initLi.phase === 'idle',
-        twitter: initTw.phase === 'idle',
         instagram: initIg.phase === 'idle',
       }
       const statuses: Record<string, PlatformStatus> = {
         facebook: initFb, facebookReel: initReel,
         youtube: initYt, tiktok: initTt,
-        linkedin: initLi, twitter: initTw, instagram: initIg,
+        instagram: initIg,
       }
 
       function checkAllDone() {
-        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.linkedin && resolved.twitter && resolved.instagram) {
-          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, linkedin: statuses.linkedin, twitter: statuses.twitter, instagram: statuses.instagram })
+        if (resolved.facebook && resolved.facebookReel && resolved.youtube && resolved.tiktok && resolved.instagram) {
+          setPublishState({ phase: 'done', facebook: statuses.facebook, facebookReel: statuses.facebookReel, youtube: statuses.youtube, tiktok: statuses.tiktok, instagram: statuses.instagram })
         }
       }
 
@@ -588,28 +570,6 @@ export default function VAPostPage() {
         })
       } else {
         resolved.tiktok = true
-      }
-
-      if (data.linkedin?.postSubmissionId) {
-        startPoll('linkedin', data.linkedin.postSubmissionId, (s) => {
-          statuses.linkedin = s
-          resolved.linkedin = true
-          setPublishState(prev => prev.phase === 'polling' ? { ...prev, linkedin: s } : prev)
-          checkAllDone()
-        })
-      } else {
-        resolved.linkedin = true
-      }
-
-      if (data.twitter?.postSubmissionId) {
-        startPoll('twitter', data.twitter.postSubmissionId, (s) => {
-          statuses.twitter = s
-          resolved.twitter = true
-          setPublishState(prev => prev.phase === 'polling' ? { ...prev, twitter: s } : prev)
-          checkAllDone()
-        })
-      } else {
-        resolved.twitter = true
       }
 
       if (data.instagram?.postSubmissionId) {
@@ -888,9 +848,9 @@ export default function VAPostPage() {
           </Card>
 
           {/* Video upload */}
-          <Card title={isPublished ? 'Video — Replace & Re-publish' : 'Video (YouTube + TikTok + Facebook + LinkedIn + X)'}>
+          <Card title={isPublished ? 'Video — Replace & Re-publish' : 'Video (YouTube + TikTok + Facebook Reel)'}>
             <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Optional. Upload a final video to publish to YouTube, TikTok, Facebook Reel, LinkedIn, and X alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
+              Optional. Upload a final video to publish to YouTube, TikTok, and Facebook Reel alongside the Facebook post. Supports MP4, MOV, or WebM up to 500 MB.
             </p>
 
             {/* Step 1: HeyGen base generation */}
@@ -989,7 +949,7 @@ export default function VAPostPage() {
                     />
                   </label>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-                    No video uploaded — YouTube, TikTok, Facebook Reel, LinkedIn, and X will get image posts instead.
+                    No video uploaded — only the Facebook image post will be published.
                   </p>
                 </>
               )}
@@ -1139,8 +1099,6 @@ export default function VAPostPage() {
               {hasVideo && <li>Publish as a Facebook Reel</li>}
               {hasVideo && <li>Upload the video to YouTube</li>}
               {hasVideo && <li>Post the video to TikTok</li>}
-              <li>Post to LinkedIn {hasVideo ? '(video)' : '(image)'}</li>
-              <li>Post to X / Twitter {hasVideo ? '(video)' : '(image)'}</li>
               <li>Post to Instagram {hasVideo ? '(Reel)' : '(image)'}</li>
             </ul>
 
@@ -1165,12 +1123,6 @@ export default function VAPostPage() {
                 )}
                 {publishState.tiktok.phase !== 'idle' && (
                   <PlatformStatusRow icon="🎵" label="TikTok" status={publishState.tiktok} />
-                )}
-                {publishState.linkedin.phase !== 'idle' && (
-                  <PlatformStatusRow icon="💼" label="LinkedIn" status={publishState.linkedin} />
-                )}
-                {publishState.twitter.phase !== 'idle' && (
-                  <PlatformStatusRow icon="𝕏" label="X / Twitter" status={publishState.twitter} />
                 )}
                 {publishState.instagram.phase !== 'idle' && (
                   <PlatformStatusRow icon="📸" label="Instagram" status={publishState.instagram} />
@@ -1208,16 +1160,6 @@ export default function VAPostPage() {
                 {publishState.tiktok.phase === 'done' && publishState.tiktok.postUrl && (
                   <a href={publishState.tiktok.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
                     View TikTok post →
-                  </a>
-                )}
-                {publishState.linkedin.phase === 'done' && publishState.linkedin.postUrl && (
-                  <a href={publishState.linkedin.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
-                    View LinkedIn post →
-                  </a>
-                )}
-                {publishState.twitter.phase === 'done' && publishState.twitter.postUrl && (
-                  <a href={publishState.twitter.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#166534', display: 'block', marginTop: 4 }}>
-                    View X post →
                   </a>
                 )}
               </div>
@@ -1271,12 +1213,6 @@ export default function VAPostPage() {
                     {post.tiktokPostSubmissionId && (
                       <PlatformStatusRow icon="🎵" label="TikTok" status={{ phase: 'done', postUrl: post.tiktokPostUrl }} />
                     )}
-                    {post.linkedinPostSubmissionId && (
-                      <PlatformStatusRow icon="💼" label="LinkedIn" status={{ phase: 'done' }} />
-                    )}
-                    {post.twitterPostSubmissionId && (
-                      <PlatformStatusRow icon="𝕏" label="X / Twitter" status={{ phase: 'done' }} />
-                    )}
                   </div>
                 )}
                 <div style={{ fontSize: 13, color: '#166534', fontWeight: 600, padding: '8px 0', textAlign: 'center', marginBottom: 8 }}>
@@ -1305,8 +1241,6 @@ export default function VAPostPage() {
                       { icon: '🎬', label: 'Facebook Reel', result: videoPublishState.facebookReel },
                       { icon: '▶️', label: 'YouTube',       result: videoPublishState.youtube },
                       { icon: '🎵', label: 'TikTok',        result: videoPublishState.tiktok },
-                      { icon: '💼', label: 'LinkedIn',      result: videoPublishState.linkedin },
-                      { icon: '𝕏',  label: 'X / Twitter',   result: videoPublishState.twitter },
                     ].map(({ icon, label, result }) => (
                       <div key={label} style={{ color: result.error ? '#991b1b' : '#166534', marginTop: 4 }}>
                         {icon} {label}: {result.error ? result.error : 'queued'}

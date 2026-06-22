@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getVAQueuePost } from '@/sanity/queries'
 import { getSanityWriteClient } from '@/lib/sanity-write'
-import { publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX } from '@/lib/oneup-client'
-import { generatePlatformCaptions, buildTikTokCaption, buildLinkedInCaption, buildXCaption } from '@/lib/publish-service'
+import { publishToFacebookReel, publishToYouTube, publishToTikTok } from '@/lib/oneup-client'
+import { generatePlatformCaptions, buildTikTokCaption } from '@/lib/publish-service'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -38,21 +38,17 @@ export async function POST(request: Request) {
   const articleUrl = `${appUrl}/blog/${post.slug}`
 
   const captions = post.socialCopy
-    ? { facebook: post.socialCopy, linkedin: post.socialCopy, twitter: post.socialCopy, tiktok: post.socialCopy, youtube: post.socialCopy }
+    ? { facebook: post.socialCopy, tiktok: post.socialCopy, youtube: post.socialCopy, instagram: post.socialCopy }
     : await generatePlatformCaptions(post)
 
-  const fbCopy       = `${captions.facebook}\n\n${articleUrl}`
-  const liCopy       = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
-  const twitterCopy  = buildXCaption(captions.twitter, post.category, articleUrl)
-  const ytDesc       = `${captions.youtube}\n\n${articleUrl}`
+  const fbCopy        = `${captions.facebook}\n\n${articleUrl}`
+  const ytDesc        = `${captions.youtube}\n\n${articleUrl}`
   const tiktokCaption = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
 
-  const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome] = await Promise.allSettled([
+  const [reelOutcome, ytOutcome, ttOutcome] = await Promise.allSettled([
     publishToFacebookReel(fbCopy, videoUrl),
     publishToYouTube(post.title, ytDesc, videoUrl, videoThumbnailUrl),
     publishToTikTok(tiktokCaption, videoUrl),
-    publishToLinkedIn(liCopy, videoUrl),
-    publishToX(twitterCopy, videoUrl),
   ])
 
   const facebookReel = reelOutcome.status === 'fulfilled'
@@ -67,22 +63,12 @@ export async function POST(request: Request) {
     ? { postSubmissionId: ttOutcome.value.postSubmissionId }
     : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok failed' }
 
-  const linkedin = liOutcome.status === 'fulfilled'
-    ? { postSubmissionId: liOutcome.value.postSubmissionId }
-    : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn failed' }
-
-  const twitter = twOutcome.status === 'fulfilled'
-    ? { postSubmissionId: twOutcome.value.postSubmissionId }
-    : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X failed' }
-
   // Update Sanity submission IDs for the new videos
   const idPatch: Record<string, string> = {}
-  if ('postSubmissionId' in facebookReel && facebookReel.postSubmissionId) idPatch.facebookReelSubmissionId   = facebookReel.postSubmissionId
-  if ('postSubmissionId' in youtube     && youtube.postSubmissionId)        idPatch.youtubePostSubmissionId    = youtube.postSubmissionId
-  if ('postSubmissionId' in tiktok      && tiktok.postSubmissionId)         idPatch.tiktokPostSubmissionId     = tiktok.postSubmissionId
-  if ('postSubmissionId' in linkedin    && linkedin.postSubmissionId)       idPatch.linkedinPostSubmissionId   = linkedin.postSubmissionId
-  if ('postSubmissionId' in twitter     && twitter.postSubmissionId)        idPatch.twitterPostSubmissionId    = twitter.postSubmissionId
+  if ('postSubmissionId' in facebookReel && facebookReel.postSubmissionId) idPatch.facebookReelSubmissionId = facebookReel.postSubmissionId
+  if ('postSubmissionId' in youtube     && youtube.postSubmissionId)        idPatch.youtubePostSubmissionId  = youtube.postSubmissionId
+  if ('postSubmissionId' in tiktok      && tiktok.postSubmissionId)         idPatch.tiktokPostSubmissionId   = tiktok.postSubmissionId
   if (Object.keys(idPatch).length) await client.patch(postId).set(idPatch).commit()
 
-  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok, linkedin, twitter })
+  return NextResponse.json({ ok: true, facebookReel, youtube, tiktok })
 }

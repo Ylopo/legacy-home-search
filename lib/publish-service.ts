@@ -9,7 +9,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import imageUrlBuilder from '@sanity/image-url'
 import { FAIR_HOUSING_RULES } from './fair-housing'
 import { createClient } from '@sanity/client'
-import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToLinkedIn, publishToX, publishToInstagram, publishToInstagramReel } from './oneup-client'
+import { publishToFacebook, publishToFacebookReel, publishToYouTube, publishToTikTok, publishToInstagram, publishToInstagramReel } from './oneup-client'
 import { markPublishing, markPublished, markPublishFailed, patchSocialSubmission } from './content-workflow'
 import { getSanityWriteClient } from './sanity-write'
 import type { SanityBlogPost } from '../sanity/queries'
@@ -96,8 +96,6 @@ export function buildInstagramCaption(copy: string, category: string | undefined
 
 export interface PlatformCaptions {
   facebook: string
-  linkedin: string
-  twitter: string
   tiktok: string
   youtube: string
   instagram: string
@@ -115,8 +113,6 @@ export async function generatePlatformCaptions(
 
   const fallback: PlatformCaptions = {
     facebook: `I've been watching the Hampton Roads market for over 20 years — ${post.title.toLowerCase()} is something every local homeowner and buyer should understand right now.`,
-    linkedin: `New insights for Hampton Roads real estate clients: ${post.title}. Read the full analysis on the Legacy Home Search blog.`,
-    twitter: `${post.title} — what this means for Hampton Roads buyers and sellers.`,
     tiktok: post.excerpt ?? post.title,
     youtube: post.excerpt ?? `${post.title} — insights from Barry Jenkins at Legacy Home Team in Virginia Beach.`,
     instagram: post.excerpt ?? `${post.title} — new on the Legacy Home Search blog.`,
@@ -127,10 +123,10 @@ export async function generatePlatformCaptions(
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
+      max_tokens: 600,
       messages: [{
         role: 'user',
-        content: `Write 6 unique social media captions for the same Hampton Roads real estate blog post by Barry Jenkins. Same core message, different delivery for each platform.
+        content: `Write 4 unique social media captions for the same Hampton Roads real estate blog post by Barry Jenkins. Same core message, different delivery for each platform.
 
 Article:
 Title: ${post.title}
@@ -139,12 +135,10 @@ Excerpt: ${post.excerpt ?? ''}
 
 ${FAIR_HOUSING_RULES}
 
-Return a JSON object with EXACTLY these 6 fields. No markdown fences.
+Return a JSON object with EXACTLY these 4 fields. No markdown fences.
 
 {
   "facebook": "2–3 sentences. First person as Barry. Teaser that makes someone stop scrolling. Pick ONE hook: surprising fact, question, local angle, myth-busting, direct value, or client story. Conversational and warm. No hashtags. Natural CTA.",
-  "linkedin": "2–3 professional sentences. Informative, industry-relevant. Barry's expertise + Hampton Roads market context. No hashtags (those are appended separately). Under 300 chars.",
-  "twitter": "1 punchy sentence under 180 characters. Direct and surprising. No hashtags (appended separately). Create genuine curiosity.",
   "tiktok": "1–2 short casual sentences. Hook-first. Very conversational. No hashtags (appended separately).",
   "youtube": "2–3 sentences describing what viewers will learn. Informative. Mention Hampton Roads specifically. No hashtags.",
   "instagram": "2–3 visually evocative sentences. Lifestyle + local angle. First person as Barry. Warm and personal. No hashtags (those are appended separately)."
@@ -157,8 +151,6 @@ Return a JSON object with EXACTLY these 6 fields. No markdown fences.
 
     return {
       facebook:  parsed.facebook  || fallback.facebook,
-      linkedin:  parsed.linkedin  || fallback.linkedin,
-      twitter:   parsed.twitter   || fallback.twitter,
       tiktok:    parsed.tiktok    || fallback.tiktok,
       youtube:   parsed.youtube   || fallback.youtube,
       instagram: parsed.instagram || fallback.instagram,
@@ -206,8 +198,6 @@ export type PublishResult =
       facebookReel: PlatformResult
       youtube: PlatformResult
       tiktok: PlatformResult
-      linkedin: PlatformResult
-      twitter: PlatformResult
       instagram: PlatformResult
     }
   | { ok: false; error: string }
@@ -223,8 +213,6 @@ export async function publishSocialOnly(
     const captions = socialCopy
       ? {
           facebook: socialCopy,
-          linkedin: socialCopy,
-          twitter: socialCopy,
           tiktok: socialCopy,
           youtube: socialCopy,
           instagram: socialCopy,
@@ -242,14 +230,10 @@ export async function publishSocialOnly(
     const articleUrl = `${appUrl}/blog/${post.slug}`
 
     const fbCopy      = `${captions.facebook}\n\n${articleUrl}`
-    const liCopy      = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
-    const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
     const igCopy      = buildInstagramCaption(captions.instagram, post.category, articleUrl)
 
-    const [fbRes, liRes, twRes, igRes] = await Promise.allSettled([
+    const [fbRes, igRes] = await Promise.allSettled([
       publishToFacebook(fbCopy, imageUrl),
-      publishToLinkedIn(liCopy, imageUrl),
-      publishToX(twitterCopy, imageUrl),
       post.videoUrl
         ? publishToInstagramReel(igCopy, post.videoUrl)
         : publishToInstagram(igCopy, imageUrl),
@@ -259,14 +243,6 @@ export async function publishSocialOnly(
       ? { postSubmissionId: fbRes.value.postSubmissionId }
       : { error: fbRes.reason instanceof Error ? fbRes.reason.message : 'Facebook publish failed' }
 
-    const liResult: PlatformResult = liRes.status === 'fulfilled'
-      ? { postSubmissionId: liRes.value.postSubmissionId }
-      : { error: liRes.reason instanceof Error ? liRes.reason.message : 'LinkedIn publish failed' }
-
-    const twResult: PlatformResult = twRes.status === 'fulfilled'
-      ? { postSubmissionId: twRes.value.postSubmissionId }
-      : { error: twRes.reason instanceof Error ? twRes.reason.message : 'X publish failed' }
-
     const igResult: PlatformResult = igRes.status === 'fulfilled'
       ? { postSubmissionId: igRes.value.postSubmissionId }
       : { error: igRes.reason instanceof Error ? igRes.reason.message : 'Instagram publish failed' }
@@ -275,17 +251,13 @@ export async function publishSocialOnly(
     const primaryId = fbResult && 'postSubmissionId' in fbResult ? fbResult.postSubmissionId : ''
     await patchSocialSubmission(postId, primaryId, captions.facebook)
 
-    // Patch LinkedIn, X, and Instagram submission IDs separately
-    const writeClient = getSanityWriteClient()
-    const extraPatch: Record<string, string> = {}
-    if (liResult && 'postSubmissionId' in liResult) extraPatch.linkedinPostSubmissionId = liResult.postSubmissionId
-    if (twResult && 'postSubmissionId' in twResult) extraPatch.twitterPostSubmissionId = twResult.postSubmissionId
-    if (igResult && 'postSubmissionId' in igResult) extraPatch.instagramPostSubmissionId = igResult.postSubmissionId
-    if (Object.keys(extraPatch).length > 0) {
-      await writeClient.patch(postId).set(extraPatch).commit()
+    // Patch Instagram submission ID separately
+    if (igResult && 'postSubmissionId' in igResult) {
+      const writeClient = getSanityWriteClient()
+      await writeClient.patch(postId).set({ instagramPostSubmissionId: igResult.postSubmissionId }).commit()
     }
 
-    return { ok: true, facebook: fbResult, facebookReel: null, youtube: null, tiktok: null, linkedin: liResult, twitter: twResult, instagram: igResult }
+    return { ok: true, facebook: fbResult, facebookReel: null, youtube: null, tiktok: null, instagram: igResult }
   } catch (err) {
     console.error('[publish-service] Social-only publish error:', err instanceof Error ? err.message : err)
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown publish error' }
@@ -328,7 +300,7 @@ export async function publishPostToAll(
     await markPublishing(postId)
 
     const captions = socialCopy
-      ? { facebook: socialCopy, linkedin: socialCopy, twitter: socialCopy, tiktok: socialCopy, youtube: socialCopy, instagram: socialCopy }
+      ? { facebook: socialCopy, tiktok: socialCopy, youtube: socialCopy, instagram: socialCopy }
       : await generatePlatformCaptions(post)
 
     const imageUrl = getSanityImageUrl(post.coverImage)
@@ -343,8 +315,6 @@ export async function publishPostToAll(
     const articleUrl = `${appUrl}/blog/${post.slug}`
 
     const fbCopy      = `${captions.facebook}\n\n${articleUrl}`
-    const liCopy      = buildLinkedInCaption(captions.linkedin, post.category, articleUrl)
-    const twitterCopy = buildXCaption(captions.twitter, post.category, articleUrl)
     const igCopy      = buildInstagramCaption(captions.instagram, post.category, articleUrl)
 
     // Always publish to Facebook (image post)
@@ -353,21 +323,16 @@ export async function publishPostToAll(
     let reelResult: PlatformResult = null
     let ytResult: PlatformResult = null
     let ttResult: PlatformResult = null
-    let liResult: PlatformResult = null
-    let twResult: PlatformResult = null
     let igResult: PlatformResult = null
 
     if (post.videoUrl) {
       const videoDescription  = `${captions.youtube}\n\n${articleUrl}`
       const tiktokCaption     = buildTikTokCaption(captions.tiktok, post.category, articleUrl)
 
-      const [reelOutcome, ytOutcome, ttOutcome, liOutcome, twOutcome, igOutcome] = await Promise.allSettled([
+      const [reelOutcome, ytOutcome, ttOutcome, igOutcome] = await Promise.allSettled([
         publishToFacebookReel(fbCopy, post.videoUrl),
         publishToYouTube(post.title, videoDescription, post.videoUrl, post.videoThumbnailUrl),
         publishToTikTok(tiktokCaption, post.videoUrl),
-        // LinkedIn, X: try video, fall back to image on rejection
-        tryVideoThenImage(publishToLinkedIn, liCopy, post.videoUrl, imageUrl, 'LinkedIn'),
-        tryVideoThenImage(publishToX, twitterCopy, post.videoUrl, imageUrl, 'X'),
         // Instagram: try reel, fall back to image
         tryVideoThenImage(publishToInstagramReel, igCopy, post.videoUrl, imageUrl, 'Instagram'),
       ])
@@ -387,25 +352,13 @@ export async function publishPostToAll(
         : { error: ttOutcome.reason instanceof Error ? ttOutcome.reason.message : 'TikTok publish failed' }
       if ('error' in (ttResult ?? {})) console.error('[publish-service] TikTok error:', (ttResult as { error: string }).error)
 
-      liResult = liOutcome.status === 'fulfilled' ? liOutcome.value : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn publish failed' }
-      twResult = twOutcome.status === 'fulfilled' ? twOutcome.value : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
       igResult = igOutcome.status === 'fulfilled' ? igOutcome.value : { error: igOutcome.reason instanceof Error ? igOutcome.reason.message : 'Instagram publish failed' }
     } else {
-      // No video — LinkedIn, X, and Instagram get image posts
-      const [liOutcome, twOutcome, igOutcome] = await Promise.allSettled([
-        publishToLinkedIn(liCopy, imageUrl),
-        publishToX(twitterCopy, imageUrl),
-        publishToInstagram(igCopy, imageUrl),
-      ])
-      liResult = liOutcome.status === 'fulfilled'
-        ? { postSubmissionId: liOutcome.value.postSubmissionId }
-        : { error: liOutcome.reason instanceof Error ? liOutcome.reason.message : 'LinkedIn publish failed' }
-      twResult = twOutcome.status === 'fulfilled'
-        ? { postSubmissionId: twOutcome.value.postSubmissionId }
-        : { error: twOutcome.reason instanceof Error ? twOutcome.reason.message : 'X publish failed' }
-      igResult = igOutcome.status === 'fulfilled'
-        ? { postSubmissionId: igOutcome.value.postSubmissionId }
-        : { error: igOutcome.reason instanceof Error ? igOutcome.reason.message : 'Instagram publish failed' }
+      // No video — Instagram gets an image post
+      const igOutcome = await publishToInstagram(igCopy, imageUrl).then(
+        (r) => ({ postSubmissionId: r.postSubmissionId }) as PlatformResult,
+      ).catch((err) => ({ error: err instanceof Error ? err.message : 'Instagram publish failed' }) as PlatformResult)
+      igResult = igOutcome
       if (igResult && 'error' in igResult) console.error('[publish-service] Instagram error:', igResult.error)
     }
 
@@ -415,8 +368,8 @@ export async function publishPostToAll(
       ytResult    && 'postSubmissionId' in ytResult    ? (ytResult    as { postSubmissionId: string }).postSubmissionId : undefined,
       ttResult    && 'postSubmissionId' in ttResult    ? (ttResult    as { postSubmissionId: string }).postSubmissionId : undefined,
       reelResult  && 'postSubmissionId' in reelResult  ? (reelResult  as { postSubmissionId: string }).postSubmissionId : undefined,
-      liResult    && 'postSubmissionId' in liResult    ? (liResult    as { postSubmissionId: string }).postSubmissionId : undefined,
-      twResult    && 'postSubmissionId' in twResult    ? (twResult    as { postSubmissionId: string }).postSubmissionId : undefined,
+      undefined,
+      undefined,
       igResult    && 'postSubmissionId' in igResult    ? (igResult    as { postSubmissionId: string }).postSubmissionId : undefined,
       publishedAtOverride,
     )
@@ -432,8 +385,6 @@ export async function publishPostToAll(
       facebookReel: reelResult,
       youtube: ytResult,
       tiktok: ttResult,
-      linkedin: liResult,
-      twitter: twResult,
       instagram: igResult,
     }
   } catch (err) {
