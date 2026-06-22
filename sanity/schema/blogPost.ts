@@ -50,8 +50,16 @@ export default {
           { title: 'Investment', value: 'investment' },
           { title: 'Home Ownership', value: 'home-ownership' },
           { title: 'Events', value: 'events' },
+          { title: 'Financing', value: 'financing' },
         ],
       },
+    },
+    {
+      name: 'vaQueuePriority',
+      title: 'VA Queue Priority',
+      type: 'number',
+      description: 'Pin to top of VA queue. 0 = normal (default), 100 = top priority (Fed rate posts, breaking news). Higher = higher in queue.',
+      initialValue: 0,
     },
     {
       name: 'excerpt',

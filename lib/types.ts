@@ -64,6 +64,8 @@ export interface BlogPostDraft {
   body: PortableTextBlock[]
   sourceUrl: string
   sourceTitle: string
+  /** Optional. 0 (default) = normal, 100 = pin to top of VA queue. */
+  vaQueuePriority?: number
 }
 
 // ─── Unified Idea Engine ──────────────────────────────────────────────────────

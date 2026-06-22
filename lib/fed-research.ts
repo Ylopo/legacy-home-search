@@ -26,8 +26,11 @@ export interface FOMCMeeting {
   meetingDates: string // full meeting window, e.g. "July 28–29"
 }
 
-// Remaining 2026 meetings. Update when Fed publishes 2027 schedule.
+// All 2026 meetings. Update annually when Fed publishes next year's schedule.
+// Past meetings remain in the list so they can be replayed via the manual
+// overrideDate trigger — the daily cron only fires on dates declared in vercel.json.
 export const FOMC_MEETINGS: FOMCMeeting[] = [
+  { date: '2026-06-10', label: 'June 2026',      meetingDates: 'June 9–10' },
   { date: '2026-07-29', label: 'July 2026',      meetingDates: 'July 28–29' },
   { date: '2026-09-16', label: 'September 2026', meetingDates: 'September 15–16' },
   { date: '2026-10-28', label: 'October 2026',   meetingDates: 'October 27–28' },
@@ -219,6 +222,8 @@ ${researchText}`,
     body: markdownToPortableText(data.body),
     sourceUrl,
     sourceTitle: `FOMC Statement — ${meeting.label}`,
+    // Pin to top of VA queue — Fed posts must publish same-day
+    vaQueuePriority: 100,
   }
 }
 

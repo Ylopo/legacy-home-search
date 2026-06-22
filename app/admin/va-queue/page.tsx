@@ -340,6 +340,7 @@ function PostCard({ post, secret, onDelete, fhStatus }: { post: SanityBlogPost; 
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.media_pending
   const label  = STATUS_LABELS[status] ?? status
   const hasThumb = !!post.coverImage?.asset
+  const isPriority = (post.vaQueuePriority ?? 0) > 0
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault()
@@ -361,15 +362,35 @@ function PostCard({ post, secret, onDelete, fhStatus }: { post: SanityBlogPost; 
   return (
     <div style={{ position: 'relative' }}>
       <Link href={`/admin/va-queue/${post._id}?secret=${secret}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-        <div style={{ background: '#fff', border: `1.5px solid ${confirming ? '#fca5a5' : colors.border}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' }}
-          onMouseEnter={e => { if (!confirming) e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)' }}
-          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+        <div style={{
+          background: '#fff',
+          border: `${isPriority ? 2 : 1.5}px solid ${confirming ? '#fca5a5' : isPriority ? '#dc2626' : colors.border}`,
+          borderRadius: 12,
+          overflow: 'hidden',
+          cursor: 'pointer',
+          transition: 'border-color 0.15s',
+          boxShadow: isPriority ? '0 0 0 4px rgba(220, 38, 38, 0.08)' : 'none',
+        }}
+          onMouseEnter={e => { if (!confirming) e.currentTarget.style.boxShadow = isPriority ? '0 4px 20px rgba(220, 38, 38, 0.25)' : '0 4px 16px rgba(0,0,0,0.10)' }}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = isPriority ? '0 0 0 4px rgba(220, 38, 38, 0.08)' : 'none')}
         >
-          <div style={{ height: 140, background: hasThumb ? '#e2e8f0' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', height: 140, background: hasThumb ? '#e2e8f0' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {hasThumb
               ? <img src={sanityThumbUrl(post.coverImage.asset._ref)} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ textAlign: 'center', color: '#94a3b8' }}><div style={{ fontSize: 28, marginBottom: 4 }}>🖼</div><div style={{ fontSize: 12 }}>No thumbnail yet</div></div>
             }
+            {isPriority && (
+              <div style={{
+                position: 'absolute', top: 10, left: 10,
+                background: '#dc2626', color: '#fff',
+                fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                padding: '4px 10px', borderRadius: 99,
+                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                🔥 PRIORITY
+              </div>
+            )}
           </div>
           <div style={{ padding: '14px 16px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>

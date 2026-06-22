@@ -182,6 +182,7 @@ export type SanityBlogPost = {
   threadsPostSubmissionId?: string
   instagramPostSubmissionId?: string
   scheduledPublishAt?: string
+  vaQueuePriority?: number
 }
 
 export type WorkflowStatus =
@@ -259,9 +260,9 @@ export async function getBlogPost(slug: string): Promise<SanityBlogPost | null> 
 export async function getVAQueue(): Promise<SanityBlogPost[]> {
   // Active (non-published) posts — all of them
   const active = await client.fetch(
-    `*[_type == "blogPost" && workflowStatus in ["media_pending", "media_ready", "publish_pending", "publishing", "scheduled", "publish_failed"]] | order(publishedAt desc){
+    `*[_type == "blogPost" && workflowStatus in ["media_pending", "media_ready", "publish_pending", "publishing", "scheduled", "publish_failed"]] | order(coalesce(vaQueuePriority, 0) desc, publishedAt desc){
       _id, title, "slug": slug.current, publishedAt, category, excerpt,
-      coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy, scheduledPublishAt
+      coverImage, workflowStatus, blotatoPublishStatus, facebookPostUrl, socialCopy, scheduledPublishAt, vaQueuePriority
     }`,
     {},
     { next: { revalidate: 0 } }
@@ -321,7 +322,7 @@ export async function getVAQueuePost(id: string): Promise<SanityBlogPost | null>
       blotatoPublishedAt, facebookPostUrl, socialCopy, videoScript,
       videoUrl, videoThumbnailUrl, youtubePostSubmissionId, tiktokPostSubmissionId,
       youtubePostUrl, tiktokPostUrl, facebookReelSubmissionId,
-      linkedinPostSubmissionId, twitterPostSubmissionId, threadsPostSubmissionId, instagramPostSubmissionId, scheduledPublishAt
+      linkedinPostSubmissionId, twitterPostSubmissionId, threadsPostSubmissionId, instagramPostSubmissionId, scheduledPublishAt, vaQueuePriority
     }`,
     { id },
     { next: { revalidate: 0 } }

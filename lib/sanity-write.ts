@@ -37,6 +37,7 @@ export async function publishBlogPost(draft: BlogPostDraft): Promise<string> {
     authorName: 'Barry Jenkins',
     aiGenerated: false,
     workflowStatus: 'media_pending',
+    ...(draft.vaQueuePriority ? { vaQueuePriority: draft.vaQueuePriority } : {}),
   })
 
   return result._id
