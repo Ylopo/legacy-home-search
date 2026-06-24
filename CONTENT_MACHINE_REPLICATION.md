@@ -1,5 +1,7 @@
 # Content Machine — Replication Guide
 
+> **New client setup?** Start with `replication-kit/README.md` — the visual-first turn-key kit with the paste-ready Claude Code prompt + screenshot-based UI walkthrough. This file is the deep technical reference the kit points to for accounts, env vars, and troubleshooting.
+
 The complete playbook for cloning the Legacy Home Search content engine onto a new real estate client site. This is the working blueprint — everything Barry Jenkins's pipeline does, this document tells you how to set up for a new agent in a new market.
 
 **Reference implementation:** `/Users/kiwi/Desktop/Cowork/Branded Sites/legacy-home-search/`

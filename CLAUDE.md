@@ -85,6 +85,7 @@ Available at `/admin/assistant` (password-protected). Update `COMMUNITY_PAGES` i
 | `MAPS.md` | Mapbox configuration — style, coordinates, layer slots |
 | `LEARNINGS.md` | Living content intelligence — voice, style, topic translations; auto-updated weekly by cron |
 | `CONTENT_MACHINE_REPLICATION.md` | New client setup guide + ready-to-paste Claude Code prompt for Shana or any future client |
+| `replication-kit/README.md` | Visual-first turn-key kit for cloning the content machine to a new client — paste-ready prompt, 9-screenshot guide, customization template, setup checklist. Start here for any new client. |
 
 ## Environment Variables
 See `.env.local.example` for full list. All same as chris-nevada-next except:
