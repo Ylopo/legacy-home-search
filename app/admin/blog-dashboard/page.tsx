@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { AdminNav } from '@/components/AdminNav'
 import { client } from '@/sanity/client'
 import { fetchSiteGA4Overview, type SiteGA4Overview } from '@/lib/ga4'
 import { getAllPlatformAnalytics, type PlatformAnalytics } from '@/lib/oneup-analytics'
@@ -251,7 +252,9 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
   const ga4Sessions = ga4?.sessions ?? null
 
   return (
-    <div style={s.page}>
+    <>
+      <AdminNav />
+      <div style={s.page}>
       <div style={s.container}>
 
         {/* ── 1. Header ──────────────────────────────────────────────────── */}
@@ -530,7 +533,8 @@ export default async function BlogDashboardPage({ searchParams }: Props) {
 
         <div style={{ height: 64 }} />
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
