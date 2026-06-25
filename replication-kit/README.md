@@ -136,6 +136,7 @@ Everything between the horizontal rules is the prompt. Copy the whole thing.
 > - **FOMC dates in vercel.json are 2026-specific.** Update them to the current year's Fed meeting schedule.
 > - **Don't ship community pages or marketing pages.** Barry's `app/(site)/*` routes (community pages, team profiles, AEO pages, hero, etc.) are highly customized. Skip those entirely — the new client builds their own marketing site separately. This kit replicates ONLY the admin/content pipeline.
 > - **Don't ship deprecated platform clients.** Skip `lib/facebook-client.ts`, `lib/youtube-client.ts`, `lib/tiktok-client.ts`, `lib/instagram-client.ts`, `lib/linkedin-client.ts`, `lib/blotato-client.ts`. OneUp handles publishing for all platforms.
+> - **AdminNav has exactly 4 tabs and must render on every admin page.** In order: `Blog Picker` (→ `/admin/idea-review`), `Media Review` (→ `/admin/va-queue`), `Analytics` (→ `/admin/blog-dashboard`), `Refresh Queue` (→ `/admin/refresh-queue`). Every page under `app/admin/*` must include `<AdminNav />` as the first child of its root container — no exceptions. The Refresh Queue page is real, fully functional, and high-value — never orphan it from the nav.
 >
 > ### Phase 3 — Apply the find/replace + per-file customizations
 >

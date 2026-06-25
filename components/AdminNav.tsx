@@ -4,9 +4,10 @@ import { usePathname } from 'next/navigation'
 import { useUrlSecret } from '@/hooks/useUrlSecret'
 
 const TABS = [
-  { label: 'Blog Picker',  path: '/admin/idea-review' },
-  { label: 'Media Review', path: '/admin/va-queue' },
-  { label: 'Analytics',    path: '/admin/blog-dashboard' },
+  { label: 'Blog Picker',    path: '/admin/idea-review' },
+  { label: 'Media Review',   path: '/admin/va-queue' },
+  { label: 'Analytics',      path: '/admin/blog-dashboard' },
+  { label: 'Refresh Queue',  path: '/admin/refresh-queue' },
 ] as const
 
 function isActive(pathname: string, path: string): boolean {

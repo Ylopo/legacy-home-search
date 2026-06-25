@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { AdminNav } from '@/components/AdminNav'
 import type { RefreshCandidate, RefreshAction } from '@/lib/refresh-engine'
 
 const ACTION_CONFIG: Record<
@@ -342,8 +343,9 @@ export default function RefreshQueuePage() {
   const overdueCount = candidates.filter((c) => c.isOverdue).length
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f7f4', padding: '32px 16px', fontFamily: 'Inter, -apple-system, sans-serif' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: '#f8f7f4', fontFamily: 'Inter, -apple-system, sans-serif' }}>
+      <AdminNav />
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 16px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>

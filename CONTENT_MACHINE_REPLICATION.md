@@ -173,7 +173,7 @@ app/admin/blog-dashboard/             ← The Shana-style analytics dashboard
 app/admin/refresh-queue/              ← Refresh approval UI
 app/admin/blog-picker/                ← Fast-track daily news picker
 app/admin/thumbnail-review/           ← Legacy thumbnail upload
-components/AdminNav.tsx               ← 3-tab admin nav
+components/AdminNav.tsx               ← 4-tab admin nav
 
 app/api/cron/research/                ← Daily Tavily research
 app/api/cron/events-research/         ← Monthly events research (25th)
@@ -426,7 +426,7 @@ Run these in order. Each failure has a known cause documented below or in the co
 ### Step 7 — Hand-off (30 min)
 
 Brief the operator and VA on the changes:
-- 3-tab admin nav: Idea Review · Media Queue · Analytics
+- 4-tab admin nav: Blog Picker · Media Review · Analytics · Refresh Queue
 - Dashboard shows cumulative growth (the "Always Climbing" section is the long-term story)
 - Hours Saved card communicates time-back-to-client value
 - VA workflow is unchanged from previous client (same Media Queue, same publish button)
@@ -557,7 +557,7 @@ Critical rules:
 - Image URLs from Sanity must include .quality(80).format('jpg') to stay under X's 5MB cap.
 - Analytics dashboard lives at /admin/blog-dashboard. Do not rebuild /admin/analytics.
 - The "Hours Saved" KPI is 2 hours per post — this is the user-facing time-savings story.
-- The admin nav has exactly 3 tabs: Idea Review, Media Queue, Analytics.
+- The admin nav has exactly 4 tabs: Blog Picker, Media Review, Analytics, Refresh Queue. AdminNav.tsx is rendered on every admin page so navigation works from anywhere.
 
 If anything in the replication guide conflicts with what you find in the codebase,
 trust the codebase as ground truth and flag the doc inconsistency back to the operator

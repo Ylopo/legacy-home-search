@@ -100,9 +100,13 @@ This is the most important screenshot. It's the single most-referenced visual in
 
 ### 09-refresh-queue.png — Content refresh approval
 
-**URL:** `/admin/refresh-queue?secret=…`
-**State:** At least 3 posts visible with refresh recommendations (full-refresh, light-refresh, review-only, do-not-touch). Different tier badges visible (pillar, money-page, evergreen, etc.).
-**Highlight:** The recommendation chip per post, the action buttons (Approve / Skip / Exclude), the tier badges, the last-refreshed-on date.
+**URL:** `/admin/refresh-queue?secret=…` (4th tab in the admin nav)
+**State:** Ideally at least 3 posts with refresh recommendations (full-refresh, light-refresh, review-only, do-not-touch) so all tier badges + action chips are visible. **If the site is new and no posts qualify yet, an empty-state screenshot is also fine** — Claude Code still uses it as a layout reference for typography, header treatment, and the admin nav bar.
+**Highlight:** The 4-tab admin nav at the top with "Refresh Queue" as the active tab, the page header, the recommendation chip per card, the action buttons (Approve / Skip / Exclude), the tier badges, the last-refreshed-on date.
+**Pro tip:** If the queue is empty, trigger the eval cron first to populate it:
+```bash
+curl -sX POST "https://<DOMAIN>/api/cron/refresh-evaluation?secret=$ADMIN_SECRET"
+```
 
 ---
 
