@@ -16,8 +16,8 @@ That whole loop is what this kit replicates.
 
 You're an operator setting up a new client. Total time: ~3–4 hours assuming all accounts are provisioned.
 
-1. **Fill out [`customization-template.md`](./customization-template.md)** — agent name, market, communities, Sanity ID, OneUp category, HeyGen avatar, brand colors. ~15 minutes.
-2. **Provision accounts** in advance (Sanity, Upstash Redis, OneUp client category, HeyGen avatar + voice, Resend, GA4). The full account table is in [`../CONTENT_MACHINE_REPLICATION.md`](../CONTENT_MACHINE_REPLICATION.md) section **Required Accounts**.
+1. **Don't hand-fill the client identity.** The client's site is already built (same Next.js + Sanity stack), so Claude Code's **Phase 0** auto-derives most of [`customization-template.md`](./customization-template.md) — agent name, market, communities, brand colors, fonts, Sanity ID, GA — straight from the existing repo, then shows it to you to confirm. You only hand-provide the net-new authority-engine credentials (OneUp, HeyGen, Upstash, Resend, GitHub PAT, Redis prefix).
+2. **Provision accounts** in advance (Sanity, Upstash Redis, OneUp client category, HeyGen avatar + voice, Resend, GA4). This is the real long pole. The full account table is in [`../CONTENT_MACHINE_REPLICATION.md`](../CONTENT_MACHINE_REPLICATION.md) section **Required Accounts**.
 3. **Capture the 9 screenshots** listed in [`screenshots/README.md`](./screenshots/README.md) from a working source instance. Drop the PNGs in `screenshots/` with the exact filenames specified.
 4. **Open Claude Code** in the new client's empty repo (or a fresh worktree). Paste the **Prompt** below, with `<SOURCE_PATH>` and `<KIT_PATH>` placeholders replaced with the actual paths.
 5. **Work the checklist** at [`SETUP_CHECKLIST.md`](./SETUP_CHECKLIST.md). Verify each phase before moving to the next.
@@ -38,7 +38,33 @@ Everything between the horizontal rules is the prompt. Copy the whole thing.
 >
 > **Source repo (READ-ONLY):** `<SOURCE_PATH>`
 > **Replication kit (READ-ONLY):** `<KIT_PATH>`
-> **New client repo:** your current working directory
+> **New client repo (your current working directory):** the client's already-built marketing site, built on this same Next.js + Sanity stack. It already contains the client's identity, communities, team, contact info, brand colors, fonts, and Sanity config. You will ADD the authority engine into it — and you'll mine it for the customization values in Phase 0.
+>
+> ### Phase 0 — Auto-derive client identity from the existing site
+>
+> The operator has NOT hand-filled most of `<KIT_PATH>/customization-template.md`. Derive it yourself from the current working directory (the built site), then present it for a quick confirm. Read:
+>
+> - `app/globals.css` — brand colors (CSS variables), off-white/cream, body text color → Section 5 + the color rows in Section 2
+> - the font setup (`app/layout.tsx` / `next/font` imports) → headline / body / italic display fonts
+> - `sanity/client.ts` + `sanity.config.ts` → Sanity project ID, dataset, studio title (Section 3)
+> - `app/layout.tsx` or the analytics component → GA4 measurement ID (`G-…`) + GTM container ID
+> - Sanity `siteSettings` + `teamMember` docs and the bio/contact/footer components → client name, agent name, years in market, positioning, public phone, public email, office address (Sections 1 + 4)
+> - community page routes + Sanity `communityPage` docs + the site nav → primary communities, market name, state (Section 1)
+> - the existing blog + community content → draft the special content angles (Section 7) and the state-specific items (Section 6)
+> - site config / live domain → Section 1 domain; derive the local area code from the phone number
+>
+> Fill EVERY field in Sections 1, 2, 5, the Sanity + GA rows of Section 3, the site-derived rows of Section 4 (agent email / phone / address), and draft Sections 6 + 7. Then show the operator the completed template plus the find/replace map and ask them to confirm or correct.
+>
+> Then ask the operator ONLY for the net-new authority-engine credentials that do not exist on the site yet (these are the accounts provisioned specifically for the content machine):
+>
+> - Upstash Redis URL + token (and pick a 3–4 letter Redis prefix)
+> - OneUp category ID + the 4 social account IDs (FB / IG / YT / TikTok)
+> - HeyGen avatar ID + voice ID
+> - Resend API key + verified from-email
+> - GA4 property ID (9-digit) + service-account access
+> - GitHub repo (company org) + a PAT with repo scope
+>
+> Do not proceed to Phase 1 until the auto-derived values are confirmed and the net-new credentials are provided.
 >
 > ### Phase 1 — Read the source
 >

@@ -1,10 +1,15 @@
 # Customization Template
 
-Fill this out **before** pasting the Claude Code prompt. The new Claude Code session reads this file and treats every value here as the source of truth.
+**You no longer fill most of this by hand.** When you run the kit prompt, Claude Code's **Phase 0** reads the client's already-built site (same repo) and auto-fills the client-identity fields — Sections 1, 2, 5, the Sanity + GA rows of Section 3, the agent-contact rows of Section 4 — and drafts Sections 6–7. It then shows them to you to confirm or correct.
+
+**What you actually provide** are the net-new authority-engine credentials: the service IDs in Section 3 (OneUp, HeyGen, Upstash), the Resend + GitHub PAT in Section 4, and the Redis prefix. Those accounts don't exist on the site, so Claude can't derive them — they're the same set as the Section 8 checklist.
+
+Claude treats the confirmed values here as the source of truth.
 
 ---
 
 ## Section 1 — Client identity
+_Auto-derived in Phase 0 from the built site — confirm._
 
 | Field | Example (Legacy Home Search) | Your value |
 |---|---|---|
@@ -21,6 +26,7 @@ Fill this out **before** pasting the Claude Code prompt. The new Claude Code ses
 ---
 
 ## Section 2 — Find/replace strings (global)
+_Auto-derived in Phase 0 once Section 1 + brand colors are known — confirm._
 
 Apply these substitutions everywhere in the new repo. The kit prompt has Claude Code do this automatically — this table is your reference + a way to verify nothing was missed.
 
@@ -52,6 +58,7 @@ Apply these substitutions everywhere in the new repo. The kit prompt has Claude 
 ---
 
 ## Section 3 — Tech stack identifiers
+_Sanity rows + GA rows: auto-derived in Phase 0. OneUp / HeyGen / Upstash / Redis prefix: **you provide** (net-new accounts)._
 
 | Service | Example value | Your value | Notes |
 |---|---|---|---|
@@ -73,6 +80,7 @@ Apply these substitutions everywhere in the new repo. The kit prompt has Claude 
 ---
 
 ## Section 4 — Operator + brand
+_Agent public email / phone / office address: auto-derived in Phase 0. Operator email, Resend from-email, GitHub repo + PAT: **you provide**._
 
 | Field | Example | Your value |
 |---|---|---|
@@ -87,6 +95,7 @@ Apply these substitutions everywhere in the new repo. The kit prompt has Claude 
 ---
 
 ## Section 5 — Brand colors + typography
+_Auto-derived in Phase 0 from `app/globals.css` + the font setup — confirm._
 
 | Field | Example (Legacy) | Your value |
 |---|---|---|
@@ -101,6 +110,7 @@ Apply these substitutions everywhere in the new repo. The kit prompt has Claude 
 ---
 
 ## Section 6 — State-specific customizations
+_Claude drafts these in Phase 0 from the client's state — **verify the legal specifics** (closing process, transfer tax, closing-cost ballpark)._
 
 | Item | Default (Virginia) | Your state |
 |---|---|---|
@@ -114,6 +124,7 @@ Apply these substitutions everywhere in the new repo. The kit prompt has Claude 
 ---
 
 ## Section 7 — Special content angles
+_Claude drafts these in Phase 0 from the market + existing site content — refine._
 
 What angles should the content machine emphasize for this client? These shape the Tavily queries in `lib/research.ts` and the writing prompt in `lib/idea-writer.ts`.
 
