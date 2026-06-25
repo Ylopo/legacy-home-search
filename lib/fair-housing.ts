@@ -197,3 +197,99 @@ export async function markFHReviewed(postId: string): Promise<void> {
   const updated: FHCheckResult = { ...existing, reviewedAt: new Date().toISOString() }
   await redis.set(fhKey(postId), JSON.stringify(updated), { ex: FH_TTL })
 }
+
+/**
+ * Remove a single violation from the FH result (by array index) and persist.
+ * Recomputes the overall severity based on what's left.
+ * Used by both Fix and Ignore endpoints — the post body change happens
+ * separately in applyFixToPostBody().
+ */
+export async function resolveViolation(
+  postId: string,
+  index: number,
+): Promise<FHCheckResult | null> {
+  const existing = await getFHResult(postId)
+  if (!existing || !Array.isArray(existing.violations) || !existing.violations[index]) {
+    return existing
+  }
+
+  const remaining = existing.violations.filter((_, i) => i !== index)
+  const severity: FHCheckResult['severity'] =
+    remaining.length === 0
+      ? 'clear'
+      : remaining.some((v) => v.severity === 'violation')
+      ? 'violation'
+      : 'warning'
+
+  const updated: FHCheckResult = {
+    ...existing,
+    violations: remaining,
+    severity,
+  }
+
+  const redis = getRedis()
+  await redis.set(fhKey(postId), JSON.stringify(updated), { ex: FH_TTL })
+  return updated
+}
+
+/**
+ * Find the offending excerpt in the post's title / excerpt / body and replace
+ * it with the compliant suggestion. Walks Sanity portable text spans.
+ * Returns { found: true } only if the excerpt was located somewhere — caller
+ * should surface a "couldn't auto-fix, edit manually" error otherwise.
+ */
+export async function applyFixToPostBody(
+  postId: string,
+  excerpt: string,
+  suggestion: string,
+): Promise<{ found: boolean }> {
+  const { getSanityWriteClient } = await import('./sanity-write')
+  const client = getSanityWriteClient()
+
+  const post = await client.fetch(
+    `*[_type == "blogPost" && _id == $id][0]{ _id, title, excerpt, body }`,
+    { id: postId },
+  )
+  if (!post) return { found: false }
+
+  let found = false
+
+  const replaceInText = (text: string): string => {
+    if (typeof text !== 'string' || !text.includes(excerpt)) return text
+    found = true
+    return text.split(excerpt).join(suggestion)
+  }
+
+  const updatedTitle = replaceInText(post.title ?? '')
+  const updatedExcerpt = replaceInText(post.excerpt ?? '')
+
+  type PtBlock = { _type?: string; children?: PtSpan[]; [k: string]: unknown }
+  type PtSpan = { _type?: string; text?: string; [k: string]: unknown }
+
+  const updatedBody = Array.isArray(post.body)
+    ? (post.body as PtBlock[]).map((block) => {
+        if (block._type !== 'block' || !Array.isArray(block.children)) return block
+        return {
+          ...block,
+          children: block.children.map((child: PtSpan) => {
+            if (child._type !== 'span' || typeof child.text !== 'string') return child
+            const newText = replaceInText(child.text)
+            return newText === child.text ? child : { ...child, text: newText }
+          }),
+        }
+      })
+    : post.body
+
+  if (!found) return { found: false }
+
+  const patch: Record<string, unknown> = {}
+  if (updatedTitle !== post.title) patch.title = updatedTitle
+  if (updatedExcerpt !== post.excerpt) patch.excerpt = updatedExcerpt
+  if (updatedBody !== post.body) patch.body = updatedBody
+
+  if (Object.keys(patch).length > 0) {
+    await client.patch(postId).set(patch).commit()
+  }
+
+  return { found: true }
+}

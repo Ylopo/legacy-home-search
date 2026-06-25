@@ -76,6 +76,9 @@ export default function VAPostPage() {
   const [fhResult, setFhResult] = useState<{ severity: 'clear' | 'warning' | 'violation'; violations: any[]; checkedAt: string; reviewedAt?: string } | null>(null)
   const [fhExpanded, setFhExpanded] = useState(true)
   const [markingReviewed, setMarkingReviewed] = useState(false)
+  // Per-violation action state. Keyed by excerpt+reason so it survives the array
+  // reshuffle that happens after a violation is removed.
+  const [violationActions, setViolationActions] = useState<Record<string, { state: 'fixing' | 'ignoring' | 'error'; error?: string }>>({})
 
   // Media editor state
   const [thumbnail, setThumbnail] = useState<ThumbnailState>({ type: 'none' })
@@ -170,6 +173,85 @@ export default function VAPostPage() {
       setFhResult(prev => prev ? { ...prev, reviewedAt: new Date().toISOString() } : prev)
     } catch { /* ignore */ } finally {
       setMarkingReviewed(false)
+    }
+  }
+
+  // ── Fix or Ignore a single FH violation ─────────────────────────────────────
+  function violationKey(v: { excerpt?: string; reason?: string }): string {
+    return `${v.excerpt ?? ''}::${v.reason ?? ''}`
+  }
+
+  async function refetchPost() {
+    try {
+      const res = await fetch(`/api/content/post?secret=${encodeURIComponent(secret)}&postId=${encodeURIComponent(postId)}`)
+      if (!res.ok) return
+      const updated: SanityBlogPost = await res.json()
+      setPost(updated)
+    } catch { /* ignore */ }
+  }
+
+  async function handleFixViolation(index: number, v: { excerpt?: string; reason?: string }) {
+    const key = violationKey(v)
+    setViolationActions(prev => ({ ...prev, [key]: { state: 'fixing' } }))
+    try {
+      const res = await fetch(`/api/content/fh-fix-violation?secret=${encodeURIComponent(secret)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, violationIndex: index }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setViolationActions(prev => ({ ...prev, [key]: { state: 'error', error: data.error ?? 'Fix failed' } }))
+        return
+      }
+      setViolationActions(prev => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      if (data.fhResult && Array.isArray(data.fhResult.violations) && data.fhResult.violations.length > 0) {
+        setFhResult(data.fhResult)
+      } else {
+        setFhResult(null)
+      }
+      await refetchPost()
+    } catch (err) {
+      setViolationActions(prev => ({
+        ...prev,
+        [key]: { state: 'error', error: err instanceof Error ? err.message : 'Fix failed' },
+      }))
+    }
+  }
+
+  async function handleIgnoreViolation(index: number, v: { excerpt?: string; reason?: string }) {
+    const key = violationKey(v)
+    setViolationActions(prev => ({ ...prev, [key]: { state: 'ignoring' } }))
+    try {
+      const res = await fetch(`/api/content/fh-ignore-violation?secret=${encodeURIComponent(secret)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, violationIndex: index }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setViolationActions(prev => ({ ...prev, [key]: { state: 'error', error: data.error ?? 'Ignore failed' } }))
+        return
+      }
+      setViolationActions(prev => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      if (data.fhResult && Array.isArray(data.fhResult.violations) && data.fhResult.violations.length > 0) {
+        setFhResult(data.fhResult)
+      } else {
+        setFhResult(null)
+      }
+    } catch (err) {
+      setViolationActions(prev => ({
+        ...prev,
+        [key]: { state: 'error', error: err instanceof Error ? err.message : 'Ignore failed' },
+      }))
     }
   }
 
@@ -726,22 +808,70 @@ export default function VAPostPage() {
             </div>
             {fhExpanded && (
               <div style={{ borderTop: `1px solid ${fhResult.severity === 'violation' ? '#fca5a5' : '#fcd34d'}`, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {fhResult.violations.map((v: any, i: number) => (
-                  <div key={i} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: v.severity === 'violation' ? '#dc2626' : '#b45309' }}>
-                        {v.severity}
-                      </span>
+                {fhResult.violations.map((v: any, i: number) => {
+                  const key = violationKey(v)
+                  const action = violationActions[key]
+                  const busy = action?.state === 'fixing' || action?.state === 'ignoring'
+                  return (
+                    <div key={key + '-' + i} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: v.severity === 'violation' ? '#dc2626' : '#b45309' }}>
+                          {v.severity}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, fontStyle: 'italic', color: '#374151', background: '#f8f7f4', borderRadius: 6, padding: '6px 10px', marginBottom: 6 }}>
+                        "{v.excerpt}"
+                      </div>
+                      <div style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}><strong>Why:</strong> {v.reason}</div>
+                      <div style={{ fontSize: 13, color: '#059669', marginBottom: 10 }}><strong>Use instead:</strong> {v.suggestion}</div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          onClick={() => handleFixViolation(i, v)}
+                          disabled={busy}
+                          style={{
+                            padding: '5px 12px',
+                            background: '#059669',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: busy ? 'wait' : 'pointer',
+                            opacity: busy ? 0.7 : 1,
+                          }}
+                        >
+                          {action?.state === 'fixing' ? 'Fixing…' : 'Fix'}
+                        </button>
+                        <button
+                          onClick={() => handleIgnoreViolation(i, v)}
+                          disabled={busy}
+                          style={{
+                            padding: '5px 12px',
+                            background: '#fff',
+                            color: '#475569',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: busy ? 'wait' : 'pointer',
+                            opacity: busy ? 0.7 : 1,
+                          }}
+                        >
+                          {action?.state === 'ignoring' ? 'Ignoring…' : 'Ignore'}
+                        </button>
+                        {action?.state === 'error' && action.error && (
+                          <span style={{ fontSize: 12, color: '#dc2626', flex: 1 }}>
+                            {action.error}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 13, fontStyle: 'italic', color: '#374151', background: '#f8f7f4', borderRadius: 6, padding: '6px 10px', marginBottom: 6 }}>
-                      "{v.excerpt}"
-                    </div>
-                    <div style={{ fontSize: 13, color: '#374151', marginBottom: 4 }}><strong>Why:</strong> {v.reason}</div>
-                    <div style={{ fontSize: 13, color: '#059669' }}><strong>Use instead:</strong> {v.suggestion}</div>
-                  </div>
-                ))}
+                  )
+                })}
                 <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
-                  Edit the flagged text in Sanity Studio, then click "Mark as Reviewed" above to clear the hold.
+                  <strong>Fix</strong> applies the suggested replacement directly in the post body.
+                  <strong> Ignore</strong> dismisses just this one violation without changing the post.
+                  Use "Mark as Reviewed" above to clear the entire hold at once.
                 </p>
               </div>
             )}
