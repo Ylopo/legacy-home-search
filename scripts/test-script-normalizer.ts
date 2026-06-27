@@ -199,6 +199,161 @@ const FIXTURES: Fixture[] = [
     ],
     forbid: ['5.25%', '$425K', ' 2026', '3BR', '2BA', '1,800 sq ft', '0.15 acres', '30–45'],
   },
+
+  // ── NEW: ADDITIONAL YEARS ──
+  {
+    label: '26. Year 1976 (bicentennial)',
+    input: 'The neighborhood was founded in 1976.',
+    expect: ['nineteen seventy-six'],
+    forbid: ['1976'],
+  },
+  {
+    label: '27. Year 2001',
+    input: 'Records from 2001 show the first big spike.',
+    expect: ['two thousand one'],
+    forbid: ['2001'],
+  },
+  {
+    label: '28. Year 2010',
+    input: 'By 2010, the market had fully recovered.',
+    expect: ['twenty ten'],
+    forbid: [' 2010'],
+  },
+
+  // ── NEW: WRITTEN-OUT MILLIONS / BILLIONS ──
+  {
+    label: '29. $28 million (with word "million")',
+    input: 'The complex sold for $28 million last quarter.',
+    expect: ['twenty-eight million dollars'],
+    forbid: ['$28 million'],
+  },
+  {
+    label: '30. $2.4 billion',
+    input: 'The portfolio is now valued at $2.4 billion.',
+    expect: ['two point four billion dollars'],
+    forbid: ['$2.4 billion'],
+  },
+  {
+    label: '31. $3,500,000 (comma format)',
+    input: 'Howard Hughes paid $3,500,000 for the land.',
+    expect: ['three million five hundred thousand dollars'],
+    forbid: ['$3,500,000'],
+  },
+
+  // ── NEW: LARGE NON-CURRENCY NUMBERS ──
+  {
+    label: '32. 25,000 acres (large round number)',
+    input: 'He purchased 25,000 acres outside the city.',
+    expect: ['twenty-five thousand acres'],
+    forbid: ['25,000'],
+  },
+  {
+    label: '33. 1,250 (mid four-digit number)',
+    input: 'The HOA serves 1,250 households.',
+    expect: ['one thousand two hundred fifty'],
+    forbid: ['1,250'],
+  },
+  {
+    label: '34. 7,500,000 (large seven-digit number)',
+    input: 'The development plan covers 7,500,000 square feet of mixed use.',
+    expect: ['seven million five hundred thousand'],
+    forbid: ['7,500,000'],
+  },
+
+  // ── NEW: DATES ──
+  {
+    label: '35. Full date with year (July 4, 2026)',
+    input: 'The grand opening is July 4, 2026.',
+    expect: ['July fourth, twenty twenty-six'],
+    forbid: ['July 4, 2026', '7/4'],
+  },
+  {
+    label: '36. Date without year (December 25)',
+    input: 'Listings tend to slow down around December 25.',
+    expect: ['December twenty-fifth'],
+    forbid: ['December 25'],
+  },
+  {
+    label: '37. Date with ordinal suffix (October 15th)',
+    input: 'The escrow closed on October 15th.',
+    expect: ['October fifteenth'],
+    forbid: ['October 15th', 'October 15.'],
+  },
+
+  // ── NEW: TIMES ──
+  {
+    label: '38. AM time with minutes',
+    input: 'The open house starts at 7:30 AM.',
+    expect: ['seven thirty'],
+    forbid: ['7:30 AM', '7:30'],
+  },
+  {
+    label: '39. Noon (12:00 PM)',
+    input: 'Showings run until 12:00 PM on Sundays.',
+    expect: ['noon'],
+    forbid: ['12:00 PM', '12:00'],
+  },
+  {
+    label: '40. Midnight (12:00 AM)',
+    input: 'The application deadline is 12:00 AM Friday.',
+    expect: ['midnight'],
+    forbid: ['12:00 AM', '12:00'],
+  },
+
+  // ── NEW: MEASUREMENTS (written-out unit) ──
+  {
+    label: '41. Acres (no comma, "acres" already spelled out)',
+    input: 'The lot is 5 acres of usable land.',
+    expect: ['five acres'],
+    forbid: ['5 acres'],
+  },
+  {
+    label: '42. Miles with decimal',
+    input: 'The drive is 2.5 miles each way.',
+    expect: ['two point five miles'],
+    forbid: ['2.5 miles'],
+  },
+  {
+    label: '43. Square feet ("square feet" written out)',
+    input: 'A 3,400 square feet home in the foothills.',
+    expect: ['three thousand four hundred square feet'],
+    forbid: ['3,400 square feet'],
+  },
+
+  // ── NEW: ORDINALS ──
+  {
+    label: '44. Ordinal 1st',
+    input: 'This is the 1st quarter of strong sales.',
+    expect: ['first'],
+    forbid: ['1st'],
+  },
+  {
+    label: '45. Ordinal 25th',
+    input: 'The 25th anniversary of the brokerage was last month.',
+    expect: ['twenty-fifth'],
+    forbid: ['25th'],
+  },
+  {
+    label: '46. Large ordinal 250th',
+    input: 'We just closed our 250th transaction of the year.',
+    expect: ['two hundred fiftieth'],
+    forbid: ['250th'],
+  },
+
+  // ── NEW: THE HOWARD HUGHES EXAMPLE (operator-supplied gold standard) ──
+  {
+    label: '47. Howard Hughes — gold standard combined example',
+    input:
+      'Howard Hughes purchased 25,000 acres in 1950 for $3,500,000. By 2026, homes in the area were selling for over $1,500,000.',
+    expect: [
+      'twenty-five thousand acres',
+      'nineteen fifty',
+      'three million five hundred thousand dollars',
+      'twenty twenty-six',
+      'one million five hundred thousand dollars',
+    ],
+    forbid: ['25,000', ' 1950', '$3,500,000', ' 2026', '$1,500,000'],
+  },
 ]
 
 // ── Runner ──────────────────────────────────────────────────────────────────
