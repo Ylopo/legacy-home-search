@@ -69,35 +69,38 @@ Open Claude Code in the **new client's empty repo**, then paste everything betwe
 > 9. `<SOURCE_PATH>/lib/publish-service.ts` — publish orchestrator
 > 10. `<SOURCE_PATH>/lib/oneup-client.ts` — OneUp API wrapper
 > 11. `<SOURCE_PATH>/lib/heygen-client.ts` — HeyGen V5 / Avatar IV video generation
-> 12. `<SOURCE_PATH>/lib/fair-housing.ts` — protected-class rules + post-generation check
-> 13. `<SOURCE_PATH>/lib/required-topics.ts` — per-city evergreen topic registry
-> 14. `<SOURCE_PATH>/lib/fed-research.ts` — Federal Reserve same-day post cron
-> 15. `<SOURCE_PATH>/lib/events-research.ts` — monthly events cron
-> 16. `<SOURCE_PATH>/lib/sanity-write.ts` — Sanity create/update helpers
-> 17. `<SOURCE_PATH>/lib/types.ts` — shared TS types
-> 18. `<SOURCE_PATH>/lib/portable-text-utils.ts` — markdown ↔ portable text
-> 19. `<SOURCE_PATH>/lib/email.ts` — Resend transactional templates
-> 20. `<SOURCE_PATH>/sanity/schema/blogPost.ts` — the central document
-> 21. `<SOURCE_PATH>/sanity/queries.ts` — VA queue, dashboard queries, sort order
+> 12. `<SOURCE_PATH>/lib/script-normalizer.ts` — numeric-to-spoken-English converter that runs before every HeyGen call (years, prices, dates, times, ordinals, percentages, measurements)
+> 13. `<SOURCE_PATH>/lib/fair-housing.ts` — protected-class rules + post-generation check + per-violation fix helpers (resolveViolation, applyFixToPostBody)
+> 14. `<SOURCE_PATH>/lib/required-topics.ts` — per-city evergreen topic registry
+> 15. `<SOURCE_PATH>/lib/fed-research.ts` — Federal Reserve same-day post cron
+> 16. `<SOURCE_PATH>/lib/events-research.ts` — monthly events cron
+> 17. `<SOURCE_PATH>/lib/sanity-write.ts` — Sanity create/update helpers
+> 18. `<SOURCE_PATH>/lib/types.ts` — shared TS types
+> 19. `<SOURCE_PATH>/lib/portable-text-utils.ts` — markdown ↔ portable text
+> 20. `<SOURCE_PATH>/lib/email.ts` — Resend transactional templates
+> 21. `<SOURCE_PATH>/sanity/schema/blogPost.ts` — the central document
+> 22. `<SOURCE_PATH>/sanity/queries.ts` — VA queue, dashboard queries, sort order
 >
 > **Admin UI to mirror (match the screenshots in `<KIT_PATH>/screenshots/`):**
-> 22. `<SOURCE_PATH>/app/admin/idea-review/page.tsx`
-> 23. `<SOURCE_PATH>/app/admin/va-queue/page.tsx`
-> 24. `<SOURCE_PATH>/app/admin/va-queue/[postId]/page.tsx`
-> 25. `<SOURCE_PATH>/app/admin/blog-dashboard/page.tsx`
-> 26. `<SOURCE_PATH>/app/admin/refresh-queue/page.tsx`
-> 27. `<SOURCE_PATH>/app/admin/blog-picker/[date]/page.tsx`
-> 28. `<SOURCE_PATH>/components/AdminNav.tsx`
+> 23. `<SOURCE_PATH>/app/admin/idea-review/page.tsx`
+> 24. `<SOURCE_PATH>/app/admin/va-queue/page.tsx`
+> 25. `<SOURCE_PATH>/app/admin/va-queue/[postId]/page.tsx` — includes per-violation FH Fix/Ignore buttons
+> 26. `<SOURCE_PATH>/app/admin/blog-dashboard/page.tsx`
+> 27. `<SOURCE_PATH>/app/admin/refresh-queue/page.tsx`
+> 28. `<SOURCE_PATH>/app/admin/blog-picker/[date]/page.tsx`
+> 29. `<SOURCE_PATH>/components/AdminNav.tsx`
 >
 > **Key API routes:**
-> 29. `<SOURCE_PATH>/app/api/cron/research/route.ts`
-> 30. `<SOURCE_PATH>/app/api/cron/fed-rate-update/route.ts`
-> 31. `<SOURCE_PATH>/app/api/cron/events-research/route.ts`
-> 32. `<SOURCE_PATH>/app/api/content/ideas/approve/route.ts`
-> 33. `<SOURCE_PATH>/app/api/content/publish/route.ts`
-> 34. `<SOURCE_PATH>/app/api/content/generate-heygen-video/route.ts`
-> 35. `<SOURCE_PATH>/app/api/content/generate-script/route.ts`
-> 36. `<SOURCE_PATH>/vercel.json`
+> 30. `<SOURCE_PATH>/app/api/cron/research/route.ts`
+> 31. `<SOURCE_PATH>/app/api/cron/fed-rate-update/route.ts`
+> 32. `<SOURCE_PATH>/app/api/cron/events-research/route.ts`
+> 33. `<SOURCE_PATH>/app/api/content/ideas/approve/route.ts`
+> 34. `<SOURCE_PATH>/app/api/content/publish/route.ts`
+> 35. `<SOURCE_PATH>/app/api/content/generate-heygen-video/route.ts` — calls normalizeScriptForSpeech() BEFORE sending to HeyGen
+> 36. `<SOURCE_PATH>/app/api/content/generate-script/route.ts`
+> 37. `<SOURCE_PATH>/app/api/content/fh-fix-violation/route.ts` — per-violation Fix endpoint
+> 38. `<SOURCE_PATH>/app/api/content/fh-ignore-violation/route.ts` — per-violation Ignore endpoint
+> 39. `<SOURCE_PATH>/vercel.json`
 >
 > **Visual targets:** Open every PNG in `<KIT_PATH>/screenshots/` — these are the target admin UI. Match layout, badges, status colors, info density.
 >
@@ -122,6 +125,8 @@ Open Claude Code in the **new client's empty repo**, then paste everything betwe
 > - **Don't ship community pages or marketing pages.** Barry's `app/(site)/*` routes (community pages, team profiles, AEO pages, hero, etc.) are highly customized. Skip those entirely — the new client builds their own marketing site separately. This kit replicates ONLY the admin/content pipeline.
 > - **Don't ship deprecated platform clients.** Skip `lib/facebook-client.ts`, `lib/youtube-client.ts`, `lib/tiktok-client.ts`, `lib/instagram-client.ts`, `lib/linkedin-client.ts`, `lib/blotato-client.ts`. OneUp handles publishing for all platforms.
 > - **AdminNav has exactly 4 tabs and must render on every admin page.** In order: `Blog Picker` (→ `/admin/idea-review`), `Media Review` (→ `/admin/va-queue`), `Analytics` (→ `/admin/blog-dashboard`), `Refresh Queue` (→ `/admin/refresh-queue`). Every page under `app/admin/*` must include `<AdminNav />` as the first child of its root container — no exceptions. The Refresh Queue page is real, fully functional, and high-value — never orphan it from the nav.
+> - **HeyGen scripts MUST pass through `normalizeScriptForSpeech()` before being sent to the HeyGen API.** Without this, the avatar reads numerals literally ("two zero two six" for 2026, "dollar three hundred fifty K" for $350K) and the videos sound robotic. The normalizer (in `lib/script-normalizer.ts`) is called by `app/api/content/generate-heygen-video/route.ts` — copy both files verbatim from the source. The normalizer's system prompt covers years, currency (with K/M/billion suffixes), percentages, dates, times (with noon/midnight), measurements, ordinals, ranges, digit sequences (phone/zip), and a preserve-list for URLs/hashtags/handles. It is fail-safe: missing API key or LLM error returns the original script unchanged so video generation never blocks. Run `npx tsx scripts/test-script-normalizer.ts` after copying to verify all 47 fixtures pass.
+> - **Fair Housing violations have per-violation Fix and Ignore buttons.** The VA queue post detail page renders each FH violation with two buttons: Fix (applies the LLM-suggested compliant phrase directly to the post body in Sanity via `applyFixToPostBody()`) and Ignore (dismisses just that one violation via `resolveViolation()`). When the last violation clears, the FH panel disappears. Two API routes back this: `/api/content/fh-fix-violation` and `/api/content/fh-ignore-violation`. The existing "Mark as Reviewed" button stays as the clear-all-at-once escape hatch. Both helpers live in `lib/fair-housing.ts` — port them with the rest of that file.
 >
 > ### Phase 3 — Apply the find/replace + per-file customizations
 >

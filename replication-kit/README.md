@@ -53,7 +53,9 @@ The prompts list these in their Phase 1 — duplicated here for easy scanning if
 | `ONEUP.md` | OneUp API quirks, account setup, analytics |
 
 ### Core lib files (copy as-is or with find/replace)
-`lib/research.ts`, `lib/idea-writer.ts`, `lib/idea-store.ts`, `lib/scoring.ts`, `lib/source-rules.ts`, `lib/publish-service.ts`, `lib/oneup-client.ts`, `lib/oneup-analytics.ts`, `lib/heygen-client.ts`, `lib/fair-housing.ts`, `lib/required-topics.ts`, `lib/required-topics-coverage.ts`, `lib/fed-research.ts`, `lib/events-research.ts`, `lib/refresh-engine.ts`, `lib/refresh-writer.ts`, `lib/refresh-store.ts`, `lib/refresh-config.ts`, `lib/sanity-write.ts`, `lib/types.ts`, `lib/portable-text-utils.ts`, `lib/email.ts`, `lib/content-workflow.ts`, `lib/learnings.ts`, `lib/ga4.ts`, `lib/thumbnail-prompt.ts`, `lib/thumbnail-asset-resolver.ts`, `lib/image-gen-market-report.ts`, `lib/market-report-writer.ts`, `lib/renick-pipeline.ts`, `lib/aeo-queue.ts`, `lib/aeo-generator.ts`
+`lib/research.ts`, `lib/idea-writer.ts`, `lib/idea-store.ts`, `lib/scoring.ts`, `lib/source-rules.ts`, `lib/publish-service.ts`, `lib/oneup-client.ts`, `lib/oneup-analytics.ts`, `lib/heygen-client.ts`, `lib/script-normalizer.ts`, `lib/fair-housing.ts`, `lib/required-topics.ts`, `lib/required-topics-coverage.ts`, `lib/fed-research.ts`, `lib/events-research.ts`, `lib/refresh-engine.ts`, `lib/refresh-writer.ts`, `lib/refresh-store.ts`, `lib/refresh-config.ts`, `lib/sanity-write.ts`, `lib/types.ts`, `lib/portable-text-utils.ts`, `lib/email.ts`, `lib/content-workflow.ts`, `lib/learnings.ts`, `lib/ga4.ts`, `lib/thumbnail-prompt.ts`, `lib/thumbnail-asset-resolver.ts`, `lib/image-gen-market-report.ts`, `lib/market-report-writer.ts`, `lib/renick-pipeline.ts`, `lib/aeo-queue.ts`, `lib/aeo-generator.ts`
+
+**Portable-as-is (no customization needed):** `lib/script-normalizer.ts` — its system prompt is universal (years, prices, dates work the same in every market). `lib/portable-text-utils.ts`, `lib/content-workflow.ts` — pure infrastructure. Everything else needs at minimum the find/replace pass; `lib/research.ts`, `lib/idea-writer.ts`, `lib/required-topics.ts`, and `lib/fair-housing.ts` need actual market-specific rewrites beyond find/replace.
 
 ### Sanity (copy as-is)
 `sanity/schema/blogPost.ts`, `sanity/schema/communityPage.ts`, `sanity/schema/marketReport.ts`, `sanity/schema/siteSettings.ts`, `sanity/schema/teamMember.ts`, `sanity/schema/index.ts`, `sanity/queries.ts`, `sanity/client.ts`, `sanity.config.ts`
@@ -65,7 +67,10 @@ The prompts list these in their Phase 1 — duplicated here for easy scanning if
 `app/api/cron/research/route.ts`, `app/api/cron/fed-rate-update/route.ts`, `app/api/cron/events-research/route.ts`, `app/api/cron/learnings-update/route.ts`, `app/api/cron/performance-review/route.ts`, `app/api/cron/refresh-evaluation/route.ts`, `app/api/cron/required-topics-coverage/route.ts`, `app/api/cron/renick-pipeline/route.ts`, `app/api/cron/scheduled-publish/route.ts`, `app/api/cron/aeo-pages/route.ts`
 
 ### Content API routes (copy as-is)
-Everything under `app/api/content/*`
+Everything under `app/api/content/*` — notably includes `fh-fix-violation/route.ts` and `fh-ignore-violation/route.ts` (per-violation Fair Housing fixes) and `generate-heygen-video/route.ts` (which MUST call the script normalizer before sending to HeyGen — see the hard rule in PROMPT_1).
+
+### Scripts (optional but recommended)
+`scripts/test-script-normalizer.ts` — 47-fixture test runner for the HeyGen script normalizer. Run after copying with `set -a; source .env.local; set +a; npx tsx scripts/test-script-normalizer.ts` to verify the prompt still produces correct conversions for years, prices, dates, times, ordinals, etc.
 
 ### Config
 `vercel.json`, `.env.local.example`, `package.json`, `tsconfig.json`, `next.config.ts`
