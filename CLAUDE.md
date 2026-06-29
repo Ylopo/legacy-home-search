@@ -91,6 +91,9 @@ Available at `/admin/assistant` (password-protected). Update `COMMUNITY_PAGES` i
 See `.env.local.example` for full list. All same as chris-nevada-next except:
 - `NEXT_PUBLIC_SANITY_PROJECT_ID=2nr7n3lm` (different Sanity project)
 
+## Repo location
+GitHub: `Ylopo/legacy-home-search` (transferred from `kiwi-vegas/legacy-home-search` 2026-06-29). Vercel ↔ GitHub auto-deploy reconnected the same day — pushes to `main` redeploy production automatically.
+
 ## Maintenance Instructions
 After every significant change, update this file to reflect:
 - New features or components added
