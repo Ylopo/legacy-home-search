@@ -89,7 +89,7 @@ _Agent public email / phone / office address: auto-derived in Phase 0. Operator 
 | **Agent's public email** | barry@yourfriendlyagent.net | |
 | **Agent's public phone** | (757) 816-4037 | |
 | **Office address** | 1545 Crossways Blvd, Ste 250, Chesapeake, VA 23320 | |
-| **GitHub repo** | kiwi-vegas/legacy-home-search | |
+| **GitHub repo** | Ylopo/legacy-home-search | |
 | **GitHub PAT** (for cron commits to LEARNINGS.md) | (classic PAT with repo scope) | |
 
 ---
