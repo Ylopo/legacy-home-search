@@ -39,7 +39,21 @@ export async function GET(request: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  return runLearningsJob()
+}
 
+// Manual trigger: POST with ?secret=ADMIN_SECRET
+// Lets the operator verify GITHUB_TOKEN access + the full LEARNINGS flow
+// without waiting for Wednesday's scheduled run.
+export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url)
+  if (searchParams.get('secret') !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return runLearningsJob()
+}
+
+async function runLearningsJob() {
   // The learnings cron runs Wednesday — look back to Tuesday's weekId
   const weekId = getLastTuesdayWeekId()
   const log: string[] = [`[learnings-update] Starting — weekId: ${weekId}`]
