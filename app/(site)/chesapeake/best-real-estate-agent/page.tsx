@@ -3,19 +3,19 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
-  description: 'Looking for the best real estate agent in Chesapeake? Barry Jenkins\' team ranks #9 nationally (Real Trends). Median $360K-$480K. Get a strategy call today.',
+  title: 'Best Real Estate Agent in Chesapeake (2026) | Legacy Home Team',
+  description: 'Looking for the best real estate agent in Chesapeake? Barry Jenkins leads the #9 U.S. team (Real Trends), covering Great Bridge to Deep Creek. Call today.',
   alternates: { canonical: 'https://legacyhometeamlpt.com/chesapeake/best-real-estate-agent' },
   openGraph: {
-    title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
-    description: 'Chesapeake\'s sub-markets behave independently. Legacy Home Team, ranked #9 in the U.S., reads all four with precision.',
+    title: 'Best Real Estate Agent in Chesapeake (2026) | Legacy Home Team',
+    description: 'Chesapeake\'s 353 sq miles has four different markets. Barry Jenkins and Legacy Home Team read all of them.',
     type: 'website',
     url: 'https://legacyhometeamlpt.com/chesapeake/best-real-estate-agent',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
-    description: 'Chesapeake\'s sub-markets behave independently. Legacy Home Team, ranked #9 in the U.S., reads all four with precision.',
+    title: 'Best Real Estate Agent in Chesapeake (2026) | Legacy Home Team',
+    description: 'Chesapeake\'s 353 sq miles has four different markets. Barry Jenkins and Legacy Home Team read all of them.',
   },
 }
 
@@ -23,7 +23,7 @@ const schemaRealEstateAgent = {
   '@context': 'https://schema.org',
   '@type': ['RealEstateAgent', 'LocalBusiness'],
   name: 'Legacy Home Team — Barry Jenkins',
-  description: 'Legacy Home Team, led by Barry Jenkins, is a top-ranked Hampton Roads real estate group serving Chesapeake, VA. Ranked #9 nationally by Real Trends with thousands of homes sold across the region.',
+  description: 'Legacy Home Team, led by Barry Jenkins, is a top-ranked Hampton Roads real estate team (#9 nationally per Real Trends) serving Chesapeake, Virginia Beach, Norfolk, and Suffolk.',
   url: 'https://legacyhometeamlpt.com',
   telephone: '(757) 816-4037',
   address: {
@@ -44,27 +44,27 @@ const schemaFAQ = {
     {
       '@type': 'Question',
       name: 'Who is the best real estate agent in Chesapeake?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally among all U.S. real estate teams by Real Trends. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team covers every Chesapeake sub-market from Great Bridge to Deep Creek.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Barry Jenkins and Legacy Home Team are consistently ranked among the top real estate teams in Chesapeake and Hampton Roads. Legacy Home Team is ranked #9 nationally among all U.S. real estate teams by Real Trends, with nearly 20 years of local experience and thousands of homes sold across Chesapeake, Virginia Beach, Norfolk, and Suffolk.' },
     },
     {
       '@type': 'Question',
       name: 'What is the median home price in Chesapeake in 2025?',
-      acceptedAnswer: { '@type': 'Answer', text: 'The Chesapeake median home price runs $360K-$480K in 2025, but that range hides significant variation. Hickory and Great Bridge often trade well above the median, while Deep Creek and parts of South Norfolk offer entry points closer to $260K-$350K.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Chesapeake\'s median home price in 2025 runs roughly $360K–$480K depending on sub-market. Great Bridge and Hickory trend higher, while Deep Creek and parts of South Norfolk sit at the lower end of the range.' },
     },
     {
       '@type': 'Question',
-      name: 'Which Chesapeake neighborhood is best for families?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Great Bridge is the most consistently requested area for families, driven by top-rated schools and steady resale demand. Hickory is a strong second choice for families who want larger lots and newer construction.' },
+      name: 'Which Chesapeake neighborhood has the best schools?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Great Bridge is consistently rated the top school zone in Chesapeake and drives the strongest family demand in the city. That school premium is a major factor in why Great Bridge holds its price-per-square-foot better than most Hampton Roads sub-markets.' },
     },
     {
       '@type': 'Question',
-      name: 'Is Chesapeake a good place to buy for military families?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Yes — Western Branch in particular is popular with military and civilian shipyard workers because of its commute to Norfolk Naval Shipyard and NSA Hampton Roads. Our team handles VA loans and PCS timelines constantly and coordinates with the Hampton Roads Realtors Association standards (hrra.com).' },
+      name: 'Is Chesapeake a good place to buy a home in 2026?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes — Chesapeake offers strong value relative to Virginia Beach and Norfolk, with more space, competitive schools, and steady appreciation. The key is choosing the right sub-market for your budget and lifestyle, which is exactly where a specialist agent matters.' },
     },
     {
       '@type': 'Question',
       name: 'How is Chesapeake different from Virginia Beach or Norfolk for buyers?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Chesapeake is larger, more spread out, and generally offers more house per dollar than Virginia Beach or Norfolk — but the sub-markets vary dramatically. Buyers moving from Virginia Beach are often surprised how differently Hickory prices compared to Great Bridge, even inside the same city.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Chesapeake is Virginia\'s second-largest city by land area (353 sq miles) and offers more land, newer construction, and lower density than Virginia Beach or Norfolk. Buyers typically get more square footage and yard for the same price point, especially in Hickory and Western Branch.' },
     },
   ],
 }
@@ -80,20 +80,20 @@ const schemaBreadcrumb = {
 }
 
 const criteriaRows = [
-  { criteria: 'Sub-market fluency', why: 'Great Bridge, Hickory, Western Branch, and Deep Creek each price and sell on different logic. One-size pricing loses money.' },
-  { criteria: 'Military & PCS experience', why: 'Western Branch and areas near Norfolk NSY see constant military moves. Timelines and VA loan nuances have to be handled cleanly.' },
-  { criteria: 'New construction knowledge', why: 'Hickory has active builder inventory. Buyers need someone who negotiates against builder contracts, not just resale.' },
-  { criteria: 'School-zone data command', why: 'Great Bridge families pay a premium for specific school assignments. An agent who can\'t map boundaries costs you the sale.' },
-  { criteria: 'Regional pricing data', why: 'Chesapeake\'s $360K-$480K median hides huge swings. The right agent shows you comps by sub-market, not city-wide averages.' },
+  { criteria: 'Sub-market fluency', why: 'An agent who works mostly in Virginia Beach oceanfront won\'t read Hickory land value or Great Bridge school premiums correctly.' },
+  { criteria: 'Recent Chesapeake transactions', why: 'With prices moving in the $360K–$480K median range in 2025, comps older than 90 days can mislead pricing by 5–8%.' },
+  { criteria: 'Military and relocation experience', why: 'Western Branch and much of Chesapeake serve Norfolk-based military families — VA loan fluency and PCS timing matter.' },
+  { criteria: 'New construction knowledge', why: 'Hickory has active builder inventory, and buyers need an agent who negotiates incentives, not just base price.' },
+  { criteria: 'Marketing reach beyond MLS', why: 'Chesapeake buyers come from Norfolk, Suffolk, and out-of-state — your agent\'s digital reach directly affects your sale price.' },
 ]
 
 const submarketsRows = [
-  { area: 'Great Bridge', range: '$420K-$650K', note: 'Top-rated schools drive consistent family demand and shorter days on market.' },
-  { area: 'Hickory', range: '$450K-$750K', note: 'Rural feel, larger lots, and active new construction — buyers here compete with builder inventory.' },
-  { area: 'Western Branch', range: '$320K-$475K', note: 'Norfolk commuter belt with heavy military-adjacent demand and steady turnover.' },
-  { area: 'Deep Creek', range: '$260K-$380K', note: 'Industrial waterfront and working-class stability — value plays and investor interest.' },
-  { area: 'Greenbrier', range: '$350K-$525K', note: 'Central location near retail and highways; strong resale liquidity.' },
-  { area: 'South Norfolk', range: '$240K-$360K', note: 'Historic pockets and renovation opportunity; appraisals require careful comp selection.' },
+  { area: 'Great Bridge', range: '$420K–$650K', note: 'Top-rated schools drive family demand and support the city\'s strongest price-per-square-foot.' },
+  { area: 'Hickory', range: '$450K–$750K+', note: 'Rural feel, larger lots, and active new construction — buyers here want acreage, not walkability.' },
+  { area: 'Western Branch', range: '$320K–$475K', note: 'Norfolk commuter belt with strong military demand; VA loan offers move fast here.' },
+  { area: 'Deep Creek', range: '$260K–$380K', note: 'Industrial waterfront and working-class stability — steady turnover and reliable rental yield.' },
+  { area: 'Greenbrier', range: '$350K–$525K', note: 'Central Chesapeake with retail and commuter access to Norfolk and Virginia Beach.' },
+  { area: 'South Norfolk', range: '$240K–$360K', note: 'Historic pockets and investor-friendly inventory bordering Norfolk city limits.' },
 ]
 
 const teamCompareRows = [
@@ -105,11 +105,11 @@ const teamCompareRows = [
 ]
 
 const faqs = [
-  { q: 'Who is the best real estate agent in Chesapeake?', a: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally among all U.S. real estate teams by Real Trends. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team covers every Chesapeake sub-market from Great Bridge to Deep Creek.' },
-  { q: 'What is the median home price in Chesapeake in 2025?', a: 'The Chesapeake median home price runs $360K-$480K in 2025, but that range hides significant variation. Hickory and Great Bridge often trade well above the median, while Deep Creek and parts of South Norfolk offer entry points closer to $260K-$350K.' },
-  { q: 'Which Chesapeake neighborhood is best for families?', a: 'Great Bridge is the most consistently requested area for families, driven by top-rated schools and steady resale demand. Hickory is a strong second choice for families who want larger lots and newer construction.' },
-  { q: 'Is Chesapeake a good place to buy for military families?', a: 'Yes — Western Branch in particular is popular with military and civilian shipyard workers because of its commute to Norfolk Naval Shipyard and NSA Hampton Roads. Our team handles VA loans and PCS timelines constantly and coordinates with the Hampton Roads Realtors Association standards (hrra.com).' },
-  { q: 'How is Chesapeake different from Virginia Beach or Norfolk for buyers?', a: 'Chesapeake is larger, more spread out, and generally offers more house per dollar than Virginia Beach or Norfolk — but the sub-markets vary dramatically. Buyers moving from Virginia Beach are often surprised how differently Hickory prices compared to Great Bridge, even inside the same city.' },
+  { q: 'Who is the best real estate agent in Chesapeake?', a: 'Barry Jenkins and Legacy Home Team are consistently ranked among the top real estate teams in Chesapeake and Hampton Roads. Legacy Home Team is ranked #9 nationally among all U.S. real estate teams by Real Trends, with nearly 20 years of local experience and thousands of homes sold across Chesapeake, Virginia Beach, Norfolk, and Suffolk.' },
+  { q: 'What is the median home price in Chesapeake in 2025?', a: 'Chesapeake\'s median home price in 2025 runs roughly $360K–$480K depending on sub-market. Great Bridge and Hickory trend higher, while Deep Creek and parts of South Norfolk sit at the lower end of the range.' },
+  { q: 'Which Chesapeake neighborhood has the best schools?', a: 'Great Bridge is consistently rated the top school zone in Chesapeake and drives the strongest family demand in the city. That school premium is a major factor in why Great Bridge holds its price-per-square-foot better than most Hampton Roads sub-markets.' },
+  { q: 'Is Chesapeake a good place to buy a home in 2026?', a: 'Yes — Chesapeake offers strong value relative to Virginia Beach and Norfolk, with more space, competitive schools, and steady appreciation. The key is choosing the right sub-market for your budget and lifestyle, which is exactly where a specialist agent matters.' },
+  { q: 'How is Chesapeake different from Virginia Beach or Norfolk for buyers?', a: 'Chesapeake is Virginia\'s second-largest city by land area (353 sq miles) and offers more land, newer construction, and lower density than Virginia Beach or Norfolk. Buyers typically get more square footage and yard for the same price point, especially in Hickory and Western Branch.' },
 ]
 
 export default function BestRealEstateAgentChesapeake() {
@@ -142,7 +142,7 @@ export default function BestRealEstateAgentChesapeake() {
               Best Real Estate Agent in Chesapeake
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 17, lineHeight: 1.75, maxWidth: 640, marginBottom: 36 }}>
-              Chesapeake covers 353 square miles and four totally different housing markets. Great Bridge doesn't behave like Deep Creek, and Hickory doesn't price like Western Branch. Our team reads all of them — because pricing a home wrong in Chesapeake usually means you priced it against the wrong neighborhood.
+              Chesapeake is Virginia's second-largest city by land area at 353 square miles, and Great Bridge, Hickory, Western Branch, and Deep Creek behave like four separate markets. The best agent in Chesapeake isn't the one with the biggest sign radius — it's the one who prices Great Bridge differently than Deep Creek and knows exactly why. That's the work we do every day.
             </p>
             <div className="hero-actions">
               <Link href="/contact" className="btn-primary" style={{ background: '#fff', color: 'var(--accent)' }}>
@@ -195,9 +195,9 @@ export default function BestRealEstateAgentChesapeake() {
       <section>
         <div className="container">
           <div className="section-header" style={{ textAlign: 'left', maxWidth: 720, margin: '0 0 40px' }}>
-            <span className="section-label">Buyer & Seller Guide</span>
-            <h2>What to Look For in a Chesapeake Real Estate Agent</h2>
-            <p>The best agent in Chesapeake isn't the one with the biggest sign — it's the one who can tell you why a house in Hickory appraises differently than one two zip codes away. Here's what actually matters when you're vetting representation.</p>
+            <span className="section-label">Agent Selection Guide</span>
+            <h2>What to Look for in a Real Estate Agent in Chesapeake</h2>
+            <p>Chesapeake rewards specificity. Here are the five criteria we tell every buyer and seller to weigh before signing with any agent in this city.</p>
           </div>
           <div style={{ overflowX: 'auto', marginBottom: 32 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -218,7 +218,7 @@ export default function BestRealEstateAgentChesapeake() {
             </table>
           </div>
           <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)' }}>
-            <strong>Pro tip:</strong> Ask any agent to name the last three homes they sold in your specific sub-market — not just Chesapeake. If they can't, they're guessing on your pricing.
+            <strong>Pro tip:</strong> Ask any agent to name the last three homes they closed in your specific Chesapeake sub-market. If they can't, they're guessing on your price.
           </div>
         </div>
       </section>
@@ -228,7 +228,7 @@ export default function BestRealEstateAgentChesapeake() {
         <div className="container">
           <div className="section-header" style={{ textAlign: 'left', maxWidth: 720, margin: '0 0 40px' }}>
             <h2>Why Chesapeake Requires a Specialist, Not a Generalist</h2>
-            <p>Chesapeake is Virginia's second-largest city by land area — bigger than Virginia Beach, Norfolk, and Suffolk in footprint. That size masks four distinct micro-markets that trade on their own supply, demand, and buyer profile.</p>
+            <p>Chesapeake's four dominant sub-markets each have distinct buyers, price ceilings, and days-on-market patterns. Here's how we read them.</p>
           </div>
           <div style={{ overflowX: 'auto', marginBottom: 32 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -251,7 +251,7 @@ export default function BestRealEstateAgentChesapeake() {
             </table>
           </div>
           <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)' }}>
-            <strong>Pro tip:</strong> If you're relocating from Virginia Beach or Norfolk, don't assume Chesapeake pricing tracks with what you know. It doesn't — and the sub-market you pick matters more than the city line.
+            <strong>Pro tip:</strong> Never price a Hickory home off Deep Creek comps — or vice versa. We build separate comp sets for each sub-market, and the Hampton Roads Realtors Association (hrra.com) data confirms these markets diverge year over year.
           </div>
         </div>
       </section>
@@ -263,9 +263,9 @@ export default function BestRealEstateAgentChesapeake() {
             <div>
               <span className="section-label">About Legacy Home Team</span>
               <h2 style={{ marginBottom: 20 }}>Barry Jenkins &amp; Legacy Home Team</h2>
-              <p style={{ marginBottom: 20 }}>Barry Jenkins has spent nearly 20 years selling real estate across Hampton Roads and leads three teams covering Virginia Beach, Chesapeake, Norfolk, Suffolk, Hampton, and Newport News. Real Trends ranks Legacy Home Team #9 nationally out of every real estate team in the U.S. — a ranking built on thousands of closed transactions, not marketing spend.</p>
-              <p style={{ marginBottom: 20 }}>Barry also serves as Head Realtor in Residence at Ylopo and CMO at Better Homes and Gardens NAGR, which means our Chesapeake clients get access to buyer-matching and listing-exposure technology that most local agents simply don't have. When a Great Bridge listing hits the market with us, it reaches the exact buyer profile shopping that school zone — not a generic MLS blast.</p>
-              <p>We've closed in every Chesapeake sub-market from Deep Creek to Hickory, and our agents live and work across Hampton Roads so we know how buyers move between Chesapeake, Virginia Beach, and Norfolk. That regional view is what lets us price and position homes accurately in a city where the wrong comp can cost you $30K.</p>
+              <p style={{ marginBottom: 20 }}>Barry Jenkins has spent nearly 20 years selling homes across Hampton Roads and leads Legacy Home Team, ranked #9 nationally among all U.S. real estate teams by Real Trends. Barry runs three teams across the region and has personally overseen thousands of transactions from Chesapeake to Newport News. When Chesapeake sellers ask who to trust with a $500K Great Bridge listing or a Hickory new-build negotiation, that track record is the answer.</p>
+              <p style={{ marginBottom: 20 }}>Barry also serves as Head Realtor in Residence at Ylopo and CMO at Better Homes and Gardens NAGR, which means our Chesapeake listings get marketing technology most local teams simply can't access. We target buyers from Norfolk, Suffolk, and out-of-state relocation pipelines the same day your home hits the market — not a week later.</p>
+              <p>Chesapeake is core territory for us, not a satellite market. We close homes in Great Bridge, Hickory, Western Branch, and Deep Creek every month, and our team knows which streets sell in seven days and which need staging first.</p>
             </div>
             <div>
               <div style={{ background: 'var(--off-white)', borderRadius: 'var(--radius-xl)', padding: '32px', border: '1px solid var(--border)' }}>
@@ -316,18 +316,18 @@ export default function BestRealEstateAgentChesapeake() {
         <div className="container">
           <div style={{ maxWidth: 760, margin: '0 auto' }}>
             <span className="section-label">Due Diligence</span>
-            <h2 style={{ marginBottom: 8 }}>Questions to Ask Before Choosing a Chesapeake Real Estate Agent</h2>
+            <h2 style={{ marginBottom: 8 }}>Questions to Ask Before Choosing a Real Estate Agent in Chesapeake</h2>
             <p style={{ marginBottom: 40 }}>A competent agent should have specific, data-backed answers to all of these. Vague responses are not answers.</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
-        'How many homes have you personally closed in Chesapeake in the last 12 months?',
-        'Can you walk me through the pricing differences between Great Bridge, Hickory, Western Branch, and Deep Creek?',
-        'What\'s your experience with VA loans and military PCS timelines?',
-        'How do you handle new construction negotiations versus resale offers?',
-        'What marketing technology do you use to reach out-of-market buyers?',
-        'How do you decide which comps to use in a 353-square-mile city?',
-        'What\'s your team structure — will I be working with you or handed off?',
-        'Can you share references from clients in my specific sub-market?',
+        'How many homes have you closed in my specific Chesapeake sub-market in the last 12 months?',
+        'What\'s your average list-to-sale price ratio in Chesapeake?',
+        'How do you price differently between Great Bridge, Hickory, Western Branch, and Deep Creek?',
+        'What\'s your marketing plan for reaching Norfolk and out-of-state buyers?',
+        'Do you have direct experience with VA loans and military PCS timelines?',
+        'How do you handle new construction negotiations in Hickory?',
+        'What\'s your average days-on-market compared to the Chesapeake city average?',
+        'Who exactly on your team will be handling my transaction from contract to close?',
               ].map((q, i) => (
                 <div key={i} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                   <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
@@ -336,7 +336,7 @@ export default function BestRealEstateAgentChesapeake() {
               ))}
             </div>
             <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)', marginTop: 24 }}>
-              <strong>Pro tip:</strong> Any agent worth hiring should welcome these questions. If they get defensive or vague on sub-market comps, keep interviewing — Chesapeake is not a city where you want someone learning on your file.
+              <strong>Pro tip:</strong> If an agent can't answer questions 1 and 3 with specific numbers on the spot, they're not a Chesapeake specialist. Real experience produces real data.
             </div>
           </div>
         </div>
@@ -369,10 +369,10 @@ export default function BestRealEstateAgentChesapeake() {
             Legacy Home Team · Chesapeake
           </span>
           <h2 style={{ color: '#fff', fontSize: 'clamp(1.6rem, 3vw, 2.5rem)', margin: '16px 0 20px' }}>
-            Get a Real Chesapeake Strategy From the #9 Team in America
+            Work With Chesapeake's Top-Ranked Real Estate Team
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 16, maxWidth: 560, margin: '0 auto 40px', lineHeight: 1.75 }}>
-            Whether you're buying in Great Bridge, selling in Hickory, or relocating into Western Branch, you deserve an agent who knows the difference. Book a call with Legacy Home Team and we'll show you the exact comps, sub-market data, and pricing strategy that fits your situation — no pressure, just clarity.
+            Whether you're buying in Great Bridge, selling in Hickory, or navigating a PCS move through Western Branch, Legacy Home Team knows exactly how your sub-market behaves. Reach out today and we'll build a plan specific to your street, your price point, and your timeline.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/contact" className="btn-primary" style={{ background: '#fff', color: 'var(--accent)' }}>
