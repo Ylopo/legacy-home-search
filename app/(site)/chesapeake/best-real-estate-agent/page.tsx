@@ -3,19 +3,19 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Best Real Estate Agent Newport News (2026) | Legacy Home Team',
-  description: 'Looking for the best real estate agent in Newport News? Barry Jenkins ranks #9 nationally (Real Trends) with thousands of homes sold across Hampton Roads. Call today.',
-  alternates: { canonical: 'https://legacyhometeamlpt.com/newport-news/best-real-estate-agent' },
+  title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
+  description: 'Looking for the best real estate agent in Chesapeake? Barry Jenkins\' team ranks #9 nationally (Real Trends). Median $360K-$480K. Get a strategy call today.',
+  alternates: { canonical: 'https://legacyhometeamlpt.com/chesapeake/best-real-estate-agent' },
   openGraph: {
-    title: 'Best Real Estate Agent Newport News (2026) | Legacy Home Team',
-    description: 'Newport News\' price gradient runs $20K-$40K north to south. Work with Barry Jenkins, ranked #9 nationally by Real Trends.',
+    title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
+    description: 'Chesapeake\'s sub-markets behave independently. Legacy Home Team, ranked #9 in the U.S., reads all four with precision.',
     type: 'website',
-    url: 'https://legacyhometeamlpt.com/newport-news/best-real-estate-agent',
+    url: 'https://legacyhometeamlpt.com/chesapeake/best-real-estate-agent',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Best Real Estate Agent Newport News (2026) | Legacy Home Team',
-    description: 'Newport News\' price gradient runs $20K-$40K north to south. Work with Barry Jenkins, ranked #9 nationally by Real Trends.',
+    title: 'Best Real Estate Agent in Chesapeake VA (2026) | Legacy Home Team',
+    description: 'Chesapeake\'s sub-markets behave independently. Legacy Home Team, ranked #9 in the U.S., reads all four with precision.',
   },
 }
 
@@ -23,13 +23,13 @@ const schemaRealEstateAgent = {
   '@context': 'https://schema.org',
   '@type': ['RealEstateAgent', 'LocalBusiness'],
   name: 'Legacy Home Team — Barry Jenkins',
-  description: 'Legacy Home Team, led by Barry Jenkins (ranked #9 nationally by Real Trends), helps buyers and sellers across Newport News and Hampton Roads with data-driven pricing and neighborhood-specific strategy.',
+  description: 'Legacy Home Team, led by Barry Jenkins, is a top-ranked Hampton Roads real estate group serving Chesapeake, VA. Ranked #9 nationally by Real Trends with thousands of homes sold across the region.',
   url: 'https://legacyhometeamlpt.com',
   telephone: '(757) 816-4037',
   address: {
     '@type': 'PostalAddress',
     streetAddress: '5224 Indian River Rd',
-    addressLocality: 'Newport News',
+    addressLocality: 'Chesapeake',
     addressRegion: 'VA',
     postalCode: '23464',
     addressCountry: 'US',
@@ -43,28 +43,28 @@ const schemaFAQ = {
   mainEntity: [
     {
       '@type': 'Question',
-      name: 'Who is the best real estate agent in Newport News?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally by Real Trends among all U.S. real estate teams. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team specializes in Newport News\' full sub-market range from Denbigh to Southeast.' },
+      name: 'Who is the best real estate agent in Chesapeake?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally among all U.S. real estate teams by Real Trends. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team covers every Chesapeake sub-market from Great Bridge to Deep Creek.' },
     },
     {
       '@type': 'Question',
-      name: 'What is the median home price in Newport News in 2025?',
-      acceptedAnswer: { '@type': 'Answer', text: 'The Newport News median in 2025 runs roughly $250K-$370K, but that citywide number hides a steep gradient. Denbigh and Kiln Creek command a premium, while Southeast homes near the shipyard trade $20K-$40K lower on comparable square footage.' },
+      name: 'What is the median home price in Chesapeake in 2025?',
+      acceptedAnswer: { '@type': 'Answer', text: 'The Chesapeake median home price runs $360K-$480K in 2025, but that range hides significant variation. Hickory and Great Bridge often trade well above the median, while Deep Creek and parts of South Norfolk offer entry points closer to $260K-$350K.' },
     },
     {
       '@type': 'Question',
-      name: 'Is Newport News a good place to buy investment property?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Yes — particularly in Southeast Newport News, where shipyard workforce demand supports strong rental yields. Investor competition is real, so working with a team that tracks Huntington Ingalls hiring cycles gives you a meaningful edge.' },
+      name: 'Which Chesapeake neighborhood is best for families?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Great Bridge is the most consistently requested area for families, driven by top-rated schools and steady resale demand. Hickory is a strong second choice for families who want larger lots and newer construction.' },
     },
     {
       '@type': 'Question',
-      name: 'How does Legacy Home Team help military buyers at Langley-Eustis?',
-      acceptedAnswer: { '@type': 'Answer', text: 'We handle PCS timelines, VA loan coordination, and virtual tours for buyers stationed elsewhere. You can learn more about the base at jble.af.mil, and our team has closed hundreds of military relocations across Newport News and Hampton.' },
+      name: 'Is Chesapeake a good place to buy for military families?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Yes — Western Branch in particular is popular with military and civilian shipyard workers because of its commute to Norfolk Naval Shipyard and NSA Hampton Roads. Our team handles VA loans and PCS timelines constantly and coordinates with the Hampton Roads Realtors Association standards (hrra.com).' },
     },
     {
       '@type': 'Question',
-      name: 'Should I use the same agent for Newport News and Virginia Beach?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Only if that agent actually works both markets at volume. We do — Barry runs three teams across Hampton Roads, so whether you\'re selling in Newport News and buying in Virginia Beach, Chesapeake, or Norfolk, we can handle both sides without a referral handoff.' },
+      name: 'How is Chesapeake different from Virginia Beach or Norfolk for buyers?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Chesapeake is larger, more spread out, and generally offers more house per dollar than Virginia Beach or Norfolk — but the sub-markets vary dramatically. Buyers moving from Virginia Beach are often surprised how differently Hickory prices compared to Great Bridge, even inside the same city.' },
     },
   ],
 }
@@ -74,26 +74,26 @@ const schemaBreadcrumb = {
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://legacyhometeamlpt.com' },
-    { '@type': 'ListItem', position: 2, name: 'Newport News', item: 'https://legacyhometeamlpt.com/newport-news' },
-    { '@type': 'ListItem', position: 3, name: 'Best Real Estate Agent in Newport News', item: 'https://legacyhometeamlpt.com/newport-news/best-real-estate-agent' },
+    { '@type': 'ListItem', position: 2, name: 'Chesapeake', item: 'https://legacyhometeamlpt.com/chesapeake' },
+    { '@type': 'ListItem', position: 3, name: 'Best Real Estate Agent in Chesapeake', item: 'https://legacyhometeamlpt.com/chesapeake/best-real-estate-agent' },
   ],
 }
 
 const criteriaRows = [
-  { criteria: 'Sub-Market Fluency', why: 'Denbigh, Hilton Village, Kiln Creek, and Southeast each price on different comp sets — a citywide average will mislead you.' },
-  { criteria: 'Military Relocation Experience', why: 'Langley-Eustis PCS timelines drive a huge share of Newport News transactions and require VA loan and quick-close expertise.' },
-  { criteria: 'Shipyard Buyer Fluency', why: 'Huntington Ingalls hiring cycles push demand into the Southeast and investor pockets — agents need to read that pipeline.' },
-  { criteria: 'Data & Marketing Tech', why: 'Newport News listings compete against Hampton, Yorktown, and Williamsburg inventory; weak marketing means weaker offers.' },
-  { criteria: 'Verified Track Record', why: 'Ask for actual sold volume and days-on-market data — not vanity awards or social media follower counts.' },
+  { criteria: 'Sub-market fluency', why: 'Great Bridge, Hickory, Western Branch, and Deep Creek each price and sell on different logic. One-size pricing loses money.' },
+  { criteria: 'Military & PCS experience', why: 'Western Branch and areas near Norfolk NSY see constant military moves. Timelines and VA loan nuances have to be handled cleanly.' },
+  { criteria: 'New construction knowledge', why: 'Hickory has active builder inventory. Buyers need someone who negotiates against builder contracts, not just resale.' },
+  { criteria: 'School-zone data command', why: 'Great Bridge families pay a premium for specific school assignments. An agent who can\'t map boundaries costs you the sale.' },
+  { criteria: 'Regional pricing data', why: 'Chesapeake\'s $360K-$480K median hides huge swings. The right agent shows you comps by sub-market, not city-wide averages.' },
 ]
 
 const submarketsRows = [
-  { area: 'Denbigh', range: '$320K-$450K', note: 'Top-rated schools and strong family demand keep this the priciest quadrant of the city.' },
-  { area: 'Kiln Creek', range: '$350K-$500K', note: 'Golf community with active HOA — attracts move-up buyers from Hampton and York County.' },
-  { area: 'Hilton Village', range: '$280K-$425K', note: 'America\'s first planned community (1918); historic charm commands a premium among design-conscious buyers.' },
-  { area: 'Midtown / Oyster Point', range: '$260K-$380K', note: 'Corporate corridor near City Center — steady demand from professionals and dual-income households.' },
-  { area: 'Southeast Newport News', range: '$140K-$240K', note: 'Affordable, walkable to the shipyard — heavy investor and first-time buyer competition.' },
-  { area: 'Near Langley-Eustis', range: '$230K-$340K', note: 'PCS-driven turnover creates predictable buying and selling windows tied to military rotations.' },
+  { area: 'Great Bridge', range: '$420K-$650K', note: 'Top-rated schools drive consistent family demand and shorter days on market.' },
+  { area: 'Hickory', range: '$450K-$750K', note: 'Rural feel, larger lots, and active new construction — buyers here compete with builder inventory.' },
+  { area: 'Western Branch', range: '$320K-$475K', note: 'Norfolk commuter belt with heavy military-adjacent demand and steady turnover.' },
+  { area: 'Deep Creek', range: '$260K-$380K', note: 'Industrial waterfront and working-class stability — value plays and investor interest.' },
+  { area: 'Greenbrier', range: '$350K-$525K', note: 'Central location near retail and highways; strong resale liquidity.' },
+  { area: 'South Norfolk', range: '$240K-$360K', note: 'Historic pockets and renovation opportunity; appraisals require careful comp selection.' },
 ]
 
 const teamCompareRows = [
@@ -105,14 +105,14 @@ const teamCompareRows = [
 ]
 
 const faqs = [
-  { q: 'Who is the best real estate agent in Newport News?', a: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally by Real Trends among all U.S. real estate teams. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team specializes in Newport News\' full sub-market range from Denbigh to Southeast.' },
-  { q: 'What is the median home price in Newport News in 2025?', a: 'The Newport News median in 2025 runs roughly $250K-$370K, but that citywide number hides a steep gradient. Denbigh and Kiln Creek command a premium, while Southeast homes near the shipyard trade $20K-$40K lower on comparable square footage.' },
-  { q: 'Is Newport News a good place to buy investment property?', a: 'Yes — particularly in Southeast Newport News, where shipyard workforce demand supports strong rental yields. Investor competition is real, so working with a team that tracks Huntington Ingalls hiring cycles gives you a meaningful edge.' },
-  { q: 'How does Legacy Home Team help military buyers at Langley-Eustis?', a: 'We handle PCS timelines, VA loan coordination, and virtual tours for buyers stationed elsewhere. You can learn more about the base at jble.af.mil, and our team has closed hundreds of military relocations across Newport News and Hampton.' },
-  { q: 'Should I use the same agent for Newport News and Virginia Beach?', a: 'Only if that agent actually works both markets at volume. We do — Barry runs three teams across Hampton Roads, so whether you\'re selling in Newport News and buying in Virginia Beach, Chesapeake, or Norfolk, we can handle both sides without a referral handoff.' },
+  { q: 'Who is the best real estate agent in Chesapeake?', a: 'Barry Jenkins and Legacy Home Team are ranked #9 nationally among all U.S. real estate teams by Real Trends. With nearly 20 years of experience and thousands of homes sold across Hampton Roads, our team covers every Chesapeake sub-market from Great Bridge to Deep Creek.' },
+  { q: 'What is the median home price in Chesapeake in 2025?', a: 'The Chesapeake median home price runs $360K-$480K in 2025, but that range hides significant variation. Hickory and Great Bridge often trade well above the median, while Deep Creek and parts of South Norfolk offer entry points closer to $260K-$350K.' },
+  { q: 'Which Chesapeake neighborhood is best for families?', a: 'Great Bridge is the most consistently requested area for families, driven by top-rated schools and steady resale demand. Hickory is a strong second choice for families who want larger lots and newer construction.' },
+  { q: 'Is Chesapeake a good place to buy for military families?', a: 'Yes — Western Branch in particular is popular with military and civilian shipyard workers because of its commute to Norfolk Naval Shipyard and NSA Hampton Roads. Our team handles VA loans and PCS timelines constantly and coordinates with the Hampton Roads Realtors Association standards (hrra.com).' },
+  { q: 'How is Chesapeake different from Virginia Beach or Norfolk for buyers?', a: 'Chesapeake is larger, more spread out, and generally offers more house per dollar than Virginia Beach or Norfolk — but the sub-markets vary dramatically. Buyers moving from Virginia Beach are often surprised how differently Hickory prices compared to Great Bridge, even inside the same city.' },
 ]
 
-export default function BestRealEstateAgentNewportNews() {
+export default function BestRealEstateAgentChesapeake() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaRealEstateAgent) }} />
@@ -124,7 +124,7 @@ export default function BestRealEstateAgentNewportNews() {
         <div className="container" style={{ padding: '14px 24px', fontSize: 13, color: 'var(--text-muted)' }}>
           <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Home</Link>
           <span style={{ margin: '0 8px', opacity: 0.4 }}>›</span>
-          <Link href="/newport-news" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Newport News</Link>
+          <Link href="/chesapeake" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Chesapeake</Link>
           <span style={{ margin: '0 8px', opacity: 0.4 }}>›</span>
           <span style={{ color: 'var(--text-secondary)' }}>Best Real Estate Agent</span>
         </div>
@@ -136,20 +136,20 @@ export default function BestRealEstateAgentNewportNews() {
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '48px', alignItems: 'flex-end' }}>
             <div style={{ paddingBottom: 72 }}>
             <div className="hero-eyebrow" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', marginBottom: 20 }}>
-              Newport News · Hampton Roads
+              Chesapeake · Hampton Roads
             </div>
             <h1 style={{ color: '#fff', fontSize: 'clamp(1.8rem, 4vw, 3rem)', marginBottom: 20 }}>
-              Best Real Estate Agent in Newport News
+              Best Real Estate Agent in Chesapeake
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 17, lineHeight: 1.75, maxWidth: 640, marginBottom: 36 }}>
-              Newport News isn't one market — it's a north-to-south price gradient where identical homes can trade $20K-$40K apart depending on the zip code. With Huntington Ingalls anchoring the shipyard economy and Joint Base Langley-Eustis driving military relocation traffic, the right agent has to read three demand curves at once. Our team has been doing exactly that for two decades.
+              Chesapeake covers 353 square miles and four totally different housing markets. Great Bridge doesn't behave like Deep Creek, and Hickory doesn't price like Western Branch. Our team reads all of them — because pricing a home wrong in Chesapeake usually means you priced it against the wrong neighborhood.
             </p>
             <div className="hero-actions">
               <Link href="/contact" className="btn-primary" style={{ background: '#fff', color: 'var(--accent)' }}>
                 Schedule a Free Consultation
               </Link>
-              <Link href="/newport-news" className="btn-outline" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
-                Explore Newport News Homes →
+              <Link href="/chesapeake" className="btn-outline" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
+                Explore Chesapeake Homes →
               </Link>
             </div>
             </div>
@@ -195,16 +195,16 @@ export default function BestRealEstateAgentNewportNews() {
       <section>
         <div className="container">
           <div className="section-header" style={{ textAlign: 'left', maxWidth: 720, margin: '0 0 40px' }}>
-            <span className="section-label">Agent Selection Guide</span>
-            <h2>What to Look For in a Newport News Real Estate Agent</h2>
-            <p>Not every licensed agent understands why a Denbigh listing prices differently than a comparable home five miles south. Here are the five criteria that actually matter when you're hiring in this market.</p>
+            <span className="section-label">Buyer & Seller Guide</span>
+            <h2>What to Look For in a Chesapeake Real Estate Agent</h2>
+            <p>The best agent in Chesapeake isn't the one with the biggest sign — it's the one who can tell you why a house in Hickory appraises differently than one two zip codes away. Here's what actually matters when you're vetting representation.</p>
           </div>
           <div style={{ overflowX: 'auto', marginBottom: 32 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ background: 'var(--accent)', color: '#fff' }}>
                   <th style={{ padding: '12px 20px', textAlign: 'left', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>What to Look For</th>
-                  <th style={{ padding: '12px 20px', textAlign: 'left', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Why It Matters in Newport News</th>
+                  <th style={{ padding: '12px 20px', textAlign: 'left', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Why It Matters in Chesapeake</th>
                 </tr>
               </thead>
               <tbody>
@@ -218,7 +218,7 @@ export default function BestRealEstateAgentNewportNews() {
             </table>
           </div>
           <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)' }}>
-            <strong>Pro tip:</strong> Ask any agent to walk you through the last five homes they closed in your specific zip code. If they can't do it from memory, they're not a specialist — they're a generalist working your listing on the side.
+            <strong>Pro tip:</strong> Ask any agent to name the last three homes they sold in your specific sub-market — not just Chesapeake. If they can't, they're guessing on your pricing.
           </div>
         </div>
       </section>
@@ -227,8 +227,8 @@ export default function BestRealEstateAgentNewportNews() {
       <section style={{ background: 'var(--off-white)' }}>
         <div className="container">
           <div className="section-header" style={{ textAlign: 'left', maxWidth: 720, margin: '0 0 40px' }}>
-            <h2>Why Newport News Requires a Specialist, Not a Generalist</h2>
-            <p>The 2025 median in Newport News runs roughly $250K-$370K, but that range masks a steep neighborhood-by-neighborhood spread. Here's how the sub-markets actually break down.</p>
+            <h2>Why Chesapeake Requires a Specialist, Not a Generalist</h2>
+            <p>Chesapeake is Virginia's second-largest city by land area — bigger than Virginia Beach, Norfolk, and Suffolk in footprint. That size masks four distinct micro-markets that trade on their own supply, demand, and buyer profile.</p>
           </div>
           <div style={{ overflowX: 'auto', marginBottom: 32 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -251,7 +251,7 @@ export default function BestRealEstateAgentNewportNews() {
             </table>
           </div>
           <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)' }}>
-            <strong>Pro tip:</strong> If you're relocating from Virginia Beach or Chesapeake, don't assume Newport News price-per-square-foot logic transfers. The commute, school zoning, and shipyard proximity rewrite the comp math entirely.
+            <strong>Pro tip:</strong> If you're relocating from Virginia Beach or Norfolk, don't assume Chesapeake pricing tracks with what you know. It doesn't — and the sub-market you pick matters more than the city line.
           </div>
         </div>
       </section>
@@ -263,9 +263,9 @@ export default function BestRealEstateAgentNewportNews() {
             <div>
               <span className="section-label">About Legacy Home Team</span>
               <h2 style={{ marginBottom: 20 }}>Barry Jenkins &amp; Legacy Home Team</h2>
-              <p style={{ marginBottom: 20 }}>Barry Jenkins has spent nearly 20 years selling real estate across Hampton Roads and is ranked #9 nationally among all U.S. real estate teams by Real Trends. Our team has closed thousands of transactions from Suffolk to Newport News, and Barry personally runs three teams across the region — giving us live comp data no single-market agent can match.</p>
-              <p style={{ marginBottom: 20 }}>Barry also serves as Head Realtor in Residence at Ylopo and CMO at Better Homes and Gardens Native American Group Realty, which means our listings get exposure through AI-driven marketing tech most Newport News agents don't have access to. That translates to more qualified buyer traffic on your listing — and better data on what buyers will actually pay in your specific neighborhood.</p>
-              <p>We've sold across every Newport News sub-market from Southeast investor deals to Kiln Creek golf-community listings. That breadth is why relocating military families, Huntington Ingalls hires, and move-up buyers from Hampton and Norfolk consistently call us first.</p>
+              <p style={{ marginBottom: 20 }}>Barry Jenkins has spent nearly 20 years selling real estate across Hampton Roads and leads three teams covering Virginia Beach, Chesapeake, Norfolk, Suffolk, Hampton, and Newport News. Real Trends ranks Legacy Home Team #9 nationally out of every real estate team in the U.S. — a ranking built on thousands of closed transactions, not marketing spend.</p>
+              <p style={{ marginBottom: 20 }}>Barry also serves as Head Realtor in Residence at Ylopo and CMO at Better Homes and Gardens NAGR, which means our Chesapeake clients get access to buyer-matching and listing-exposure technology that most local agents simply don't have. When a Great Bridge listing hits the market with us, it reaches the exact buyer profile shopping that school zone — not a generic MLS blast.</p>
+              <p>We've closed in every Chesapeake sub-market from Deep Creek to Hickory, and our agents live and work across Hampton Roads so we know how buyers move between Chesapeake, Virginia Beach, and Norfolk. That regional view is what lets us price and position homes accurately in a city where the wrong comp can cost you $30K.</p>
             </div>
             <div>
               <div style={{ background: 'var(--off-white)', borderRadius: 'var(--radius-xl)', padding: '32px', border: '1px solid var(--border)' }}>
@@ -316,18 +316,18 @@ export default function BestRealEstateAgentNewportNews() {
         <div className="container">
           <div style={{ maxWidth: 760, margin: '0 auto' }}>
             <span className="section-label">Due Diligence</span>
-            <h2 style={{ marginBottom: 8 }}>Questions to Ask Before Choosing a Newport News Real Estate Agent</h2>
+            <h2 style={{ marginBottom: 8 }}>Questions to Ask Before Choosing a Chesapeake Real Estate Agent</h2>
             <p style={{ marginBottom: 40 }}>A competent agent should have specific, data-backed answers to all of these. Vague responses are not answers.</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
-        'How many homes have you personally sold in Newport News in the last 12 months?',
-        'What\'s your average list-to-sale price ratio in Denbigh vs. Southeast?',
-        'How do you handle VA loans and PCS timelines for Langley-Eustis buyers?',
-        'What marketing platforms will my listing appear on beyond the MLS?',
-        'Can you show me your sold data broken down by sub-market?',
-        'How do you price a Hilton Village home differently than a Kiln Creek home?',
-        'Who actually answers my calls — you or an assistant?',
-        'What\'s your plan if my home doesn\'t get an offer in the first 21 days?',
+        'How many homes have you personally closed in Chesapeake in the last 12 months?',
+        'Can you walk me through the pricing differences between Great Bridge, Hickory, Western Branch, and Deep Creek?',
+        'What\'s your experience with VA loans and military PCS timelines?',
+        'How do you handle new construction negotiations versus resale offers?',
+        'What marketing technology do you use to reach out-of-market buyers?',
+        'How do you decide which comps to use in a 353-square-mile city?',
+        'What\'s your team structure — will I be working with you or handed off?',
+        'Can you share references from clients in my specific sub-market?',
               ].map((q, i) => (
                 <div key={i} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                   <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
@@ -336,7 +336,7 @@ export default function BestRealEstateAgentNewportNews() {
               ))}
             </div>
             <div style={{ background: 'var(--accent-light)', border: '1px solid #dbe4f0', borderRadius: 'var(--radius-lg)', padding: '18px 24px', fontSize: 14, color: 'var(--accent)', marginTop: 24 }}>
-              <strong>Pro tip:</strong> The best agents welcome these questions and answer with specifics. If you get vague answers or deflection, that's your signal to keep interviewing.
+              <strong>Pro tip:</strong> Any agent worth hiring should welcome these questions. If they get defensive or vague on sub-market comps, keep interviewing — Chesapeake is not a city where you want someone learning on your file.
             </div>
           </div>
         </div>
@@ -366,20 +366,20 @@ export default function BestRealEstateAgentNewportNews() {
       <section style={{ background: 'var(--accent)', textAlign: 'center', padding: '80px 24px' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <span className="section-label" style={{ color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.2)' }}>
-            Legacy Home Team · Newport News
+            Legacy Home Team · Chesapeake
           </span>
           <h2 style={{ color: '#fff', fontSize: 'clamp(1.6rem, 3vw, 2.5rem)', margin: '16px 0 20px' }}>
-            Ready to Work With Newport News' Top-Ranked Real Estate Team?
+            Get a Real Chesapeake Strategy From the #9 Team in America
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 16, maxWidth: 560, margin: '0 auto 40px', lineHeight: 1.75 }}>
-            Whether you're relocating for Langley-Eustis, moving up in Denbigh, or selling near the shipyard, we bring the data and marketing firepower this market demands. Let's talk about your specific sub-market, timeline, and price target — no pressure, just straight answers from a team that closes across all of Hampton Roads.
+            Whether you're buying in Great Bridge, selling in Hickory, or relocating into Western Branch, you deserve an agent who knows the difference. Book a call with Legacy Home Team and we'll show you the exact comps, sub-market data, and pricing strategy that fits your situation — no pressure, just clarity.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/contact" className="btn-primary" style={{ background: '#fff', color: 'var(--accent)' }}>
               Schedule a Free Consultation
             </Link>
-            <Link href="/newport-news" className="btn-outline" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
-              Explore Newport News Homes →
+            <Link href="/chesapeake" className="btn-outline" style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
+              Explore Chesapeake Homes →
             </Link>
           </div>
         </div>
